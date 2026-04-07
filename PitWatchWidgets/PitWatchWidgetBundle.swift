@@ -10,27 +10,32 @@ struct PitWatchWidgetBundle: WidgetBundle {
 
 struct NextMatchWidget: Widget {
     let kind = "NextMatchWidget"
+
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: PlaceholderProvider()) { entry in
-            Text("PitWatch")
+        StaticConfiguration(kind: kind, provider: MatchTimelineProvider()) { entry in
+            WidgetEntryView(entry: entry)
         }
         .configurationDisplayName("Next Match")
         .description("Track your team's next FRC match.")
-        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge,
-                            .accessoryCircular, .accessoryRectangular])
+        .supportedFamilies([
+            .systemSmall, .systemMedium, .systemLarge,
+            .accessoryCircular, .accessoryRectangular
+        ])
     }
 }
 
-struct PlaceholderProvider: TimelineProvider {
-    func placeholder(in context: Context) -> SimpleEntry { SimpleEntry(date: .now) }
-    func getSnapshot(in context: Context, completion: @escaping (SimpleEntry) -> Void) {
-        completion(SimpleEntry(date: .now))
-    }
-    func getTimeline(in context: Context, completion: @escaping (Timeline<SimpleEntry>) -> Void) {
-        completion(Timeline(entries: [SimpleEntry(date: .now)], policy: .after(.now.addingTimeInterval(3600))))
-    }
-}
+struct WidgetEntryView: View {
+    @Environment(\.widgetFamily) var family
+    let entry: MatchWidgetEntry
 
-struct SimpleEntry: TimelineEntry {
-    let date: Date
+    var body: some View {
+        switch family {
+        case .systemSmall: SmallWidgetView(entry: entry)
+        case .systemMedium: MediumWidgetView(entry: entry)
+        case .systemLarge: LargeWidgetView(entry: entry)
+        case .accessoryCircular: CircularLockScreenView(entry: entry)
+        case .accessoryRectangular: RectangularLockScreenView(entry: entry)
+        default: SmallWidgetView(entry: entry)
+        }
+    }
 }
