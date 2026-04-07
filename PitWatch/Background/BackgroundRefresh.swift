@@ -8,6 +8,12 @@ import TBAKit
 import ActivityKit
 #endif
 
+/// Wraps a non-Sendable value for safe transfer across isolation boundaries
+/// when the developer guarantees correct usage.
+private struct SendableBox<T>: @unchecked Sendable {
+    let value: T
+}
+
 enum BackgroundRefresh {
     static let taskIdentifier = "com.pitwatch.refresh"
 
@@ -38,12 +44,13 @@ enum BackgroundRefresh {
             task.setTaskCompleted(success: true)
             return
         }
+        let boxedTask = SendableBox(value: task)
         let refreshTask = Task {
             do {
                 try await performRefresh(store: store, config: config, apiKey: apiKey)
-                task.setTaskCompleted(success: true)
+                boxedTask.value.setTaskCompleted(success: true)
             } catch {
-                task.setTaskCompleted(success: false)
+                boxedTask.value.setTaskCompleted(success: false)
             }
             scheduleNext(store: store)
         }
