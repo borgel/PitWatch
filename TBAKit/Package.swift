@@ -5,7 +5,8 @@ let package = Package(
     name: "TBAKit",
     platforms: [
         .iOS(.v18),
-        .watchOS(.v11)
+        .watchOS(.v11),
+        .macOS(.v15)
     ],
     products: [
         .library(name: "TBAKit", targets: ["TBAKit"]),
