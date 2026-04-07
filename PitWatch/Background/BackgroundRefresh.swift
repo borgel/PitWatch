@@ -1,7 +1,12 @@
 import Foundation
 import BackgroundTasks
 import WidgetKit
+import WatchConnectivity
 import TBAKit
+
+#if canImport(ActivityKit) && os(iOS)
+import ActivityKit
+#endif
 
 enum BackgroundRefresh {
     static let taskIdentifier = "com.pitwatch.refresh"
@@ -112,12 +117,59 @@ enum BackgroundRefresh {
         store.saveEventCache(cache)
         store.saveRefreshState(refreshState)
 
+        // Push data to watch via WatchConnectivity
+        if WCSession.isSupported() {
+            if WCSession.default.activationState == .activated {
+                if let data = try? JSONEncoder().encode(cache) {
+                    WCSession.default.transferUserInfo(["eventCache": data])
+                }
+            }
+        }
+
         // Only reload widgets if data changed
         let teamKey = config.teamKey ?? ""
         let changes = ChangeDetector.detect(old: oldCache, new: cache, teamKey: teamKey)
         if forceReload || changes.shouldReloadWidgets {
             WidgetCenter.shared.reloadAllTimelines()
         }
+
+        #if canImport(ActivityKit) && os(iOS)
+        // Live Activity management
+        let manager = LiveActivityManager.shared
+        let schedule = MatchSchedule(matches: cache.matches, teamKey: teamKey)
+
+        if let next = schedule.nextMatch {
+            if manager.hasActiveActivity {
+                await manager.updateActivity(
+                    match: next,
+                    useScheduledTime: config.useScheduledTime,
+                    queueOffsetMinutes: config.queueOffsetMinutes,
+                    ranking: cache.rankings?.rankings.first { $0.teamKey == teamKey },
+                    oprs: cache.oprs
+                )
+            } else if schedule.shouldStartLiveActivity(
+                now: .now, mode: config.liveActivityMode,
+                useScheduledTime: config.useScheduledTime,
+                hasActiveLiveActivity: false
+            ) {
+                let _ = try? manager.startActivity(
+                    match: next,
+                    teamNumber: config.teamNumber ?? 0,
+                    teamKey: teamKey,
+                    eventName: cache.event?.shortName ?? cache.event?.name ?? "",
+                    useScheduledTime: config.useScheduledTime,
+                    queueOffsetMinutes: config.queueOffsetMinutes,
+                    ranking: cache.rankings?.rankings.first { $0.teamKey == teamKey },
+                    oprs: cache.oprs
+                )
+            }
+        }
+
+        // End completed match Live Activities
+        if let last = schedule.lastPlayedMatch {
+            await manager.endActivity(for: last.key)
+        }
+        #endif
     }
 
     static func autoDetectEvent(from events: [Event]) -> Event? {

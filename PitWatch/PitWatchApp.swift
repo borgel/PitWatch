@@ -33,7 +33,22 @@ struct PitWatchApp: App {
                                             )
                                         },
                                         onStartLiveActivity: {
-                                            // Wired in Task 18 (Live Activity)
+                                            #if canImport(ActivityKit) && os(iOS)
+                                            let cache = store.loadEventCache()
+                                            let schedule = MatchSchedule(matches: cache.matches, teamKey: config.teamKey ?? "")
+                                            if let next = schedule.nextMatch {
+                                                let _ = try? LiveActivityManager.shared.startActivity(
+                                                    match: next,
+                                                    teamNumber: config.teamNumber ?? 0,
+                                                    teamKey: config.teamKey ?? "",
+                                                    eventName: cache.event?.shortName ?? cache.event?.name ?? "",
+                                                    useScheduledTime: config.useScheduledTime,
+                                                    queueOffsetMinutes: config.queueOffsetMinutes,
+                                                    ranking: cache.rankings?.rankings.first { $0.teamKey == config.teamKey },
+                                                    oprs: cache.oprs
+                                                )
+                                            }
+                                            #endif
                                         }
                                     )
                                 } label: {
