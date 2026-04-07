@@ -42,6 +42,8 @@ tba-ios-widget/
 │   │   │   ├── TBADataStore.swift       # Read/write App Group shared data
 │   │   │   ├── MatchSchedule.swift      # Next match, last match, adaptive timing logic
 │   │   │   └── ChangeDetector.swift     # Compare fetched vs cached, decide if widgets need reload
+│   │   ├── LiveActivity/
+│   │   │   └── LiveActivityManager.swift # Start/update/end Live Activity lifecycle
 │   │   └── Config/
 │   │       └── UserConfig.swift         # Team number, API key, event override, time prefs, queue offset
 │   └── Tests/TBAKitTests/
@@ -52,6 +54,10 @@ tba-ios-widget/
 │   │   ├── EventPickerView.swift        # Auto-detected + manual override
 │   │   ├── MatchListView.swift          # Scrollable match list (pull-to-refresh)
 │   │   └── SettingsView.swift           # Time source, queue offset, API key, refresh status
+│   ├── LiveActivity/
+│   │   ├── MatchLiveActivity.swift          # ActivityAttributes + content state definitions
+│   │   ├── LiveActivityLockScreenView.swift # Expanded lock screen presentation
+│   │   └── DynamicIslandViews.swift         # Compact, minimal, expanded Dynamic Island views
 │   └── Background/
 │       └── BackgroundRefresh.swift      # BGTaskScheduler polling
 ├── PitWatchWidgets/                     # iOS WidgetKit extension
@@ -143,6 +149,8 @@ This two-layer approach conserves the WidgetKit reload budget for meaningful upd
 |---|---|---|
 | Time source | Scheduled / Predicted | Predicted |
 | Queue offset | 0–60 min in 5-min increments | 0 (off) |
+| Live Activity mode | All day / Near match (2 hr window) | Near match |
+| Start Live Activity | Button (force-start immediately) | — |
 | API key | View / change / clear | — |
 | Force refresh | Button | — |
 
@@ -216,6 +224,91 @@ On medium and large widgets, show **summed OPR** for each alliance in the next m
 
 ---
 
+## Live Activity (ActivityKit)
+
+### Overview
+
+A Live Activity provides a persistent, frequently-updated view on the lock screen and Dynamic Island. Unlike widgets, Live Activity updates do **not** consume the WidgetKit timeline reload budget. Additionally, iOS gives the app higher background execution priority when a Live Activity is active, improving BGTaskScheduler reliability for all data fetching.
+
+### Live Activity Mode Setting
+
+The user chooses when Live Activities auto-start:
+
+- **Near match (default):** Live Activity starts automatically when the next match is within 2 hours. Ends ~15 minutes after match result is posted (so the user sees the score). If the team has another match within 2 hours, a new Live Activity starts immediately.
+- **All day:** Live Activity starts when the first match of the day is within 2 hours and persists throughout the event day, rolling from match to match. Ends when no more matches are scheduled for the day or the event day concludes. The Live Activity transitions between states (countdown → in progress → result → countdown to next) without the user needing to interact.
+- **Force start button:** If the user dismissed a Live Activity or wants one outside the auto-start window, a button in the app immediately starts a Live Activity for the current/next match.
+
+### ActivityAttributes
+
+```
+MatchActivityAttributes (static context):
+  - teamNumber: Int
+  - eventName: String
+  - matchKey: String
+  - matchLabel: String (e.g., "Qual 32")
+  - compLevel: String
+  - redTeams: [String]      (team numbers)
+  - blueTeams: [String]
+  - trackedAllianceColor: "red" | "blue"
+
+ContentState (dynamic, updated via Activity.update()):
+  - matchTime: Date?          (scheduled or predicted, per user setting)
+  - queueTime: Date?          (matchTime minus queue offset, nil if offset is 0)
+  - redScore: Int?            (nil until match is scored)
+  - blueScore: Int?
+  - winningAlliance: String?  (nil until match is scored)
+  - redAllianceOPR: Double?   (nil if OPR data unavailable)
+  - blueAllianceOPR: Double?
+  - matchState: .upcoming | .imminent | .inProgress | .completed
+  - rank: Int?
+  - record: String?           (e.g., "5-2-0")
+```
+
+### Live Activity Lifecycle
+
+1. **Auto-start trigger:** BGTaskScheduler or foreground app detects the next match is within the configured window (2 hours for "near match", or start-of-day for "all day"). Calls `Activity.request()` with the match's static attributes and initial content state.
+2. **Countdown phase:** Each BGTask fire or foreground refresh calls `Activity.update()` with the latest predicted/scheduled time. The countdown ticks via SwiftUI's `Text(.date, style: .timer)` which updates in real-time without needing app updates.
+3. **In-progress phase:** Once `matchTime` passes and no `actual_time` is posted yet, state transitions to `.inProgress`. Display shifts from countdown to "Match in progress."
+4. **Completed phase:** When scores are posted (`actual_time` is set and scores are non-nil), update with final scores and win/loss. State becomes `.completed`.
+5. **Transition or end:**
+   - **All day mode:** After showing the result for ~5 minutes, if another match exists for the team today, seamlessly start a new Live Activity for the next match. If no more matches today, end the activity.
+   - **Near match mode:** After showing the result for ~15 minutes, end the activity. A new one will auto-start when the next match enters the 2-hour window.
+6. **Stale handling:** If a Live Activity has not been updated in 30 minutes (e.g., phone lost connectivity), iOS marks it as stale. The view should show a "Last updated X min ago" indicator in this state.
+7. **Force start:** The app button calls `Activity.request()` immediately for the current/next match, regardless of the auto-start window.
+
+### Dynamic Island Views
+
+**Compact (minimal pill):**
+- Leading: alliance color dot + match label (🔴 Q32)
+- Trailing: countdown or score (47m / 87-72)
+
+**Minimal (single side when sharing with another Live Activity):**
+- Alliance color dot + countdown (🔴 47m)
+
+**Expanded (long-press on Dynamic Island):**
+- Match label + countdown/time
+- Both alliance lines with team numbers (tracked team bolded) + summed OPR
+- After completion: scores + win/loss indicator
+- Rank + record at bottom
+
+### Lock Screen Expanded View
+
+The lock screen presentation shows more detail than the Dynamic Island:
+
+- **Header:** Match label + event name
+- **Countdown/status:** Large countdown with "to match"/"to queue" label, or "In progress", or final score
+- **Alliances:** Both alliance lines with all team numbers + summed OPR (tracked team bolded, alliance color indicators)
+- **Footer:** Rank + record
+- After completion: prominent score display with win/loss, replacing the countdown area
+
+### 8-Hour Limit
+
+ActivityKit enforces a maximum ~8 hours for active Live Activities. For "all day" mode on a long event day:
+- If approaching the 8-hour limit, end the current activity and immediately start a new one
+- The transition is near-seamless — the user briefly sees the activity end animation before the new one appears
+
+---
+
 ## Watch App & Complications
 
 ### Watch Complications (WidgetKit)
@@ -253,6 +346,8 @@ Minimal match list view — same concept as iOS MatchListView but adapted for th
 
 - Time source toggle (Scheduled / Predicted)
 - Queue offset picker (0–60 min, 5-min increments)
+- Live Activity mode toggle (All day / Near match)
+- Start Live Activity button (force-start immediately for current/next match)
 - API key field (change / clear)
 - Force refresh button
 - Last refresh timestamp + status display
@@ -279,8 +374,11 @@ Timeline entries use `.after(date)` reload policy, targeting the next relevant t
 
 - `BGAppRefreshTask` scheduled to fire aligned with the next match time (adjusted for queue offset)
 - On fire: polls TBA with `If-Modified-Since`, runs change detection, only calls `reloadAllTimelines()` if widget-visible data changed
+- Also updates the active Live Activity via `Activity.update()` if one is running (Live Activity updates are not budget-limited)
+- Starts or ends Live Activities based on the user's Live Activity mode setting and match proximity
 - Re-schedules itself for the next relevant window
 - When no event is active, schedules once per day
+- **Note:** iOS grants higher background execution priority when a Live Activity is active, improving BGTask reliability during match windows
 
 ### Force Refresh
 
@@ -304,7 +402,7 @@ When no event is active for the tracked team:
 
 ## Future Considerations (Not In Scope)
 
-- **Push notifications via backend server (Option C):** A lightweight server polls TBA and sends silent APNs pushes for near-real-time widget updates. Architecture is designed to accommodate this — adding a push trigger for `reloadAllTimelines()` would slot in alongside the existing BGTaskScheduler path.
+- **Push notifications via backend server (Option C):** A lightweight server polls TBA and sends APNs pushes for near-real-time updates. This unlocks both silent pushes for widget reloads and ActivityKit push notifications for Live Activity updates — enabling near-instant score posting on the lock screen and Dynamic Island without relying on BGTaskScheduler timing.
 - **Statbotics EPA integration:** Replace summed OPR with EPA from the Statbotics API for more accurate alliance strength predictions.
 - **Control Center widgets:** iOS 18 supports these — could add a quick-glance complication there.
 - **Multiple team tracking:** Allow users to configure multiple teams and switch between them or show side-by-side.
