@@ -11,8 +11,8 @@ struct PitWatchWatchWidgetBundle: WidgetBundle {
 struct WatchNextMatchWidget: Widget {
     let kind = "WatchNextMatchWidget"
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: WatchPlaceholderProvider()) { entry in
-            Text("PW")
+        StaticConfiguration(kind: kind, provider: WatchComplicationProvider()) { entry in
+            WatchWidgetEntryView(entry: entry)
         }
         .configurationDisplayName("Next Match")
         .description("Track your team's next FRC match.")
@@ -20,16 +20,14 @@ struct WatchNextMatchWidget: Widget {
     }
 }
 
-struct WatchPlaceholderProvider: TimelineProvider {
-    func placeholder(in context: Context) -> WatchSimpleEntry { WatchSimpleEntry(date: .now) }
-    func getSnapshot(in context: Context, completion: @escaping (WatchSimpleEntry) -> Void) {
-        completion(WatchSimpleEntry(date: .now))
+struct WatchWidgetEntryView: View {
+    @Environment(\.widgetFamily) var family
+    let entry: WatchMatchEntry
+    var body: some View {
+        switch family {
+        case .accessoryCircular: CircularComplicationView(entry: entry)
+        case .accessoryRectangular: RectangularComplicationView(entry: entry)
+        default: CircularComplicationView(entry: entry)
+        }
     }
-    func getTimeline(in context: Context, completion: @escaping (Timeline<WatchSimpleEntry>) -> Void) {
-        completion(Timeline(entries: [WatchSimpleEntry(date: .now)], policy: .after(.now.addingTimeInterval(3600))))
-    }
-}
-
-struct WatchSimpleEntry: TimelineEntry {
-    let date: Date
 }
