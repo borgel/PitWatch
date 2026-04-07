@@ -5,6 +5,7 @@ import WidgetKit
 struct PitWatchWidgetBundle: WidgetBundle {
     var body: some Widget {
         NextMatchWidget()
+        MatchLiveActivityWidget()
     }
 }
 
