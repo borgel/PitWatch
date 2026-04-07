@@ -10,15 +10,60 @@ struct PitWatchApp: App {
         let store = TBADataStore(containerURL: AppGroup.containerURL)
         self.store = store
         self._config = State(initialValue: store.loadConfig())
+        BackgroundRefresh.register()
+        BackgroundRefresh.scheduleNext(store: store)
     }
 
     var body: some Scene {
         WindowGroup {
             if config.isConfigured {
-                Text("Match List (coming soon)")
+                NavigationStack {
+                    MatchListView(config: config, store: store)
+                        .toolbar {
+                            ToolbarItem(placement: .topBarTrailing) {
+                                NavigationLink {
+                                    SettingsView(
+                                        config: $config,
+                                        store: store,
+                                        onForceRefresh: {
+                                            guard let apiKey = config.apiKey else { return }
+                                            try? await BackgroundRefresh.performRefresh(
+                                                store: store, config: config,
+                                                apiKey: apiKey, forceReload: true
+                                            )
+                                        },
+                                        onStartLiveActivity: {
+                                            // Wired in Task 18 (Live Activity)
+                                        }
+                                    )
+                                } label: {
+                                    Image(systemName: "gear")
+                                }
+                            }
+                            ToolbarItem(placement: .topBarLeading) {
+                                NavigationLink {
+                                    EventPickerView(
+                                        events: [],
+                                        selectedEventKey: $config.eventKeyOverride,
+                                        autoDetectedEventKey: store.loadEventCache().event?.key
+                                    )
+                                } label: {
+                                    Image(systemName: "calendar")
+                                }
+                            }
+                        }
+                }
             } else {
                 SetupView(config: $config) {
                     store.saveConfig(config)
+                    BackgroundRefresh.scheduleNext(store: store)
+                    Task {
+                        guard let apiKey = config.apiKey else { return }
+                        try? await BackgroundRefresh.performRefresh(
+                            store: store, config: config,
+                            apiKey: apiKey, forceReload: true
+                        )
+                    }
                 }
             }
         }
