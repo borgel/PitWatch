@@ -1,0 +1,17 @@
+{
+  "rankings": [
+    {
+      "team_key": "frc1234",
+      "rank": 3,
+      "record": { "wins": 5, "losses": 2, "ties": 0 },
+      "qual_average": 82.5,
+      "matches_played": 7,
+      "dq": 0,
+      "sort_orders": [2.14, 82.5]
+    }
+  ],
+  "sort_order_info": [
+    { "name": "Ranking Score", "precision": 2 },
+    { "name": "Avg Match Score", "precision": 1 }
+  ]
+}

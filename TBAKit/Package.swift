@@ -12,6 +12,10 @@ let package = Package(
     ],
     targets: [
         .target(name: "TBAKit"),
-        .testTarget(name: "TBAKitTests", dependencies: ["TBAKit"]),
+        .testTarget(
+            name: "TBAKitTests",
+            dependencies: ["TBAKit"],
+            resources: [.copy("Fixtures")]
+        ),
     ]
 )
