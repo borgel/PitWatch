@@ -1,0 +1,110 @@
+name: PitWatch
+options:
+  bundleIdPrefix: com.pitwatch
+  deploymentTarget:
+    iOS: "18.0"
+    watchOS: "11.0"
+  xcodeVersion: "16.0"
+  generateEmptyDirectories: true
+
+packages:
+  TBAKit:
+    path: TBAKit
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    GENERATE_INFOPLIST_FILE: true
+    ENABLE_USER_SCRIPT_SANDBOXING: false
+
+targets:
+  PitWatch:
+    type: application
+    platform: iOS
+    sources:
+      - path: PitWatch
+      - path: Shared
+    dependencies:
+      - package: TBAKit
+    settings:
+      base:
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: true
+        INFOPLIST_KEY_UILaunchScreen_Generation: true
+        INFOPLIST_KEY_NSSupportsLiveActivities: true
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    entitlements:
+      path: PitWatch/PitWatch.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.pitwatch.shared
+
+  PitWatchWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: PitWatchWidgets
+      - path: Shared
+    dependencies:
+      - package: TBAKit
+    settings:
+      base:
+        INFOPLIST_KEY_NSExtension_NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: PitWatchWidgets/PitWatchWidgets.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.pitwatch.shared
+
+  PitWatchWatch:
+    type: application
+    platform: watchOS
+    sources:
+      - path: PitWatchWatch
+      - path: Shared
+    dependencies:
+      - package: TBAKit
+      - target: PitWatchWatchWidgets
+    settings:
+      base:
+        INFOPLIST_KEY_WKCompanionAppBundleIdentifier: com.pitwatch.PitWatch
+    entitlements:
+      path: PitWatchWatch/PitWatchWatch.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.pitwatch.shared
+
+  PitWatchWatchWidgets:
+    type: app-extension
+    platform: watchOS
+    sources:
+      - path: PitWatchWatchWidgets
+      - path: Shared
+    dependencies:
+      - package: TBAKit
+    settings:
+      base:
+        INFOPLIST_KEY_NSExtension_NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: PitWatchWatchWidgets/PitWatchWatchWidgets.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.pitwatch.shared
+
+schemes:
+  PitWatch:
+    build:
+      targets:
+        PitWatch: all
+        PitWatchWidgets: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+
+  PitWatchWatch:
+    build:
+      targets:
+        PitWatchWatch: all
+        PitWatchWatchWidgets: all
+    run:
+      config: Debug

@@ -1,1 +1,6 @@
 .superpowers/
+PitWatch.xcodeproj/
+.build/
+DerivedData/
+*.xcuserdata
+build/
