@@ -1,6 +1,20 @@
-.superpowers/
+# Generated Xcode project (regenerate with: xcodegen generate)
 PitWatch.xcodeproj/
-.build/
+
+# Xcode
 DerivedData/
-*.xcuserdata
 build/
+*.xcuserdata
+*.xcscmblueprint
+*.xccheckout
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# macOS
+.DS_Store
+
+# Superpowers brainstorming
+.superpowers/
