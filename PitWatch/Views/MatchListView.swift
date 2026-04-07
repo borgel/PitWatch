@@ -6,6 +6,8 @@ struct MatchListView: View {
     let config: UserConfig
     let store: TBADataStore
     @State private var eventCache: EventCache
+    @State private var isLoading = false
+    @State private var errorMessage: String?
 
     init(config: UserConfig, store: TBADataStore) {
         self.config = config
@@ -32,6 +34,24 @@ struct MatchListView: View {
                 }
             }
 
+            if let error = errorMessage {
+                Section {
+                    Label(error, systemImage: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.red)
+                        .font(.caption)
+                }
+            }
+
+            if isLoading && schedule.teamMatches.isEmpty {
+                Section {
+                    HStack {
+                        Spacer()
+                        ProgressView("Loading matches...")
+                        Spacer()
+                    }
+                }
+            }
+
             if !schedule.upcomingMatches.isEmpty {
                 Section("Upcoming") {
                     ForEach(schedule.upcomingMatches) { match in
@@ -48,7 +68,7 @@ struct MatchListView: View {
                 }
             }
 
-            if schedule.teamMatches.isEmpty {
+            if !isLoading && schedule.teamMatches.isEmpty && eventCache.event != nil {
                 ContentUnavailableView(
                     "No Matches",
                     systemImage: "calendar.badge.exclamationmark",
@@ -60,6 +80,12 @@ struct MatchListView: View {
             await forceRefresh()
         }
         .navigationTitle("Team \(config.teamNumber ?? 0)")
+        .task {
+            // Load fresh data on appear if cache is empty
+            if eventCache.matches.isEmpty {
+                await loadData()
+            }
+        }
     }
 
     @ViewBuilder
@@ -83,30 +109,34 @@ struct MatchListView: View {
         eventCache.rankings?.rankings.first { $0.teamKey == config.teamKey }
     }
 
-    private func forceRefresh() async {
-        guard let apiKey = config.apiKey,
-              let eventKey = eventCache.event?.key ?? config.eventKeyOverride else { return }
-
-        let client = TBAClient(apiKey: apiKey)
+    /// Full data load via BackgroundRefresh (fetches event + matches + rankings + OPRs)
+    private func loadData() async {
+        guard let apiKey = config.apiKey else { return }
+        isLoading = true
+        errorMessage = nil
         do {
-            async let matchesResult = client.fetch([Match].self, path: Endpoints.eventMatches(key: eventKey))
-            async let rankingsResult = client.fetch(EventRankings.self, path: Endpoints.eventRankings(key: eventKey))
-            async let oprsResult = client.fetch(EventOPRs.self, path: Endpoints.eventOPRs(key: eventKey))
-
-            if case .data(let matches, _) = try await matchesResult {
-                eventCache.matches = matches
-            }
-            if case .data(let rankings, _) = try await rankingsResult {
-                eventCache.rankings = rankings
-            }
-            if case .data(let oprs, _) = try await oprsResult {
-                eventCache.oprs = oprs
-            }
-
-            store.saveEventCache(eventCache)
-            WidgetCenter.shared.reloadAllTimelines()
+            try await BackgroundRefresh.performRefresh(
+                store: store, config: config, apiKey: apiKey, forceReload: true
+            )
+            // Reload cache from store after refresh writes it
+            eventCache = store.loadEventCache()
         } catch {
-            // Silently fail — data stays as-is
+            errorMessage = "Failed to load: \(error.localizedDescription)"
+        }
+        isLoading = false
+    }
+
+    /// Pull-to-refresh
+    private func forceRefresh() async {
+        guard let apiKey = config.apiKey else { return }
+        errorMessage = nil
+        do {
+            try await BackgroundRefresh.performRefresh(
+                store: store, config: config, apiKey: apiKey, forceReload: true
+            )
+            eventCache = store.loadEventCache()
+        } catch {
+            errorMessage = "Refresh failed: \(error.localizedDescription)"
         }
     }
 }

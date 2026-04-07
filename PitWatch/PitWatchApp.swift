@@ -72,13 +72,6 @@ struct PitWatchApp: App {
                 SetupView(config: $config) {
                     store.saveConfig(config)
                     BackgroundRefresh.scheduleNext(store: store)
-                    Task {
-                        guard let apiKey = config.apiKey else { return }
-                        try? await BackgroundRefresh.performRefresh(
-                            store: store, config: config,
-                            apiKey: apiKey, forceReload: true
-                        )
-                    }
                 }
             }
         }

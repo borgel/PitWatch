@@ -4,9 +4,13 @@ enum AppGroup {
     static let identifier = "group.com.pitwatch.shared"
 
     static var containerURL: URL {
-        FileManager.default.containerURL(
+        if let url = FileManager.default.containerURL(
             forSecurityApplicationGroupIdentifier: identifier
-        )!
+        ) {
+            return url
+        }
+        // Fallback for simulator/development when App Group isn't provisioned
+        return FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
     }
 
     static var configURL: URL { containerURL.appendingPathComponent("team_config.json") }
