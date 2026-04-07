@@ -1,6 +1,6 @@
 import Foundation
 
-public struct UserConfig: Codable, Sendable {
+public struct UserConfig: Codable, Sendable, Equatable {
     public var teamNumber: Int?
     public var apiKey: String?
     public var eventKeyOverride: String?
