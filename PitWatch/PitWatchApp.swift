@@ -58,7 +58,8 @@ struct PitWatchApp: App {
                             ToolbarItem(placement: .topBarLeading) {
                                 NavigationLink {
                                     EventPickerView(
-                                        events: [],
+                                        config: config,
+                                        store: store,
                                         selectedEventKey: $config.eventKeyOverride,
                                         autoDetectedEventKey: store.loadEventCache().event?.key
                                     )
