@@ -1,6 +1,9 @@
 import SwiftUI
 import TBAKit
 import WidgetKit
+#if canImport(ActivityKit) && os(iOS)
+import ActivityKit
+#endif
 
 struct SettingsView: View {
     @Binding var config: UserConfig
@@ -51,6 +54,13 @@ struct SettingsView: View {
                 Button("Start Live Activity Now") {
                     onStartLiveActivity()
                 }
+
+                #if DEBUG
+                Button("Preview Live Activity (Demo)") {
+                    startDemoLiveActivity()
+                }
+                .foregroundStyle(.orange)
+                #endif
             }
 
             Section("Data") {
@@ -90,4 +100,47 @@ struct SettingsView: View {
         guard let key = config.apiKey, key.count > 8 else { return "Not set" }
         return String(key.prefix(4)) + "••••" + String(key.suffix(4))
     }
+
+    #if DEBUG
+    private func startDemoLiveActivity() {
+        #if canImport(ActivityKit) && os(iOS)
+        let teamNum = config.teamNumber ?? 1234
+        let matchTime = Date.now.addingTimeInterval(45 * 60) // 45 min from now
+
+        let attributes = MatchActivityAttributes(
+            teamNumber: teamNum,
+            eventName: "Demo Regional",
+            matchKey: "2026demo_qm32",
+            matchLabel: "Qual 32",
+            compLevel: "qm",
+            redTeams: ["\(teamNum)", "5678", "9012"],
+            blueTeams: ["3456", "7890", "1111"],
+            trackedAllianceColor: "red"
+        )
+
+        let queueTime: Date? = config.queueOffsetMinutes > 0
+            ? matchTime.addingTimeInterval(-TimeInterval(config.queueOffsetMinutes * 60))
+            : nil
+
+        let state = MatchActivityAttributes.ContentState(
+            matchTime: matchTime,
+            queueTime: queueTime,
+            redScore: nil,
+            blueScore: nil,
+            winningAlliance: nil,
+            redAllianceOPR: 68.4,
+            blueAllianceOPR: 62.1,
+            matchState: .upcoming,
+            rank: 3,
+            record: "5-2-0"
+        )
+
+        let content = ActivityContent(state: state, staleDate: .now.addingTimeInterval(3600))
+        let _ = try? Activity<MatchActivityAttributes>.request(
+            attributes: attributes,
+            content: content
+        )
+        #endif
+    }
+    #endif
 }
