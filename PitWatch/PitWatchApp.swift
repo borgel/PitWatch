@@ -18,7 +18,7 @@ struct PitWatchApp: App {
         WindowGroup {
             if config.isConfigured {
                 NavigationStack {
-                    MatchListView(config: config, store: store)
+                    MatchListView(config: $config, store: store)
                         .toolbar {
                             ToolbarItem(placement: .topBarTrailing) {
                                 NavigationLink {

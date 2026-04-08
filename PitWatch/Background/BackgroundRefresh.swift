@@ -71,6 +71,13 @@ enum BackgroundRefresh {
         let eventKey: String
         if let override = config.eventKeyOverride {
             eventKey = override
+            // Clear cached data if switching to a different event
+            if cache.event?.key != override {
+                cache.event = nil
+                cache.matches = []
+                cache.rankings = nil
+                cache.oprs = nil
+            }
         } else if let active = cache.event?.key {
             eventKey = active
         } else {
@@ -90,6 +97,14 @@ enum BackgroundRefresh {
         }
 
         let oldCache = cache
+
+        // Fetch event details if not cached
+        if cache.event == nil {
+            let eventResult = try await client.fetch(Event.self, path: Endpoints.event(key: eventKey))
+            if case .data(let event, _) = eventResult {
+                cache.event = event
+            }
+        }
 
         // Fetch matches
         let matchesPath = Endpoints.eventMatches(key: eventKey)

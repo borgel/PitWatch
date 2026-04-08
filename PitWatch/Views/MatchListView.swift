@@ -3,14 +3,14 @@ import WidgetKit
 import TBAKit
 
 struct MatchListView: View {
-    let config: UserConfig
+    @Binding var config: UserConfig
     let store: TBADataStore
     @State private var eventCache: EventCache
     @State private var isLoading = false
     @State private var errorMessage: String?
 
-    init(config: UserConfig, store: TBADataStore) {
-        self.config = config
+    init(config: Binding<UserConfig>, store: TBADataStore) {
+        self._config = config
         self.store = store
         self._eventCache = State(initialValue: store.loadEventCache())
     }
@@ -81,10 +81,12 @@ struct MatchListView: View {
         }
         .navigationTitle("Team \(config.teamNumber ?? 0)")
         .task {
-            // Load fresh data on appear if cache is empty
             if eventCache.matches.isEmpty {
                 await loadData()
             }
+        }
+        .onChange(of: config.eventKeyOverride) { _, _ in
+            Task { await loadData() }
         }
     }
 
@@ -109,7 +111,6 @@ struct MatchListView: View {
         eventCache.rankings?.rankings.first { $0.teamKey == config.teamKey }
     }
 
-    /// Full data load via BackgroundRefresh (fetches event + matches + rankings + OPRs)
     private func loadData() async {
         guard let apiKey = config.apiKey else { return }
         isLoading = true
@@ -118,7 +119,6 @@ struct MatchListView: View {
             try await BackgroundRefresh.performRefresh(
                 store: store, config: config, apiKey: apiKey, forceReload: true
             )
-            // Reload cache from store after refresh writes it
             eventCache = store.loadEventCache()
         } catch {
             errorMessage = "Failed to load: \(error.localizedDescription)"
@@ -126,7 +126,6 @@ struct MatchListView: View {
         isLoading = false
     }
 
-    /// Pull-to-refresh
     private func forceRefresh() async {
         guard let apiKey = config.apiKey else { return }
         errorMessage = nil
