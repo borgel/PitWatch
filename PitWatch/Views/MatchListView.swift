@@ -20,6 +20,34 @@ struct MatchListView: View {
     }
 
     var body: some View {
+        ZStack {
+            if isLoading && eventCache.event == nil {
+                // First load — no cached data at all
+                ProgressView("Loading matches...")
+            } else {
+                matchList
+            }
+        }
+        .refreshable {
+            await forceRefresh()
+        }
+        .navigationTitle("Team \(config.teamNumber ?? 0)")
+        .task {
+            // Always show cached data immediately, refresh in background
+            eventCache = store.loadEventCache()
+            if eventCache.matches.isEmpty {
+                await loadData()
+            } else {
+                // Have cached data — refresh silently in background
+                Task { await loadData() }
+            }
+        }
+        .onChange(of: config.eventKeyOverride) { _, _ in
+            Task { await loadData() }
+        }
+    }
+
+    private var matchList: some View {
         List {
             if let event = eventCache.event {
                 Section {
@@ -42,7 +70,7 @@ struct MatchListView: View {
                 }
             }
 
-            if isLoading && schedule.teamMatches.isEmpty {
+            if isLoading && schedule.teamMatches.isEmpty && eventCache.event != nil {
                 Section {
                     HStack {
                         Spacer()
@@ -75,18 +103,6 @@ struct MatchListView: View {
                     description: Text("No matches found for this team at this event.")
                 )
             }
-        }
-        .refreshable {
-            await forceRefresh()
-        }
-        .navigationTitle("Team \(config.teamNumber ?? 0)")
-        .task {
-            if eventCache.matches.isEmpty {
-                await loadData()
-            }
-        }
-        .onChange(of: config.eventKeyOverride) { _, _ in
-            Task { await loadData() }
         }
     }
 
