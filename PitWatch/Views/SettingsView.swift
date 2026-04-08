@@ -136,10 +136,15 @@ struct SettingsView: View {
         )
 
         let content = ActivityContent(state: state, staleDate: .now.addingTimeInterval(3600))
-        let _ = try? Activity<MatchActivityAttributes>.request(
-            attributes: attributes,
-            content: content
-        )
+        do {
+            let activity = try Activity<MatchActivityAttributes>.request(
+                attributes: attributes,
+                content: content
+            )
+            print("✅ Live Activity started: \(activity.id)")
+        } catch {
+            print("❌ Live Activity failed: \(error)")
+        }
         #endif
     }
     #endif
