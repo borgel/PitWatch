@@ -26,12 +26,13 @@ targets:
       - path: Shared
     dependencies:
       - package: TBAKit
+      - target: PitWatchWidgets
     settings:
       base:
         INFOPLIST_FILE: PitWatch/Info.plist
-        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: true
-        INFOPLIST_KEY_UILaunchScreen_Generation: true
-        INFOPLIST_KEY_NSSupportsLiveActivities: true
+        GENERATE_INFOPLIST_FILE: true
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     entitlements:
       path: PitWatch/PitWatch.entitlements
@@ -49,7 +50,11 @@ targets:
       - package: TBAKit
     settings:
       base:
-        INFOPLIST_KEY_NSExtension_NSExtensionPointIdentifier: com.apple.widgetkit-extension
+        PRODUCT_BUNDLE_IDENTIFIER: com.pitwatch.PitWatch.widgets
+        INFOPLIST_FILE: PitWatchWidgets/Info.plist
+        GENERATE_INFOPLIST_FILE: true
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
     entitlements:
       path: PitWatchWidgets/PitWatchWidgets.entitlements
       properties:
