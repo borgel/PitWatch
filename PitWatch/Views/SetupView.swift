@@ -6,6 +6,7 @@ struct SetupView: View {
     var onComplete: () -> Void
 
     @State private var apiKeyText = ""
+    @State private var nexusApiKeyText = ""
     @State private var teamNumberText = ""
     @State private var isValidating = false
     @State private var validationError: String?
@@ -26,6 +27,20 @@ struct SetupView: View {
                          destination: URL(string: "https://www.thebluealliance.com/account")!)
                 } header: {
                     Text("TBA API Key")
+                }
+
+                Section {
+                    Text("Optional. Provides real-time match queue times at supported events.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    TextField("API Key", text: $nexusApiKeyText)
+                        .textContentType(.password)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                    Link("Get an API Key \u{2192}",
+                         destination: URL(string: "https://frc.nexus/api")!)
+                } header: {
+                    Text("FRC Nexus API Key (Optional)")
                 }
 
                 Section {
@@ -76,6 +91,10 @@ struct SetupView: View {
             validatedTeamName = team.nickname
             config.apiKey = apiKeyText.trimmingCharacters(in: .whitespaces)
             config.teamNumber = teamNumber
+            let nexusKey = nexusApiKeyText.trimmingCharacters(in: .whitespaces)
+            if !nexusKey.isEmpty {
+                config.nexusApiKey = nexusKey
+            }
             onComplete()
         } catch {
             validationError = "Could not find team \(teamNumber). Check your API key and team number."
