@@ -9,7 +9,8 @@ public final class LiveActivityManager: @unchecked Sendable {
     public func startActivity(
         match: Match, teamNumber: Int, teamKey: String, eventName: String,
         useScheduledTime: Bool, queueOffsetMinutes: Int,
-        ranking: Ranking?, oprs: EventOPRs?, nexusMatch: NexusMatch? = nil
+        ranking: Ranking?, oprs: EventOPRs?, nexusMatch: NexusMatch? = nil,
+        nowQueuing: String? = nil
     ) throws -> Activity<MatchActivityAttributes>? {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return nil }
 
@@ -38,7 +39,8 @@ public final class LiveActivityManager: @unchecked Sendable {
             nexusQueueTime: nexusMatch?.times.queueDate,
             nexusOnDeckTime: nexusMatch?.times.onDeckDate,
             nexusOnFieldTime: nexusMatch?.times.onFieldDate,
-            nexusStartTime: nexusMatch?.times.startDate
+            nexusStartTime: nexusMatch?.times.startDate,
+            nowQueuing: nowQueuing
         )
 
         let content = ActivityContent(state: state, staleDate: Date.now.addingTimeInterval(1800))
@@ -47,7 +49,8 @@ public final class LiveActivityManager: @unchecked Sendable {
 
     public func updateActivity(
         match: Match, useScheduledTime: Bool, queueOffsetMinutes: Int,
-        ranking: Ranking?, oprs: EventOPRs?, nexusMatch: NexusMatch? = nil
+        ranking: Ranking?, oprs: EventOPRs?, nexusMatch: NexusMatch? = nil,
+        nowQueuing: String? = nil
     ) async {
         guard let activity = Activity<MatchActivityAttributes>.activities.first(
             where: { $0.attributes.matchKey == match.key }
@@ -90,7 +93,8 @@ public final class LiveActivityManager: @unchecked Sendable {
             nexusQueueTime: nexusMatch?.times.queueDate,
             nexusOnDeckTime: nexusMatch?.times.onDeckDate,
             nexusOnFieldTime: nexusMatch?.times.onFieldDate,
-            nexusStartTime: nexusMatch?.times.startDate
+            nexusStartTime: nexusMatch?.times.startDate,
+            nowQueuing: nowQueuing
         )
 
         let content = ActivityContent(state: state, staleDate: Date.now.addingTimeInterval(1800))

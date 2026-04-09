@@ -21,13 +21,14 @@ public struct MatchActivityAttributes: ActivityAttributes {
         public var nexusOnDeckTime: Date?
         public var nexusOnFieldTime: Date?
         public var nexusStartTime: Date?
+        public var nowQueuing: String?
 
         public init(matchTime: Date?, queueTime: Date?, redScore: Int?, blueScore: Int?,
                     winningAlliance: String?, redAllianceOPR: Double?, blueAllianceOPR: Double?,
                     matchState: MatchState, rank: Int?, record: String?,
                     nexusStatus: String? = nil, nexusQueueTime: Date? = nil,
                     nexusOnDeckTime: Date? = nil, nexusOnFieldTime: Date? = nil,
-                    nexusStartTime: Date? = nil) {
+                    nexusStartTime: Date? = nil, nowQueuing: String? = nil) {
             self.matchTime = matchTime
             self.queueTime = queueTime
             self.redScore = redScore
@@ -43,6 +44,7 @@ public struct MatchActivityAttributes: ActivityAttributes {
             self.nexusOnDeckTime = nexusOnDeckTime
             self.nexusOnFieldTime = nexusOnFieldTime
             self.nexusStartTime = nexusStartTime
+            self.nowQueuing = nowQueuing
         }
     }
 

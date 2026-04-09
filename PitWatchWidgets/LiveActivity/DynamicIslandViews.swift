@@ -42,11 +42,16 @@ enum MatchDynamicIsland {
             Circle()
                 .fill(context.attributes.trackedAllianceColor == "red" ? Color.red : Color.blue)
                 .frame(width: 6, height: 6)
-            // Show current phase state if available, otherwise match label
             if let phase = currentNexusPhase(state: context.state) {
-                Text(phase)
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(nexusStatusColor(phase))
+                // Show phase state and your match number
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(phase)
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(nexusStatusColor(phase))
+                    Text(context.attributes.matchLabel)
+                        .font(.system(size: 9))
+                        .foregroundStyle(.secondary)
+                }
             } else {
                 Text(context.attributes.matchLabel)
                     .font(.system(size: 12, weight: .semibold))
@@ -72,9 +77,17 @@ enum MatchDynamicIsland {
             let target = nextNexusPhaseDate(state: context.state)
                 ?? context.state.queueTime ?? context.state.matchTime
             if let target {
-                Text(target, style: .timer)
-                    .font(.system(size: 12, weight: .bold))
-                    .monospacedDigit()
+                VStack(alignment: .trailing, spacing: 0) {
+                    Text(target, style: .timer)
+                        .font(.system(size: 12, weight: .bold))
+                        .monospacedDigit()
+                    if let nowQ = context.state.nowQueuing {
+                        Text("Now: \(nowQ)")
+                            .font(.system(size: 7))
+                            .foregroundStyle(.tertiary)
+                            .lineLimit(1)
+                    }
+                }
             } else {
                 Text("--")
                     .font(.system(size: 12, weight: .bold))

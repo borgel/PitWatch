@@ -175,6 +175,8 @@ enum BackgroundRefresh {
         if let next = schedule.nextMatch {
             let nexusMatch = NexusMatchMerge.nexusInfo(for: next, in: cache.nexusEvent)
 
+            let eventNowQueuing = cache.nexusEvent?.nowQueuing
+
             if manager.hasActiveActivity {
                 await manager.updateActivity(
                     match: next,
@@ -182,7 +184,8 @@ enum BackgroundRefresh {
                     queueOffsetMinutes: config.queueOffsetMinutes,
                     ranking: cache.rankings?.rankings.first { $0.teamKey == teamKey },
                     oprs: cache.oprs,
-                    nexusMatch: nexusMatch
+                    nexusMatch: nexusMatch,
+                    nowQueuing: eventNowQueuing
                 )
             } else if schedule.shouldStartLiveActivity(
                 now: .now, mode: config.liveActivityMode,
@@ -199,7 +202,8 @@ enum BackgroundRefresh {
                     queueOffsetMinutes: config.queueOffsetMinutes,
                     ranking: cache.rankings?.rankings.first { $0.teamKey == teamKey },
                     oprs: cache.oprs,
-                    nexusMatch: nexusMatch
+                    nexusMatch: nexusMatch,
+                    nowQueuing: eventNowQueuing
                 )
             }
         }
