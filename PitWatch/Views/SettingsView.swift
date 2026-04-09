@@ -83,10 +83,13 @@ struct SettingsView: View {
                 HStack {
                     Text("Team")
                     Spacer()
-                    TextField("Number", value: $config.teamNumber, format: .number)
-                        .keyboardType(.numberPad)
-                        .multilineTextAlignment(.trailing)
-                        .frame(width: 80)
+                    TextField("Number", text: Binding(
+                        get: { config.teamNumber.map(String.init) ?? "" },
+                        set: { config.teamNumber = Int($0) }
+                    ))
+                    .keyboardType(.numberPad)
+                    .multilineTextAlignment(.trailing)
+                    .frame(width: 80)
                 }
 
                 LabeledContent("TBA API Key") {
