@@ -127,6 +127,10 @@ struct SettingsView: View {
             } footer: {
                 Text("When available, Nexus provides real-time match queue times and status.")
             }
+
+            #if DEBUG
+            nexusDemoSection
+            #endif
         }
         .navigationTitle("Settings")
         .onChange(of: config) { _, newConfig in
@@ -141,6 +145,143 @@ struct SettingsView: View {
     }
 
     #if DEBUG
+    @State private var nexusDemoEventKey = ""
+    @State private var nexusDemoLoading = false
+    @State private var nexusDemoResult: String?
+
+    private var nexusDemoSection: some View {
+        Section {
+            TextField("Nexus Event Key", text: $nexusDemoEventKey)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
+
+            Button {
+                Task { await loadNexusDemo() }
+            } label: {
+                if nexusDemoLoading {
+                    ProgressView().frame(maxWidth: .infinity)
+                } else {
+                    Text("Load Nexus Demo").frame(maxWidth: .infinity)
+                }
+            }
+            .disabled(nexusDemoEventKey.isEmpty || !config.isNexusConfigured || nexusDemoLoading)
+            .foregroundStyle(.orange)
+
+            if let result = nexusDemoResult {
+                Text(result)
+                    .font(.caption)
+                    .foregroundStyle(result.starts(with: "Error") ? .red : .green)
+            }
+        } header: {
+            Text("Nexus Demo Mode")
+        } footer: {
+            Text("Fetches live Nexus data and generates mock TBA matches so you can test the full UI.")
+        }
+    }
+
+    private func loadNexusDemo() async {
+        guard let nexusKey = config.nexusApiKey, !nexusKey.isEmpty else {
+            nexusDemoResult = "Error: Set a Nexus API key first"
+            return
+        }
+
+        nexusDemoLoading = true
+        nexusDemoResult = nil
+
+        let client = NexusClient(apiKey: nexusKey)
+        guard let nexusEvent = await client.fetchEventStatus(eventKey: nexusDemoEventKey) else {
+            nexusDemoResult = "Error: Could not fetch event '\(nexusDemoEventKey)' from Nexus"
+            nexusDemoLoading = false
+            return
+        }
+
+        // Generate mock TBA data from Nexus matches
+        let teamNumber = config.teamNumber ?? 1234
+        let teamKey = "frc\(teamNumber)"
+        let eventKey = nexusDemoEventKey
+
+        let mockEvent = Event.mock(key: eventKey, name: "Nexus Demo Event")
+        var mockMatches: [Match] = []
+
+        for (index, nexusMatch) in nexusEvent.matches.enumerated() {
+            let parsed = parseNexusLabelForMock(nexusMatch.label)
+            let compLevel = parsed.compLevel
+            let setNumber = parsed.setNumber
+            let matchNumber = parsed.matchNumber
+
+            // Ensure tracked team is on an alliance for every few matches
+            var redTeams = nexusMatch.redTeams.map { "frc\($0)" }
+            var blueTeams = nexusMatch.blueTeams.map { "frc\($0)" }
+
+            // Put tracked team on red for every 3rd match (so they appear in the schedule)
+            if index % 3 == 0 {
+                if !redTeams.contains(teamKey) && !blueTeams.contains(teamKey) {
+                    if redTeams.count > 0 { redTeams[0] = teamKey }
+                    else if blueTeams.count > 0 { blueTeams[0] = teamKey }
+                }
+            }
+
+            let startTime: Int64? = nexusMatch.times.estimatedStartTime.map { $0 / 1000 }
+
+            let match = Match.mock(
+                key: "\(eventKey)_\(compLevel)\(matchNumber)",
+                compLevel: compLevel,
+                setNumber: setNumber,
+                matchNumber: matchNumber,
+                eventKey: eventKey,
+                time: startTime,
+                redTeamKeys: redTeams,
+                blueTeamKeys: blueTeams
+            )
+            mockMatches.append(match)
+        }
+
+        // Write to cache
+        var cache = store.loadEventCache()
+        cache.event = mockEvent
+        cache.matches = mockMatches
+        cache.nexusEvent = nexusEvent
+        cache.rankings = nil
+        cache.oprs = nil
+        store.saveEventCache(cache)
+
+        // Also update config to point at this event
+        config.eventKeyOverride = eventKey
+        store.saveConfig(config)
+
+        WidgetCenter.shared.reloadAllTimelines()
+
+        nexusDemoResult = "Loaded \(nexusEvent.matches.count) Nexus matches, \(mockMatches.filter { m in m.alliances.values.contains { $0.teamKeys.contains(teamKey) } }.count) are your team's"
+        nexusDemoLoading = false
+    }
+
+    private func parseNexusLabelForMock(_ label: String) -> (compLevel: String, setNumber: Int, matchNumber: Int) {
+        let parts = label.split(separator: " ", maxSplits: 1)
+        guard parts.count == 2 else { return ("qm", 1, 1) }
+
+        let levelStr = parts[0].lowercased()
+        let numberStr = String(parts[1])
+
+        let compLevel: String
+        switch levelStr {
+        case "practice": compLevel = "p"
+        case "qualification": compLevel = "qm"
+        case "eighthfinal": compLevel = "ef"
+        case "quarterfinal": compLevel = "qf"
+        case "semifinal": compLevel = "sf"
+        case "final": compLevel = "f"
+        default: compLevel = levelStr
+        }
+
+        if numberStr.contains("-") {
+            let nums = numberStr.split(separator: "-").compactMap { Int($0) }
+            if nums.count == 2 {
+                return (compLevel, nums[0], nums[1])
+            }
+        }
+        return (compLevel, 1, Int(numberStr) ?? 1)
+    }
+
     private func startDemoLiveActivity() {
         #if canImport(ActivityKit) && os(iOS)
         let teamNum = config.teamNumber ?? 1234
