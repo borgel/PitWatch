@@ -31,7 +31,7 @@ struct MatchListView: View {
         .refreshable {
             await forceRefresh()
         }
-        .navigationTitle("Team \(config.teamNumber ?? 0)")
+        .navigationTitle("Team \(config.teamNumber.map(String.init) ?? "0")")
         .task {
             // Always show cached data immediately, refresh in background
             eventCache = store.loadEventCache()
