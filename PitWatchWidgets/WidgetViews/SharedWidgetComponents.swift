@@ -76,3 +76,12 @@ func formatMatchTime(_ date: Date?, prefix: String) -> String {
 func teamNumber(from key: String) -> String {
     key.replacingOccurrences(of: "frc", with: "")
 }
+
+func nexusStatusColor(_ status: String) -> Color {
+    switch status.lowercased() {
+    case let s where s.contains("queuing"): return .orange
+    case let s where s.contains("deck"): return .yellow
+    case let s where s.contains("field"): return .green
+    default: return .gray
+    }
+}
