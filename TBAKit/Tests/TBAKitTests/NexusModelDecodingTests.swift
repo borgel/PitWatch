@@ -44,3 +44,29 @@ import Foundation
     let startDate = times.startDate
     #expect(startDate == Date(timeIntervalSince1970: 1712000900))
 }
+
+@Test func nextPhaseDateReturnsFirstFuturePhase() {
+    let times = NexusMatchTimes(
+        estimatedQueueTime: 1712000000000,
+        estimatedOnDeckTime: 1712000300000,
+        estimatedOnFieldTime: 1712000600000,
+        estimatedStartTime: 1712000900000,
+        actualQueueTime: nil
+    )
+    let now = Date(timeIntervalSince1970: 1712000400)
+    let result = times.nextPhaseDate(after: now)
+    #expect(result?.label == "On Field")
+    #expect(result?.date == Date(timeIntervalSince1970: 1712000600))
+}
+
+@Test func nextPhaseDateReturnsNilWhenAllPast() {
+    let times = NexusMatchTimes(
+        estimatedQueueTime: 1712000000000,
+        estimatedOnDeckTime: 1712000300000,
+        estimatedOnFieldTime: 1712000600000,
+        estimatedStartTime: 1712000900000,
+        actualQueueTime: nil
+    )
+    let now = Date(timeIntervalSince1970: 1712001000)
+    #expect(times.nextPhaseDate(after: now) == nil)
+}
