@@ -5,49 +5,69 @@ import TBAKit
 struct SmallWidgetView: View {
     let entry: MatchWidgetEntry
 
+    private var matchTime: Date? {
+        entry.nextMatch?.matchDate(useScheduled: true)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
+            // Header
             HStack(spacing: 4) {
-                Text("TEAM \(entry.teamNumber ?? 0)")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.secondary)
+                Text(String(entry.teamNumber ?? 0))
+                    .font(.system(size: 14, weight: .bold, design: .monospaced))
                 if let color = entry.nextMatchAllianceColor {
-                    AllianceDot(color, size: 8)
+                    AllianceDot(color, size: 6)
                 }
             }
             if let ranking = entry.ranking {
-                Text("Rank #\(ranking.rank) \u{00B7} \(ranking.record?.display ?? "")")
-                    .font(.system(size: 10)).foregroundStyle(.tertiary)
+                Text("#\(String(ranking.rank)) · \(ranking.record?.display ?? "")")
+                    .font(.system(size: 10, design: .monospaced))
+                    .foregroundStyle(.secondary)
             }
+
             Spacer()
+
             if let next = entry.nextMatch {
-                VStack(spacing: 2) {
-                    HStack(spacing: 4) {
-                        Text("NEXT MATCH").font(.system(size: 10)).foregroundStyle(.secondary)
-                        if let status = entry.nexusStatus {
-                            Text(status.uppercased())
-                                .font(.system(size: 7, weight: .bold))
-                                .padding(.horizontal, 3).padding(.vertical, 1)
-                                .background(nexusStatusColor(status).opacity(0.2), in: Capsule())
-                                .foregroundStyle(nexusStatusColor(status))
-                        }
-                    }
-                    Text(next.shortLabel).font(.system(size: 26, weight: .bold))
-                    if let target = entry.countdownTarget {
-                        Text(target, style: .relative).font(.system(size: 12)).foregroundStyle(.secondary)
-                        Text(entry.countdownLabel).font(.system(size: 9)).foregroundStyle(.tertiary)
-                    }
-                }.frame(maxWidth: .infinity)
+                // Match label
+                Text(next.shortLabel)
+                    .font(.system(size: 28, weight: .bold, design: .monospaced))
+                    .frame(maxWidth: .infinity, alignment: .center)
+
+                // Countdown
+                if let target = entry.countdownTarget {
+                    Text(target, style: .relative)
+                        .font(.system(size: 13, weight: .medium, design: .monospaced))
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                }
+
+                // Wall clock time
+                if let time = matchTime {
+                    Text(formatMatchTime(time, prefix: entry.timePrefix))
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundStyle(.tertiary)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                }
             } else {
-                VStack { Text("No upcoming match").font(.system(size: 11)).foregroundStyle(.secondary) }
-                    .frame(maxWidth: .infinity)
+                Text("No match")
+                    .font(.system(size: 12, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .center)
             }
+
             Spacer()
+
             if let name = entry.eventName {
-                Text(name).font(.system(size: 9)).foregroundStyle(.tertiary)
+                Text(name)
+                    .font(.system(size: 9))
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(1)
                     .frame(maxWidth: .infinity, alignment: .trailing)
             }
         }
-        .containerBackground(.fill.tertiary, for: .widget)
+        .containerBackground(for: .widget) {
+            Color(hex: "#1C1C1E")
+        }
     }
 }
