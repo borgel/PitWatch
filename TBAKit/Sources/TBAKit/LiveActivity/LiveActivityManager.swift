@@ -9,7 +9,7 @@ public final class LiveActivityManager: @unchecked Sendable {
     public func startActivity(
         match: Match, teamNumber: Int, teamKey: String, eventName: String,
         useScheduledTime: Bool, queueOffsetMinutes: Int,
-        ranking: Ranking?, oprs: EventOPRs?
+        ranking: Ranking?, oprs: EventOPRs?, nexusMatch: NexusMatch? = nil
     ) throws -> Activity<MatchActivityAttributes>? {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return nil }
 
@@ -33,7 +33,12 @@ public final class LiveActivityManager: @unchecked Sendable {
             redScore: nil, blueScore: nil, winningAlliance: nil,
             redAllianceOPR: oprs?.summedOPR(for: match.alliances["red"]?.teamKeys ?? []),
             blueAllianceOPR: oprs?.summedOPR(for: match.alliances["blue"]?.teamKeys ?? []),
-            matchState: .upcoming, rank: ranking?.rank, record: ranking?.record?.display
+            matchState: .upcoming, rank: ranking?.rank, record: ranking?.record?.display,
+            nexusStatus: nexusMatch?.status,
+            nexusQueueTime: nexusMatch?.times.queueDate,
+            nexusOnDeckTime: nexusMatch?.times.onDeckDate,
+            nexusOnFieldTime: nexusMatch?.times.onFieldDate,
+            nexusStartTime: nexusMatch?.times.startDate
         )
 
         let content = ActivityContent(state: state, staleDate: Date.now.addingTimeInterval(1800))
@@ -42,7 +47,7 @@ public final class LiveActivityManager: @unchecked Sendable {
 
     public func updateActivity(
         match: Match, useScheduledTime: Bool, queueOffsetMinutes: Int,
-        ranking: Ranking?, oprs: EventOPRs?
+        ranking: Ranking?, oprs: EventOPRs?, nexusMatch: NexusMatch? = nil
     ) async {
         guard let activity = Activity<MatchActivityAttributes>.activities.first(
             where: { $0.attributes.matchKey == match.key }
@@ -53,11 +58,25 @@ public final class LiveActivityManager: @unchecked Sendable {
             md.addingTimeInterval(-TimeInterval(queueOffsetMinutes * 60))
         } else { nil }
 
+        // Use Nexus status for state transitions when available
         let matchState: MatchState
-        if match.isPlayed { matchState = .completed }
-        else if let md = matchDate, md.timeIntervalSinceNow < 0 { matchState = .inProgress }
-        else if let md = matchDate, md.timeIntervalSinceNow < 600 { matchState = .imminent }
-        else { matchState = .upcoming }
+        if match.isPlayed {
+            matchState = .completed
+        } else if let status = nexusMatch?.status?.lowercased() {
+            if status.contains("field") {
+                matchState = .inProgress
+            } else if status.contains("deck") {
+                matchState = .imminent
+            } else {
+                matchState = .upcoming
+            }
+        } else if let md = matchDate, md.timeIntervalSinceNow < 0 {
+            matchState = .inProgress
+        } else if let md = matchDate, md.timeIntervalSinceNow < 600 {
+            matchState = .imminent
+        } else {
+            matchState = .upcoming
+        }
 
         let state = MatchActivityAttributes.ContentState(
             matchTime: matchDate, queueTime: queueDate,
@@ -66,7 +85,12 @@ public final class LiveActivityManager: @unchecked Sendable {
             winningAlliance: match.isPlayed ? match.winningAlliance : nil,
             redAllianceOPR: oprs?.summedOPR(for: match.alliances["red"]?.teamKeys ?? []),
             blueAllianceOPR: oprs?.summedOPR(for: match.alliances["blue"]?.teamKeys ?? []),
-            matchState: matchState, rank: ranking?.rank, record: ranking?.record?.display
+            matchState: matchState, rank: ranking?.rank, record: ranking?.record?.display,
+            nexusStatus: nexusMatch?.status,
+            nexusQueueTime: nexusMatch?.times.queueDate,
+            nexusOnDeckTime: nexusMatch?.times.onDeckDate,
+            nexusOnFieldTime: nexusMatch?.times.onFieldDate,
+            nexusStartTime: nexusMatch?.times.startDate
         )
 
         let content = ActivityContent(state: state, staleDate: Date.now.addingTimeInterval(1800))
