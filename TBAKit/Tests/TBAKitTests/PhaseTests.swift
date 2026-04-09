@@ -14,10 +14,10 @@ struct PhaseEnumTests {
 
     @Test("labels match spec")
     func labels() {
-        #expect(Phase.preQueue.label == "PRE")
-        #expect(Phase.queueing.label == "QUEUE")
-        #expect(Phase.onDeck.label == "DECK")
-        #expect(Phase.onField.label == "FIELD")
+        #expect(Phase.preQueue.label == "PRE Q")
+        #expect(Phase.queueing.label == "QUEUE IN")
+        #expect(Phase.onDeck.label == "DECK IN")
+        #expect(Phase.onField.label == "ON FIELD")
     }
 
     @Test("sublabels match spec")
@@ -30,8 +30,8 @@ struct PhaseEnumTests {
 
     @Test("combinedLabel joins label and sublabel")
     func combinedLabel() {
-        #expect(Phase.queueing.combinedLabel == "QUEUE \u{00B7} UNTIL ON DECK")
-        #expect(Phase.onField.combinedLabel == "FIELD \u{00B7} MATCH IN PROGRESS")
+        #expect(Phase.queueing.combinedLabel == "QUEUE IN \u{00B7} UNTIL ON DECK")
+        #expect(Phase.onField.combinedLabel == "ON FIELD \u{00B7} MATCH IN PROGRESS")
     }
 
     @Test("CaseIterable has four phases")

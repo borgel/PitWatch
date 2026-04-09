@@ -10,10 +10,10 @@ public enum Phase: Int, Codable, CaseIterable, Identifiable, Sendable, Hashable 
 
     public var label: String {
         switch self {
-        case .preQueue: return "PRE"
-        case .queueing: return "QUEUE"
-        case .onDeck:   return "DECK"
-        case .onField:  return "FIELD"
+        case .preQueue: return "PRE Q"
+        case .queueing: return "QUEUE IN"
+        case .onDeck:   return "DECK IN"
+        case .onField:  return "ON FIELD"
         }
     }
 
