@@ -8,6 +8,7 @@ public struct UserConfig: Codable, Sendable, Equatable {
     public var queueOffsetMinutes: Int
     public var liveActivityMode: LiveActivityMode
     public var nexusApiKey: String?
+    public var timeSource: TimeSource?
 
     public init() {
         self.teamNumber = nil
@@ -17,6 +18,12 @@ public struct UserConfig: Codable, Sendable, Equatable {
         self.queueOffsetMinutes = 0
         self.liveActivityMode = .nearMatch
         self.nexusApiKey = nil
+        self.timeSource = nil
+    }
+
+    /// Effective time source: user's choice, or Nexus if configured, TBA otherwise.
+    public var effectiveTimeSource: TimeSource {
+        timeSource ?? (isNexusConfigured ? .nexus : .tba)
     }
 
     public var isConfigured: Bool {
@@ -40,4 +47,9 @@ public struct UserConfig: Codable, Sendable, Equatable {
 public enum LiveActivityMode: String, Codable, Sendable, CaseIterable {
     case nearMatch
     case allDay
+}
+
+public enum TimeSource: String, Codable, Sendable, CaseIterable {
+    case nexus
+    case tba
 }

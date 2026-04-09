@@ -25,23 +25,36 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
-            Section("Time Display") {
-                Picker("Time Source", selection: $config.useScheduledTime) {
-                    Text("Predicted").tag(false)
-                    Text("Scheduled").tag(true)
+            Section {
+                Picker("Time Source", selection: Binding(
+                    get: { config.effectiveTimeSource },
+                    set: { config.timeSource = $0 }
+                )) {
+                    Text("FRC Nexus").tag(TimeSource.nexus)
+                    Text("The Blue Alliance").tag(TimeSource.tba)
                 }
 
-                Picker("Queue Offset", selection: $config.queueOffsetMinutes) {
-                    Text("Off").tag(0)
-                    ForEach(Array(stride(from: 5, through: 60, by: 5)), id: \.self) { minutes in
-                        Text("\(minutes) min").tag(minutes)
+                if config.effectiveTimeSource == .tba {
+                    Picker("Queue Offset", selection: $config.queueOffsetMinutes) {
+                        Text("Off").tag(0)
+                        ForEach(Array(stride(from: 5, through: 60, by: 5)), id: \.self) { minutes in
+                            Text("\(minutes) min").tag(minutes)
+                        }
+                    }
+
+                    if config.queueOffsetMinutes > 0 {
+                        Text("Countdown will show time to queue (\(config.queueOffsetMinutes) min before match)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 }
-
-                if config.queueOffsetMinutes > 0 {
-                    Text("Countdown will show time to queue (\(config.queueOffsetMinutes) min before match)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+            } header: {
+                Text("Time Source")
+            } footer: {
+                if config.effectiveTimeSource == .nexus {
+                    Text("Using real-time queue and match times from FRC Nexus.")
+                } else {
+                    Text("Using predicted match times from The Blue Alliance.")
                 }
             }
 
