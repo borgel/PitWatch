@@ -81,9 +81,15 @@ struct SettingsView: View {
 
             Section("Account") {
                 LabeledContent("Team", value: "\(config.teamNumber ?? 0)")
-                LabeledContent("API Key") {
-                    Text(maskedKey).foregroundStyle(.secondary)
+
+                LabeledContent("TBA API Key") {
+                    Text(maskedKey(config.apiKey)).foregroundStyle(.secondary)
                 }
+
+                LabeledContent("Nexus API Key") {
+                    Text(maskedKey(config.nexusApiKey)).foregroundStyle(.secondary)
+                }
+
                 Button("Clear All Data", role: .destructive) {
                     config = UserConfig()
                     store.saveConfig(config)
@@ -91,16 +97,17 @@ struct SettingsView: View {
             }
 
             Section {
-                SecureField("Nexus API Key", text: Binding(
+                TextField("API Key", text: Binding(
                     get: { config.nexusApiKey ?? "" },
                     set: { config.nexusApiKey = $0.isEmpty ? nil : $0 }
                 ))
                 .textContentType(.password)
                 .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
 
                 if config.isNexusConfigured {
                     if let nexusDate = store.loadRefreshState().nexusLastRefreshDate {
-                        LabeledContent("Last Nexus Refresh", value: nexusDate.formatted(.relative(presentation: .named)))
+                        LabeledContent("Last Refresh", value: nexusDate.formatted(.relative(presentation: .named)))
                     }
                     if let nexusError = store.loadRefreshState().nexusLastError {
                         Label(nexusError, systemImage: "info.circle")
@@ -127,8 +134,9 @@ struct SettingsView: View {
         }
     }
 
-    private var maskedKey: String {
-        guard let key = config.apiKey, key.count > 8 else { return "Not set" }
+    private func maskedKey(_ key: String?) -> String {
+        guard let key, !key.isEmpty else { return "Not set" }
+        guard key.count > 8 else { return String(repeating: "•", count: key.count) }
         return String(key.prefix(4)) + "••••" + String(key.suffix(4))
     }
 
