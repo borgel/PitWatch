@@ -173,26 +173,28 @@ enum BackgroundRefresh {
         let schedule = MatchSchedule(matches: cache.matches, teamKey: teamKey)
 
         if let next = schedule.nextMatch {
-            let nexusMatch = NexusMatchMerge.nexusInfo(for: next, in: cache.nexusEvent)
+            let useNexus = config.effectiveTimeSource == .nexus
+            let nexusMatch = useNexus ? NexusMatchMerge.nexusInfo(for: next, in: cache.nexusEvent) : nil
+            let nexusEvent = useNexus ? cache.nexusEvent : nil
 
             if manager.hasActiveActivity {
                 await manager.updateActivity(
                     match: next,
                     nexusMatch: nexusMatch,
-                    nexusEvent: cache.nexusEvent
+                    nexusEvent: nexusEvent
                 )
             } else if schedule.shouldStartLiveActivity(
                 now: .now, mode: config.liveActivityMode,
                 useScheduledTime: config.useScheduledTime,
                 hasActiveLiveActivity: false,
-                nexusEvent: cache.nexusEvent
+                nexusEvent: nexusEvent
             ) {
                 let _ = try? manager.startActivity(
                     match: next,
                     teamNumber: config.teamNumber ?? 0,
                     teamKey: teamKey,
                     nexusMatch: nexusMatch,
-                    nexusEvent: cache.nexusEvent
+                    nexusEvent: nexusEvent
                 )
             }
         }

@@ -37,13 +37,14 @@ struct PitWatchApp: App {
                                             let cache = store.loadEventCache()
                                             let schedule = MatchSchedule(matches: cache.matches, teamKey: config.teamKey ?? "")
                                             if let next = schedule.nextMatch {
-                                                let nexusMatch = NexusMatchMerge.nexusInfo(for: next, in: cache.nexusEvent)
+                                                let useNexus = config.effectiveTimeSource == .nexus
+                                                let nexusMatch = useNexus ? NexusMatchMerge.nexusInfo(for: next, in: cache.nexusEvent) : nil
                                                 let _ = try? LiveActivityManager.shared.startActivity(
                                                     match: next,
                                                     teamNumber: config.teamNumber ?? 0,
                                                     teamKey: config.teamKey ?? "",
                                                     nexusMatch: nexusMatch,
-                                                    nexusEvent: cache.nexusEvent
+                                                    nexusEvent: useNexus ? cache.nexusEvent : nil
                                                 )
                                             }
                                             #endif

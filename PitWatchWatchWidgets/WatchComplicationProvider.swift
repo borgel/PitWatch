@@ -43,9 +43,10 @@ struct WatchComplicationProvider: TimelineProvider {
         let config = store.loadConfig()
         let cache = store.loadEventCache()
         let schedule = MatchSchedule(matches: cache.matches, teamKey: config.teamKey ?? "")
+        let useNexus = config.effectiveTimeSource == .nexus
         let reloadDate = schedule.nextReloadDate(
             now: .now, useScheduledTime: config.useScheduledTime,
-            nexusEvent: cache.nexusEvent
+            nexusEvent: useNexus ? cache.nexusEvent : nil
         )
         completion(Timeline(entries: [entry], policy: .after(reloadDate)))
     }
@@ -71,7 +72,8 @@ struct WatchComplicationProvider: TimelineProvider {
         var deadline: Date? = next.matchDate(useScheduled: config.useScheduledTime)
         var phaseStart: Date = .now
 
-        if let nexusEvent = cache.nexusEvent,
+        if config.effectiveTimeSource == .nexus,
+           let nexusEvent = cache.nexusEvent,
            let nexusMatch = NexusMatchMerge.nexusInfo(for: next, in: nexusEvent) {
             let result = PhaseDerivation.derivePhase(from: nexusMatch)
             phase = result.phase

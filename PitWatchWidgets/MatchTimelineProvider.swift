@@ -87,9 +87,10 @@ struct MatchTimelineProvider: TimelineProvider {
         let config = store.loadConfig()
         let cache = store.loadEventCache()
         let schedule = MatchSchedule(matches: cache.matches, teamKey: config.teamKey ?? "")
+        let useNexus = config.effectiveTimeSource == .nexus
         let reloadDate = schedule.nextReloadDate(
             now: .now, useScheduledTime: config.useScheduledTime,
-            nexusEvent: cache.nexusEvent
+            nexusEvent: useNexus ? cache.nexusEvent : nil
         )
         completion(Timeline(entries: [entry], policy: .after(reloadDate)))
     }
@@ -113,7 +114,7 @@ struct MatchTimelineProvider: TimelineProvider {
             teamKey: config.teamKey ?? "",
             useScheduledTime: config.useScheduledTime,
             queueOffsetMinutes: config.queueOffsetMinutes,
-            nexusEvent: cache.nexusEvent
+            nexusEvent: config.effectiveTimeSource == .nexus ? cache.nexusEvent : nil
         )
     }
 }
