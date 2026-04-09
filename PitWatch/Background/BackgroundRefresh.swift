@@ -175,17 +175,11 @@ enum BackgroundRefresh {
         if let next = schedule.nextMatch {
             let nexusMatch = NexusMatchMerge.nexusInfo(for: next, in: cache.nexusEvent)
 
-            let eventNowQueuing = cache.nexusEvent?.nowQueuing
-
             if manager.hasActiveActivity {
                 await manager.updateActivity(
                     match: next,
-                    useScheduledTime: config.useScheduledTime,
-                    queueOffsetMinutes: config.queueOffsetMinutes,
-                    ranking: cache.rankings?.rankings.first { $0.teamKey == teamKey },
-                    oprs: cache.oprs,
                     nexusMatch: nexusMatch,
-                    nowQueuing: eventNowQueuing
+                    nexusEvent: cache.nexusEvent
                 )
             } else if schedule.shouldStartLiveActivity(
                 now: .now, mode: config.liveActivityMode,
@@ -197,20 +191,15 @@ enum BackgroundRefresh {
                     match: next,
                     teamNumber: config.teamNumber ?? 0,
                     teamKey: teamKey,
-                    eventName: cache.event?.shortName ?? cache.event?.name ?? "",
-                    useScheduledTime: config.useScheduledTime,
-                    queueOffsetMinutes: config.queueOffsetMinutes,
-                    ranking: cache.rankings?.rankings.first { $0.teamKey == teamKey },
-                    oprs: cache.oprs,
                     nexusMatch: nexusMatch,
-                    nowQueuing: eventNowQueuing
+                    nexusEvent: cache.nexusEvent
                 )
             }
         }
 
         // End completed match Live Activities
         if let last = schedule.lastPlayedMatch {
-            await manager.endActivity(for: last.key)
+            await manager.endActivity(matchLabel: last.shortLabel)
         }
         #endif
     }

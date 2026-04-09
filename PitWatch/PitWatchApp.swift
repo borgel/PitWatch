@@ -42,13 +42,8 @@ struct PitWatchApp: App {
                                                     match: next,
                                                     teamNumber: config.teamNumber ?? 0,
                                                     teamKey: config.teamKey ?? "",
-                                                    eventName: cache.event?.shortName ?? cache.event?.name ?? "",
-                                                    useScheduledTime: config.useScheduledTime,
-                                                    queueOffsetMinutes: config.queueOffsetMinutes,
-                                                    ranking: cache.rankings?.rankings.first { $0.teamKey == config.teamKey },
-                                                    oprs: cache.oprs,
                                                     nexusMatch: nexusMatch,
-                                                    nowQueuing: cache.nexusEvent?.nowQueuing
+                                                    nexusEvent: cache.nexusEvent
                                                 )
                                             }
                                             #endif

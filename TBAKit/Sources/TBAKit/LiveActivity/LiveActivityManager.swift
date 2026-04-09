@@ -6,116 +6,167 @@ public final class LiveActivityManager: @unchecked Sendable {
     public static let shared = LiveActivityManager()
     private init() {}
 
+    /// Start a new Live Activity for a match using the new FRCMatchAttributes.
     public func startActivity(
-        match: Match, teamNumber: Int, teamKey: String, eventName: String,
-        useScheduledTime: Bool, queueOffsetMinutes: Int,
-        ranking: Ranking?, oprs: EventOPRs?, nexusMatch: NexusMatch? = nil,
-        nowQueuing: String? = nil
-    ) throws -> Activity<MatchActivityAttributes>? {
+        match: Match,
+        teamNumber: Int,
+        teamKey: String,
+        nexusMatch: NexusMatch?,
+        nexusEvent: NexusEvent?
+    ) throws -> Activity<FRCMatchAttributes>? {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return nil }
 
-        let allianceColor = match.allianceColor(for: teamKey) ?? "red"
-        let redTeams = (match.alliances["red"]?.teamKeys ?? []).map { $0.replacingOccurrences(of: "frc", with: "") }
-        let blueTeams = (match.alliances["blue"]?.teamKeys ?? []).map { $0.replacingOccurrences(of: "frc", with: "") }
+        let allianceStr = match.allianceColor(for: teamKey) ?? "blue"
+        let alliance: MatchAlliance = allianceStr == "red" ? .red : .blue
 
-        let attributes = MatchActivityAttributes(
-            teamNumber: teamNumber, eventName: eventName, matchKey: match.key,
-            matchLabel: match.label, compLevel: match.compLevel,
-            redTeams: redTeams, blueTeams: blueTeams, trackedAllianceColor: allianceColor
+        let attributes = FRCMatchAttributes(
+            teamNumber: teamNumber,
+            matchNumber: match.matchNumber,
+            matchLabel: match.shortLabel,
+            alliance: alliance
         )
 
-        let matchDate = match.matchDate(useScheduled: useScheduledTime)
-        let queueDate: Date? = if queueOffsetMinutes > 0, let md = matchDate {
-            md.addingTimeInterval(-TimeInterval(queueOffsetMinutes * 60))
-        } else { nil }
+        var phase: Phase = .preQueue
+        var deadline: Date = .now.addingTimeInterval(3600)
+        var phaseStart: Date = .now
+        var currentOnField: Int = match.matchNumber
+        var queueDL: Date?
+        var onDeckDL: Date?
+        var onFieldDL: Date?
+        var matchEndDL: Date?
 
-        let state = MatchActivityAttributes.ContentState(
-            matchTime: matchDate, queueTime: queueDate,
-            redScore: nil, blueScore: nil, winningAlliance: nil,
-            redAllianceOPR: oprs?.summedOPR(for: match.alliances["red"]?.teamKeys ?? []),
-            blueAllianceOPR: oprs?.summedOPR(for: match.alliances["blue"]?.teamKeys ?? []),
-            matchState: .upcoming, rank: ranking?.rank, record: ranking?.record?.display,
-            nexusStatus: nexusMatch?.status,
-            nexusQueueTime: nexusMatch?.times.queueDate,
-            nexusOnDeckTime: nexusMatch?.times.onDeckDate,
-            nexusOnFieldTime: nexusMatch?.times.onFieldDate,
-            nexusStartTime: nexusMatch?.times.startDate,
-            nowQueuing: nowQueuing
-        )
-
-        let content = ActivityContent(state: state, staleDate: Date.now.addingTimeInterval(1800))
-        return try Activity<MatchActivityAttributes>.request(attributes: attributes, content: content)
-    }
-
-    public func updateActivity(
-        match: Match, useScheduledTime: Bool, queueOffsetMinutes: Int,
-        ranking: Ranking?, oprs: EventOPRs?, nexusMatch: NexusMatch? = nil,
-        nowQueuing: String? = nil
-    ) async {
-        guard let activity = Activity<MatchActivityAttributes>.activities.first(
-            where: { $0.attributes.matchKey == match.key }
-        ) else { return }
-
-        let matchDate = match.matchDate(useScheduled: useScheduledTime)
-        let queueDate: Date? = if queueOffsetMinutes > 0, let md = matchDate {
-            md.addingTimeInterval(-TimeInterval(queueOffsetMinutes * 60))
-        } else { nil }
-
-        // Use Nexus status for state transitions when available
-        let matchState: MatchState
-        if match.isPlayed {
-            matchState = .completed
-        } else if let status = nexusMatch?.status?.lowercased() {
-            if status.contains("field") {
-                matchState = .inProgress
-            } else if status.contains("deck") {
-                matchState = .imminent
-            } else {
-                matchState = .upcoming
-            }
-        } else if let md = matchDate, md.timeIntervalSinceNow < 0 {
-            matchState = .inProgress
-        } else if let md = matchDate, md.timeIntervalSinceNow < 600 {
-            matchState = .imminent
-        } else {
-            matchState = .upcoming
+        if let nexusMatch {
+            let result = PhaseDerivation.derivePhase(from: nexusMatch)
+            phase = result.phase
+            deadline = result.deadline ?? deadline
+            phaseStart = result.phaseStartDate
+            queueDL = result.queueDeadline
+            onDeckDL = result.onDeckDeadline
+            onFieldDL = result.onFieldDeadline
+            matchEndDL = result.matchEndDeadline
         }
 
-        let state = MatchActivityAttributes.ContentState(
-            matchTime: matchDate, queueTime: queueDate,
-            redScore: match.isPlayed ? match.alliances["red"]?.score : nil,
-            blueScore: match.isPlayed ? match.alliances["blue"]?.score : nil,
-            winningAlliance: match.isPlayed ? match.winningAlliance : nil,
-            redAllianceOPR: oprs?.summedOPR(for: match.alliances["red"]?.teamKeys ?? []),
-            blueAllianceOPR: oprs?.summedOPR(for: match.alliances["blue"]?.teamKeys ?? []),
-            matchState: matchState, rank: ranking?.rank, record: ranking?.record?.display,
-            nexusStatus: nexusMatch?.status,
-            nexusQueueTime: nexusMatch?.times.queueDate,
-            nexusOnDeckTime: nexusMatch?.times.onDeckDate,
-            nexusOnFieldTime: nexusMatch?.times.onFieldDate,
-            nexusStartTime: nexusMatch?.times.startDate,
-            nowQueuing: nowQueuing
+        if let nexusEvent {
+            currentOnField = PhaseDerivation.currentMatchOnField(
+                matches: nexusEvent.matches,
+                fallbackMatchNumber: match.matchNumber
+            )
+        }
+
+        let state = FRCMatchAttributes.ContentState(
+            currentPhase: phase,
+            phaseStartDate: phaseStart,
+            phaseDeadline: deadline,
+            currentMatchOnField: currentOnField,
+            lastUpdated: .now,
+            queueDeadline: queueDL,
+            onDeckDeadline: onDeckDL,
+            onFieldDeadline: onFieldDL,
+            matchEndDeadline: matchEndDL
         )
 
-        let content = ActivityContent(state: state, staleDate: Date.now.addingTimeInterval(1800))
+        let staleDate = deadline.addingTimeInterval(30)
+        let content = ActivityContent(state: state, staleDate: staleDate)
+        return try Activity<FRCMatchAttributes>.request(
+            attributes: attributes, content: content
+        )
+    }
+
+    /// Update an existing Live Activity with fresh Nexus data.
+    public func updateActivity(
+        match: Match,
+        nexusMatch: NexusMatch?,
+        nexusEvent: NexusEvent?
+    ) async {
+        guard let activity = Activity<FRCMatchAttributes>.activities.first(
+            where: { $0.attributes.matchLabel == match.shortLabel }
+        ) else { return }
+
+        var phase: Phase = .preQueue
+        var deadline: Date = .now.addingTimeInterval(3600)
+        var phaseStart: Date = .now
+        var currentOnField: Int = match.matchNumber
+        var queueDL: Date?
+        var onDeckDL: Date?
+        var onFieldDL: Date?
+        var matchEndDL: Date?
+
+        if let nexusMatch {
+            let result = PhaseDerivation.derivePhase(from: nexusMatch)
+            phase = result.phase
+            deadline = result.deadline ?? deadline
+            phaseStart = result.phaseStartDate
+            queueDL = result.queueDeadline
+            onDeckDL = result.onDeckDeadline
+            onFieldDL = result.onFieldDeadline
+            matchEndDL = result.matchEndDeadline
+        }
+
+        if let nexusEvent {
+            currentOnField = PhaseDerivation.currentMatchOnField(
+                matches: nexusEvent.matches,
+                fallbackMatchNumber: match.matchNumber
+            )
+        }
+
+        let state = FRCMatchAttributes.ContentState(
+            currentPhase: phase,
+            phaseStartDate: phaseStart,
+            phaseDeadline: deadline,
+            currentMatchOnField: currentOnField,
+            lastUpdated: .now,
+            queueDeadline: queueDL,
+            onDeckDeadline: onDeckDL,
+            onFieldDeadline: onFieldDL,
+            matchEndDeadline: matchEndDL
+        )
+
+        let staleDate = deadline.addingTimeInterval(30)
+        let content = ActivityContent(state: state, staleDate: staleDate)
         await activity.update(content)
     }
 
-    public func endActivity(for matchKey: String) async {
-        guard let activity = Activity<MatchActivityAttributes>.activities.first(
-            where: { $0.attributes.matchKey == matchKey }
-        ) else { return }
-        await activity.end(nil, dismissalPolicy: .after(.now.addingTimeInterval(900)))
+    /// End the current match's activity and optionally start one for the next match.
+    public func transitionToNextMatch(
+        nextMatch: Match?,
+        teamNumber: Int,
+        teamKey: String,
+        nexusMatch: NexusMatch?,
+        nexusEvent: NexusEvent?
+    ) async throws -> Activity<FRCMatchAttributes>? {
+        await endActivity(matchLabel: nil)
+
+        guard let nextMatch else { return nil }
+        return try startActivity(
+            match: nextMatch,
+            teamNumber: teamNumber,
+            teamKey: teamKey,
+            nexusMatch: nexusMatch,
+            nexusEvent: nexusEvent
+        )
+    }
+
+    public func endActivity(matchLabel: String?) async {
+        let target: Activity<FRCMatchAttributes>?
+        if let matchLabel {
+            target = Activity<FRCMatchAttributes>.activities.first(
+                where: { $0.attributes.matchLabel == matchLabel }
+            )
+        } else {
+            target = Activity<FRCMatchAttributes>.activities.first
+        }
+        guard let activity = target else { return }
+        await activity.end(nil, dismissalPolicy: .immediate)
     }
 
     public func endAllActivities() async {
-        for activity in Activity<MatchActivityAttributes>.activities {
+        for activity in Activity<FRCMatchAttributes>.activities {
             await activity.end(nil, dismissalPolicy: .immediate)
         }
     }
 
     public var hasActiveActivity: Bool {
-        !Activity<MatchActivityAttributes>.activities.isEmpty
+        !Activity<FRCMatchAttributes>.activities.isEmpty
     }
 }
 #endif

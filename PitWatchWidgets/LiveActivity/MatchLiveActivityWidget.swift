@@ -5,10 +5,10 @@ import TBAKit
 
 struct MatchLiveActivityWidget: Widget {
     var body: some WidgetConfiguration {
-        ActivityConfiguration(for: MatchActivityAttributes.self) { context in
-            LiveActivityLockScreenView(context: context)
+        ActivityConfiguration(for: FRCMatchAttributes.self) { context in
+            ExpandedLiveActivityView(context: context)
         } dynamicIsland: { context in
-            MatchDynamicIsland.build(for: context)
+            FRCDynamicIsland.build(for: context)
         }
     }
 }

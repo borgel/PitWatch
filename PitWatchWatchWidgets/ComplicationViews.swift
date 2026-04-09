@@ -2,54 +2,152 @@ import SwiftUI
 import WidgetKit
 import TBAKit
 
+// MARK: - Circular Complication (70x70pt)
+
 struct CircularComplicationView: View {
-    let entry: WatchMatchEntry
+    let entry: PhaseComplicationEntry
+
+    private var isOnField: Bool { entry.phase == .onField }
+
     var body: some View {
-        if let next = entry.nextMatch {
+        if let phase = entry.phase, let deadline = entry.phaseDeadline {
             ZStack {
-                AccessoryWidgetBackground()
-                VStack(spacing: 1) {
-                    HStack(spacing: 2) {
+                Circle()
+                    .fill(isOnField ? Color(hex: "#0F2118") : Color(hex: "#1C1C1E"))
+                    .overlay(
                         Circle()
-                            .fill(entry.allianceColor == "red" ? Color.red : (entry.allianceColor == "blue" ? Color.blue : Color.gray))
-                            .frame(width: 5, height: 5)
-                        Text(next.shortLabel).font(.system(size: 9))
-                    }
-                    if let target = entry.countdownTarget {
-                        Text(target, style: .timer).font(.system(size: 15, weight: .bold)).monospacedDigit()
+                            .strokeBorder(
+                                isOnField ? Color(hex: "#30D158") : .clear,
+                                lineWidth: 1
+                            )
+                    )
+
+                VStack(spacing: 2) {
+                    Text(phase.label)
+                        .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                        .tracking(0.6)
+                        .foregroundStyle(phase.color)
+
+                    Text(deadline, style: .timer)
+                        .font(.system(size: 22, weight: .bold, design: .monospaced))
+                        .kerning(-1)
+                        .foregroundStyle(.white)
+                        .monospacedDigit()
+
+                    HStack(spacing: 4) {
+                        GeometryReader { geo in
+                            ZStack(alignment: .leading) {
+                                RoundedRectangle(cornerRadius: 1.25)
+                                    .fill(Color(hex: "#3A3A3C"))
+                                    .frame(height: 2.5)
+                                RoundedRectangle(cornerRadius: 1.25)
+                                    .fill(phase.color)
+                                    .frame(width: geo.size.width * entry.phaseProgress, height: 2.5)
+                            }
+                        }
+                        .frame(width: 28, height: 2.5)
+
+                        if let alliance = entry.alliance {
+                            Circle()
+                                .fill(alliance.dotColor)
+                                .frame(width: 5, height: 5)
+                        }
                     }
                 }
-            }.widgetAccentable()
+            }
         } else {
             ZStack {
-                AccessoryWidgetBackground()
-                Text("\(entry.teamNumber ?? 0)").font(.system(size: 14, weight: .bold))
+                Circle().fill(Color(hex: "#1C1C1E"))
+                Text(String(entry.teamNumber ?? 0))
+                    .font(.system(size: 14, weight: .bold, design: .monospaced))
+                    .foregroundStyle(.white)
             }
         }
     }
 }
 
+// MARK: - Rectangular Complication (160x68pt)
+
 struct RectangularComplicationView: View {
-    let entry: WatchMatchEntry
+    let entry: PhaseComplicationEntry
+
+    private var isOnField: Bool { entry.phase == .onField }
+
     var body: some View {
-        if let next = entry.nextMatch {
-            VStack(alignment: .leading, spacing: 2) {
-                HStack {
-                    Text(next.label).font(.system(size: 12, weight: .semibold))
-                    Spacer()
-                    if let target = entry.countdownTarget {
-                        Text(target, style: .relative).font(.system(size: 10)).foregroundStyle(.secondary)
+        if let phase = entry.phase, let deadline = entry.phaseDeadline {
+            HStack(spacing: 0) {
+                VStack(spacing: 4) {
+                    RoundedRectangle(cornerRadius: 5)
+                        .fill(phase.color)
+                        .frame(width: 20, height: 20)
+                    Text("#\(String(entry.teamNumber ?? 0))")
+                        .font(.system(size: 9.5, design: .monospaced))
+                        .foregroundStyle(phase.color.opacity(0.50))
+                }
+                .frame(width: 46)
+
+                Rectangle()
+                    .fill(.white.opacity(0.15))
+                    .frame(width: 0.5, height: 42)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(phase.label)
+                        .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                        .tracking(0.6)
+                        .foregroundStyle(phase.color)
+
+                    Text(deadline, style: .timer)
+                        .font(.system(size: 26, weight: .bold, design: .monospaced))
+                        .kerning(-1)
+                        .foregroundStyle(.white)
+                        .monospacedDigit()
+
+                    HStack(spacing: 4) {
+                        GeometryReader { geo in
+                            ZStack(alignment: .leading) {
+                                RoundedRectangle(cornerRadius: 1.25)
+                                    .fill(Color(hex: "#3A3A3C"))
+                                    .frame(height: 2.5)
+                                RoundedRectangle(cornerRadius: 1.25)
+                                    .fill(phase.color)
+                                    .frame(width: geo.size.width * entry.phaseProgress, height: 2.5)
+                            }
+                        }
+                        .frame(width: 48, height: 2.5)
+
+                        if let alliance = entry.alliance {
+                            Circle()
+                                .fill(alliance.dotColor)
+                                .frame(width: 5, height: 5)
+                        }
                     }
                 }
-                if let ranking = entry.ranking {
-                    Text("#\(ranking.rank) \u{00B7} \(ranking.record?.display ?? "")")
-                        .font(.system(size: 9)).foregroundStyle(.secondary)
-                }
+                .padding(.leading, 8)
+
+                Spacer()
             }
+            .padding(8)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(isOnField ? Color(hex: "#0F2118") : Color(hex: "#1C1C1E"))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .strokeBorder(
+                                isOnField
+                                    ? Color(red: 48/255, green: 209/255, blue: 88/255).opacity(0.40)
+                                    : .clear,
+                                lineWidth: 0.5
+                            )
+                    )
+            )
         } else {
             VStack(alignment: .leading) {
-                Text("Team \(entry.teamNumber ?? 0)").font(.system(size: 12, weight: .semibold))
-                Text("No match").font(.system(size: 10)).foregroundStyle(.secondary)
+                Text("Team \(String(entry.teamNumber ?? 0))")
+                    .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(.white)
+                Text("No match")
+                    .font(.system(size: 10, design: .monospaced))
+                    .foregroundStyle(.secondary)
             }
         }
     }
