@@ -141,6 +141,19 @@ struct SettingsView: View {
             #if DEBUG
             nexusDemoSection
             #endif
+
+            Section {
+                Link(destination: URL(string: "https://github.com/borgel/PitWatch")!) {
+                    HStack {
+                        Image(systemName: "chevron.left.forwardslash.chevron.right")
+                        Text("PitWatch on GitHub")
+                        Spacer()
+                        Image(systemName: "arrow.up.right.square")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
         }
         .navigationTitle("Settings")
         .onChange(of: config) { _, newConfig in
