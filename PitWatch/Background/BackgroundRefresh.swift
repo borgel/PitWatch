@@ -101,17 +101,17 @@ enum BackgroundRefresh {
 
         // Fetch event details if not cached
         if cache.event == nil {
-            let eventResult = try await client.fetch(Event.self, path: Endpoints.event(key: eventKey))
-            if case .data(let event, _) = eventResult {
+            if let eventResult = try? await client.fetch(Event.self, path: Endpoints.event(key: eventKey)),
+               case .data(let event, _) = eventResult {
                 cache.event = event
             }
         }
 
-        // Fetch matches
+        // Fetch matches (non-fatal — Nexus-only events won't exist on TBA)
         let matchesPath = Endpoints.eventMatches(key: eventKey)
         let matchesLM = forceReload ? nil : refreshState.lastModified(for: matchesPath)
-        let matchesResult = try await client.fetch([Match].self, path: matchesPath, lastModified: matchesLM)
-        if case .data(let matches, let lm) = matchesResult {
+        if let matchesResult = try? await client.fetch([Match].self, path: matchesPath, lastModified: matchesLM),
+           case .data(let matches, let lm) = matchesResult {
             cache.matches = matches
             refreshState.setLastModified(lm, for: matchesPath)
         }
@@ -119,8 +119,8 @@ enum BackgroundRefresh {
         // Fetch rankings
         let rankingsPath = Endpoints.eventRankings(key: eventKey)
         let rankingsLM = forceReload ? nil : refreshState.lastModified(for: rankingsPath)
-        let rankingsResult = try await client.fetch(EventRankings.self, path: rankingsPath, lastModified: rankingsLM)
-        if case .data(let rankings, let lm) = rankingsResult {
+        if let rankingsResult = try? await client.fetch(EventRankings.self, path: rankingsPath, lastModified: rankingsLM),
+           case .data(let rankings, let lm) = rankingsResult {
             cache.rankings = rankings
             refreshState.setLastModified(lm, for: rankingsPath)
         }
@@ -128,8 +128,8 @@ enum BackgroundRefresh {
         // Fetch OPRs
         let oprsPath = Endpoints.eventOPRs(key: eventKey)
         let oprsLM = forceReload ? nil : refreshState.lastModified(for: oprsPath)
-        let oprsResult = try await client.fetch(EventOPRs.self, path: oprsPath, lastModified: oprsLM)
-        if case .data(let oprs, let lm) = oprsResult {
+        if let oprsResult = try? await client.fetch(EventOPRs.self, path: oprsPath, lastModified: oprsLM),
+           case .data(let oprs, let lm) = oprsResult {
             cache.oprs = oprs
             refreshState.setLastModified(lm, for: oprsPath)
         }
