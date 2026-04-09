@@ -2,7 +2,7 @@ import Foundation
 import WatchConnectivity
 import TBAKit
 
-class ConnectivityManager: NSObject, ObservableObject, WCSessionDelegate {
+class ConnectivityManager: NSObject, ObservableObject, WCSessionDelegate, @unchecked Sendable {
     static let shared = ConnectivityManager()
     @Published var lastSyncDate: Date?
 
