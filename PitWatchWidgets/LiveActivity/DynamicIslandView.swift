@@ -18,9 +18,20 @@ enum FRCDynamicIsland {
         } compactTrailing: {
             compactTrailing(context: context)
         } minimal: {
-            Circle()
-                .fill(context.attributes.alliance.dotColor)
-                .frame(width: 6, height: 6)
+            VStack(spacing: 1) {
+                HStack(spacing: 2) {
+                    Text(context.state.currentPhase.label.prefix(1))
+                        .font(.system(size: 6, weight: .bold, design: .monospaced))
+                        .foregroundStyle(context.state.currentPhase.color)
+                    Circle()
+                        .fill(context.attributes.alliance.dotColor)
+                        .frame(width: 4, height: 4)
+                }
+                Text(context.state.phaseDeadline, style: .timer)
+                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                    .foregroundStyle(.white)
+                    .monospacedDigit()
+            }
         }
     }
 
