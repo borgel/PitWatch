@@ -14,14 +14,22 @@ struct MatchWidgetEntry: TimelineEntry {
     let teamKey: String
     let useScheduledTime: Bool
     let queueOffsetMinutes: Int
+    let nexusEvent: NexusEvent?
 
     var nextMatchAllianceColor: String? {
         nextMatch?.allianceColor(for: teamKey)
     }
 
     var countdownTarget: Date? {
-        guard let match = nextMatch,
-              let date = match.matchDate(useScheduled: useScheduledTime) else { return nil }
+        guard let match = nextMatch else { return nil }
+        // Prefer Nexus queue time if available
+        if let nexusEvent,
+           let nexusMatch = NexusMatchMerge.nexusInfo(for: match, in: nexusEvent),
+           let nextPhase = nexusMatch.times.nextPhaseDate(after: .now) {
+            return nextPhase.date
+        }
+        // Fall back to TBA time
+        guard let date = match.matchDate(useScheduled: useScheduledTime) else { return nil }
         if queueOffsetMinutes > 0 {
             return date.addingTimeInterval(-TimeInterval(queueOffsetMinutes * 60))
         }
@@ -29,7 +37,26 @@ struct MatchWidgetEntry: TimelineEntry {
     }
 
     var countdownLabel: String {
-        queueOffsetMinutes > 0 ? "to queue" : "to match"
+        guard let match = nextMatch else { return "to match" }
+        if let nexusEvent,
+           let nexusMatch = NexusMatchMerge.nexusInfo(for: match, in: nexusEvent),
+           let nextPhase = nexusMatch.times.nextPhaseDate(after: .now) {
+            return "to \(nextPhase.label.lowercased())"
+        }
+        return queueOffsetMinutes > 0 ? "to queue" : "to match"
+    }
+
+    var nowQueuing: String? {
+        nexusEvent?.nowQueuing
+    }
+
+    var nexusStatus: String? {
+        guard let match = nextMatch, let nexusEvent else { return nil }
+        return NexusMatchMerge.nexusInfo(for: match, in: nexusEvent)?.status
+    }
+
+    var isNexusAvailable: Bool {
+        nexusEvent != nil
     }
 
     var timePrefix: String {
@@ -41,7 +68,8 @@ struct MatchWidgetEntry: TimelineEntry {
             date: .now, teamNumber: 1234, eventName: "Regional",
             nextMatch: nil, lastMatch: nil, upcomingMatches: [], pastMatches: [],
             ranking: nil, oprs: nil, teamKey: "frc1234",
-            useScheduledTime: false, queueOffsetMinutes: 0
+            useScheduledTime: false, queueOffsetMinutes: 0,
+            nexusEvent: nil
         )
     }
 }
@@ -59,7 +87,10 @@ struct MatchTimelineProvider: TimelineProvider {
         let config = store.loadConfig()
         let cache = store.loadEventCache()
         let schedule = MatchSchedule(matches: cache.matches, teamKey: config.teamKey ?? "")
-        let reloadDate = schedule.nextReloadDate(now: .now, useScheduledTime: config.useScheduledTime)
+        let reloadDate = schedule.nextReloadDate(
+            now: .now, useScheduledTime: config.useScheduledTime,
+            nexusEvent: cache.nexusEvent
+        )
         completion(Timeline(entries: [entry], policy: .after(reloadDate)))
     }
 
@@ -81,7 +112,8 @@ struct MatchTimelineProvider: TimelineProvider {
             oprs: cache.oprs,
             teamKey: config.teamKey ?? "",
             useScheduledTime: config.useScheduledTime,
-            queueOffsetMinutes: config.queueOffsetMinutes
+            queueOffsetMinutes: config.queueOffsetMinutes,
+            nexusEvent: cache.nexusEvent
         )
     }
 }
