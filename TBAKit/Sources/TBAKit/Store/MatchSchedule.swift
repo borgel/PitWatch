@@ -68,14 +68,39 @@ public struct MatchSchedule: Sendable {
     }
 
     /// Whether a Live Activity should be auto-started given the mode and current time.
+    /// When Nexus data is available, uses Nexus queue time as the trigger instead of TBA match time.
     public func shouldStartLiveActivity(
         now: Date,
         mode: LiveActivityMode,
         useScheduledTime: Bool,
-        hasActiveLiveActivity: Bool
+        hasActiveLiveActivity: Bool,
+        nexusEvent: NexusEvent? = nil
     ) -> Bool {
-        guard !hasActiveLiveActivity, let next = nextMatch,
-              let matchDate = referenceDate(for: next, useScheduledTime: useScheduledTime) else {
+        guard !hasActiveLiveActivity, let next = nextMatch else {
+            return false
+        }
+
+        // If Nexus data available, use the earliest Nexus phase time
+        if let nexusEvent,
+           let nexusMatch = NexusMatchMerge.nexusInfo(for: next, in: nexusEvent) {
+            // Use the earliest available Nexus time as reference
+            let nexusDate = nexusMatch.times.queueDate
+                ?? nexusMatch.times.onDeckDate
+                ?? nexusMatch.times.onFieldDate
+                ?? nexusMatch.times.startDate
+            if let nexusDate {
+                let timeUntil = nexusDate.timeIntervalSince(now)
+                switch mode {
+                case .nearMatch:
+                    return timeUntil > -900 && timeUntil <= 7200
+                case .allDay:
+                    return timeUntil > -900
+                }
+            }
+        }
+
+        // Fall back to TBA times
+        guard let matchDate = referenceDate(for: next, useScheduledTime: useScheduledTime) else {
             return false
         }
         let timeUntil = matchDate.timeIntervalSince(now)

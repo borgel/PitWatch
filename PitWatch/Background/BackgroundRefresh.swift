@@ -187,7 +187,8 @@ enum BackgroundRefresh {
             } else if schedule.shouldStartLiveActivity(
                 now: .now, mode: config.liveActivityMode,
                 useScheduledTime: config.useScheduledTime,
-                hasActiveLiveActivity: false
+                hasActiveLiveActivity: false,
+                nexusEvent: cache.nexusEvent
             ) {
                 let _ = try? manager.startActivity(
                     match: next,
