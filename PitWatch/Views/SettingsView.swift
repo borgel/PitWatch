@@ -89,6 +89,37 @@ struct SettingsView: View {
                     store.saveConfig(config)
                 }
             }
+
+            Section {
+                SecureField("Nexus API Key", text: Binding(
+                    get: { config.nexusApiKey ?? "" },
+                    set: { config.nexusApiKey = $0.isEmpty ? nil : $0 }
+                ))
+                .textContentType(.password)
+                .autocorrectionDisabled()
+
+                if config.isNexusConfigured {
+                    if let nexusDate = store.loadRefreshState().nexusLastRefreshDate {
+                        LabeledContent("Last Nexus Refresh", value: nexusDate.formatted(.relative(presentation: .named)))
+                    }
+                    if let nexusError = store.loadRefreshState().nexusLastError {
+                        Label(nexusError, systemImage: "info.circle")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Link("Get a Nexus API key", destination: URL(string: "https://frc.nexus/api")!)
+                    .font(.caption)
+
+                Text("Data provided by frc.nexus")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            } header: {
+                Text("FRC Nexus")
+            } footer: {
+                Text("When available, Nexus provides real-time match queue times and status.")
+            }
         }
         .navigationTitle("Settings")
         .onChange(of: config) { _, newConfig in
