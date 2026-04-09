@@ -16,13 +16,13 @@ struct WatchNextMatchWidget: Widget {
         }
         .configurationDisplayName("Next Match")
         .description("Track your team's next FRC match.")
-        .supportedFamilies([.accessoryCircular, .accessoryRectangular, .accessoryCorner])
+        .supportedFamilies([.accessoryCircular, .accessoryRectangular])
     }
 }
 
 struct WatchWidgetEntryView: View {
     @Environment(\.widgetFamily) var family
-    let entry: WatchMatchEntry
+    let entry: PhaseComplicationEntry
     var body: some View {
         switch family {
         case .accessoryCircular: CircularComplicationView(entry: entry)

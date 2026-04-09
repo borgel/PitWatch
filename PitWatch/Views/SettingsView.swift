@@ -80,15 +80,67 @@ struct SettingsView: View {
             }
 
             Section("Account") {
-                LabeledContent("Team", value: "\(config.teamNumber ?? 0)")
-                LabeledContent("API Key") {
-                    Text(maskedKey).foregroundStyle(.secondary)
+                HStack {
+                    Text("Team")
+                    Spacer()
+                    TextField("Number", text: Binding(
+                        get: { config.teamNumber.map(String.init) ?? "" },
+                        set: { config.teamNumber = Int($0) }
+                    ))
+                    .keyboardType(.numberPad)
+                    .multilineTextAlignment(.trailing)
+                    .frame(width: 80)
                 }
+
+                LabeledContent("TBA API Key") {
+                    Text(maskedKey(config.apiKey)).foregroundStyle(.secondary)
+                }
+
+                LabeledContent("Nexus API Key") {
+                    Text(maskedKey(config.nexusApiKey)).foregroundStyle(.secondary)
+                }
+
                 Button("Clear All Data", role: .destructive) {
                     config = UserConfig()
                     store.saveConfig(config)
                 }
             }
+
+            Section {
+                TextField("API Key", text: Binding(
+                    get: { config.nexusApiKey ?? "" },
+                    set: { config.nexusApiKey = $0.isEmpty ? nil : $0 }
+                ))
+                .textContentType(.password)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
+
+                if config.isNexusConfigured {
+                    if let nexusDate = store.loadRefreshState().nexusLastRefreshDate {
+                        LabeledContent("Last Refresh", value: nexusDate.formatted(.relative(presentation: .named)))
+                    }
+                    if let nexusError = store.loadRefreshState().nexusLastError {
+                        Label(nexusError, systemImage: "info.circle")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Link("Get a Nexus API key", destination: URL(string: "https://frc.nexus/api")!)
+                    .font(.caption)
+
+                Text("Data provided by frc.nexus")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            } header: {
+                Text("FRC Nexus")
+            } footer: {
+                Text("When available, Nexus provides real-time match queue times and status.")
+            }
+
+            #if DEBUG
+            nexusDemoSection
+            #endif
         }
         .navigationTitle("Settings")
         .onChange(of: config) { _, newConfig in
@@ -96,48 +148,176 @@ struct SettingsView: View {
         }
     }
 
-    private var maskedKey: String {
-        guard let key = config.apiKey, key.count > 8 else { return "Not set" }
+    private func maskedKey(_ key: String?) -> String {
+        guard let key, !key.isEmpty else { return "Not set" }
+        guard key.count > 8 else { return String(repeating: "•", count: key.count) }
         return String(key.prefix(4)) + "••••" + String(key.suffix(4))
     }
 
     #if DEBUG
+    @State private var nexusDemoEventKey = ""
+    @State private var nexusDemoLoading = false
+    @State private var nexusDemoResult: String?
+
+    private var nexusDemoSection: some View {
+        Section {
+            TextField("Nexus Event Key", text: $nexusDemoEventKey)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
+
+            Button {
+                Task { await loadNexusDemo() }
+            } label: {
+                if nexusDemoLoading {
+                    ProgressView().frame(maxWidth: .infinity)
+                } else {
+                    Text("Load Nexus Demo").frame(maxWidth: .infinity)
+                }
+            }
+            .disabled(nexusDemoEventKey.isEmpty || !config.isNexusConfigured || nexusDemoLoading)
+            .foregroundStyle(.orange)
+
+            if let result = nexusDemoResult {
+                Text(result)
+                    .font(.caption)
+                    .foregroundStyle(result.starts(with: "Error") ? .red : .green)
+            }
+        } header: {
+            Text("Nexus Demo Mode")
+        } footer: {
+            Text("Fetches live Nexus data and generates mock TBA matches so you can test the full UI.")
+        }
+    }
+
+    private func loadNexusDemo() async {
+        guard let nexusKey = config.nexusApiKey, !nexusKey.isEmpty else {
+            nexusDemoResult = "Error: Set a Nexus API key first"
+            return
+        }
+
+        nexusDemoLoading = true
+        nexusDemoResult = nil
+
+        let client = NexusClient(apiKey: nexusKey)
+        guard let nexusEvent = await client.fetchEventStatus(eventKey: nexusDemoEventKey) else {
+            nexusDemoResult = "Error: Could not fetch event '\(nexusDemoEventKey)' from Nexus"
+            nexusDemoLoading = false
+            return
+        }
+
+        // Generate mock TBA data from Nexus matches
+        let teamNumber = config.teamNumber ?? 1234
+        let teamKey = "frc\(teamNumber)"
+        let eventKey = nexusDemoEventKey
+
+        let mockEvent = Event.mock(key: eventKey, name: "Nexus Demo Event")
+        var mockMatches: [Match] = []
+
+        for (index, nexusMatch) in nexusEvent.matches.enumerated() {
+            let parsed = parseNexusLabelForMock(nexusMatch.label)
+            let compLevel = parsed.compLevel
+            let setNumber = parsed.setNumber
+            let matchNumber = parsed.matchNumber
+
+            // Ensure tracked team is on an alliance for every few matches
+            var redTeams = nexusMatch.redTeams.map { "frc\($0)" }
+            var blueTeams = nexusMatch.blueTeams.map { "frc\($0)" }
+
+            // Put tracked team on red for every 3rd match (so they appear in the schedule)
+            if index % 3 == 0 {
+                if !redTeams.contains(teamKey) && !blueTeams.contains(teamKey) {
+                    if redTeams.count > 0 { redTeams[0] = teamKey }
+                    else if blueTeams.count > 0 { blueTeams[0] = teamKey }
+                }
+            }
+
+            let startTime: Int64? = nexusMatch.times.estimatedStartTime.map { $0 / 1000 }
+
+            let match = Match.mock(
+                key: "\(eventKey)_\(compLevel)\(matchNumber)",
+                compLevel: compLevel,
+                setNumber: setNumber,
+                matchNumber: matchNumber,
+                eventKey: eventKey,
+                time: startTime,
+                redTeamKeys: redTeams,
+                blueTeamKeys: blueTeams
+            )
+            mockMatches.append(match)
+        }
+
+        // Write to cache
+        var cache = store.loadEventCache()
+        cache.event = mockEvent
+        cache.matches = mockMatches
+        cache.nexusEvent = nexusEvent
+        cache.rankings = nil
+        cache.oprs = nil
+        store.saveEventCache(cache)
+
+        // Also update config to point at this event
+        config.eventKeyOverride = eventKey
+        store.saveConfig(config)
+
+        WidgetCenter.shared.reloadAllTimelines()
+
+        nexusDemoResult = "Loaded \(nexusEvent.matches.count) Nexus matches, \(mockMatches.filter { m in m.alliances.values.contains { $0.teamKeys.contains(teamKey) } }.count) are your team's"
+        nexusDemoLoading = false
+    }
+
+    private func parseNexusLabelForMock(_ label: String) -> (compLevel: String, setNumber: Int, matchNumber: Int) {
+        let parts = label.split(separator: " ", maxSplits: 1)
+        guard parts.count == 2 else { return ("qm", 1, 1) }
+
+        let levelStr = parts[0].lowercased()
+        let numberStr = String(parts[1])
+
+        let compLevel: String
+        switch levelStr {
+        case "practice": compLevel = "p"
+        case "qualification": compLevel = "qm"
+        case "eighthfinal": compLevel = "ef"
+        case "quarterfinal": compLevel = "qf"
+        case "semifinal": compLevel = "sf"
+        case "final": compLevel = "f"
+        default: compLevel = levelStr
+        }
+
+        if numberStr.contains("-") {
+            let nums = numberStr.split(separator: "-").compactMap { Int($0) }
+            if nums.count == 2 {
+                return (compLevel, nums[0], nums[1])
+            }
+        }
+        return (compLevel, 1, Int(numberStr) ?? 1)
+    }
+
     private func startDemoLiveActivity() {
         #if canImport(ActivityKit) && os(iOS)
         let teamNum = config.teamNumber ?? 1234
-        let matchTime = Date.now.addingTimeInterval(45 * 60) // 45 min from now
 
-        let attributes = MatchActivityAttributes(
+        let attributes = FRCMatchAttributes(
             teamNumber: teamNum,
-            eventName: "Demo Regional",
-            matchKey: "2026demo_qm32",
-            matchLabel: "Qual 32",
-            compLevel: "qm",
-            redTeams: ["\(teamNum)", "5678", "9012"],
-            blueTeams: ["3456", "7890", "1111"],
-            trackedAllianceColor: "red"
+            matchNumber: 32,
+            matchLabel: "Q32",
+            alliance: .red
         )
 
-        let queueTime: Date? = config.queueOffsetMinutes > 0
-            ? matchTime.addingTimeInterval(-TimeInterval(config.queueOffsetMinutes * 60))
-            : nil
-
-        let state = MatchActivityAttributes.ContentState(
-            matchTime: matchTime,
-            queueTime: queueTime,
-            redScore: nil,
-            blueScore: nil,
-            winningAlliance: nil,
-            redAllianceOPR: 68.4,
-            blueAllianceOPR: 62.1,
-            matchState: .upcoming,
-            rank: 3,
-            record: "5-2-0"
+        let state = FRCMatchAttributes.ContentState(
+            currentPhase: .queueing,
+            phaseStartDate: .now.addingTimeInterval(-120),
+            phaseDeadline: .now.addingTimeInterval(300),
+            currentMatchOnField: 29,
+            lastUpdated: .now.addingTimeInterval(-90),
+            queueDeadline: .now.addingTimeInterval(-120),
+            onDeckDeadline: .now.addingTimeInterval(300),
+            onFieldDeadline: .now.addingTimeInterval(600),
+            matchEndDeadline: .now.addingTimeInterval(900)
         )
 
         let content = ActivityContent(state: state, staleDate: .now.addingTimeInterval(3600))
         do {
-            let activity = try Activity<MatchActivityAttributes>.request(
+            let activity = try Activity<FRCMatchAttributes>.request(
                 attributes: attributes,
                 content: content
             )

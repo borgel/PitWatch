@@ -19,11 +19,27 @@ struct LargeWidgetView: View {
                 }
             }
 
+            if let nowQueuing = entry.nowQueuing {
+                HStack(spacing: 4) {
+                    Image(systemName: "arrow.right.circle.fill")
+                        .font(.system(size: 9)).foregroundStyle(.orange)
+                    Text("Queuing: \(nowQueuing)")
+                        .font(.system(size: 10)).foregroundStyle(.orange)
+                }
+            }
+
             if let next = entry.nextMatch {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
                         Text("UP NEXT \u{2192}").font(.system(size: 10)).foregroundStyle(.secondary)
                         Text(next.label).font(.system(size: 14, weight: .bold))
+                        if let status = entry.nexusStatus {
+                            Text(status.uppercased())
+                                .font(.system(size: 8, weight: .bold))
+                                .padding(.horizontal, 4).padding(.vertical, 1)
+                                .background(nexusStatusColor(status).opacity(0.2), in: Capsule())
+                                .foregroundStyle(nexusStatusColor(status))
+                        }
                         Spacer()
                         if let target = entry.countdownTarget {
                             Text(target, style: .relative).font(.system(size: 12)).foregroundStyle(.secondary)

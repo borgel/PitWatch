@@ -1,0 +1,48 @@
+{
+  "dataAsOfTime": 1712000000000,
+  "nowQueuing": "Qualification 33",
+  "matches": [
+    {
+      "label": "Qualification 32",
+      "status": "On deck",
+      "redTeams": ["1234", "5678", "9012"],
+      "blueTeams": ["3456", "7890", "1111"],
+      "times": {
+        "estimatedQueueTime": 1711999200000,
+        "estimatedOnDeckTime": 1711999500000,
+        "estimatedOnFieldTime": 1711999800000,
+        "estimatedStartTime": 1712000000000,
+        "actualQueueTime": 1711999250000
+      }
+    },
+    {
+      "label": "Qualification 31",
+      "status": "On field",
+      "redTeams": ["1234", "2222", "3333"],
+      "blueTeams": ["4444", "5555", "6666"],
+      "times": {
+        "estimatedQueueTime": 1711998600000,
+        "estimatedOnDeckTime": 1711998900000,
+        "estimatedOnFieldTime": 1711999200000,
+        "estimatedStartTime": 1711999400000,
+        "actualQueueTime": 1711998650000
+      }
+    },
+    {
+      "label": "Quarterfinal 2-1",
+      "status": null,
+      "redTeams": ["1234", "5678", "9012"],
+      "blueTeams": ["3456", "7890", "1111"],
+      "times": {
+        "estimatedQueueTime": null,
+        "estimatedOnDeckTime": null,
+        "estimatedOnFieldTime": null,
+        "estimatedStartTime": null,
+        "actualQueueTime": null
+      },
+      "replayOf": null
+    }
+  ],
+  "announcements": [],
+  "partsRequests": []
+}

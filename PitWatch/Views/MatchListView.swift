@@ -31,7 +31,7 @@ struct MatchListView: View {
         .refreshable {
             await forceRefresh()
         }
-        .navigationTitle("Team \(config.teamNumber ?? 0)")
+        .navigationTitle("Team \(config.teamNumber.map(String.init) ?? "0")")
         .task {
             // Always show cached data immediately, refresh in background
             eventCache = store.loadEventCache()
@@ -49,6 +49,18 @@ struct MatchListView: View {
 
     private var matchList: some View {
         List {
+            if let nowQueuing = eventCache.nexusEvent?.nowQueuing {
+                Section {
+                    HStack {
+                        Image(systemName: "arrow.right.circle.fill")
+                            .foregroundStyle(.orange)
+                        Text("Now queuing: \(nowQueuing)")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                    }
+                }
+            }
+
             if let event = eventCache.event {
                 Section {
                     VStack(alignment: .leading, spacing: 4) {
@@ -67,6 +79,14 @@ struct MatchListView: View {
                     Label(error, systemImage: "exclamationmark.triangle.fill")
                         .foregroundStyle(.red)
                         .font(.caption)
+                }
+            }
+
+            if config.isNexusConfigured && eventCache.nexusEvent == nil && eventCache.event != nil {
+                Section {
+                    Label("Nexus unavailable — showing TBA times", systemImage: "info.circle")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
 
@@ -117,7 +137,8 @@ struct MatchListView: View {
                 teamKey: config.teamKey ?? "",
                 oprs: eventCache.oprs,
                 useScheduledTime: config.useScheduledTime,
-                queueOffsetMinutes: config.queueOffsetMinutes
+                queueOffsetMinutes: config.queueOffsetMinutes,
+                nexusEvent: eventCache.nexusEvent
             )
         }
         .tint(.primary)

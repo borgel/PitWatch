@@ -22,8 +22,18 @@ struct MediumWidgetView: View {
                     if let next = entry.nextMatch {
                         HStack {
                             Text(next.shortLabel).font(.system(size: 16, weight: .bold))
+                            if let status = entry.nexusStatus {
+                                Text(status.uppercased())
+                                    .font(.system(size: 7, weight: .bold))
+                                    .padding(.horizontal, 3).padding(.vertical, 1)
+                                    .background(nexusStatusColor(status).opacity(0.2), in: Capsule())
+                                    .foregroundStyle(nexusStatusColor(status))
+                            }
                             Spacer()
-                            if let date = next.matchDate(useScheduled: entry.useScheduledTime) {
+                            if let target = entry.countdownTarget {
+                                Text(target, style: .relative)
+                                    .font(.system(size: 10)).foregroundStyle(.secondary)
+                            } else if let date = next.matchDate(useScheduled: entry.useScheduledTime) {
                                 Text(formatMatchTime(date, prefix: entry.timePrefix))
                                     .font(.system(size: 10)).foregroundStyle(.secondary)
                             }

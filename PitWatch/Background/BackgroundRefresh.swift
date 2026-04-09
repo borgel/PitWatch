@@ -77,6 +77,7 @@ enum BackgroundRefresh {
                 cache.matches = []
                 cache.rankings = nil
                 cache.oprs = nil
+                cache.nexusEvent = nil
             }
         } else if let active = cache.event?.key {
             eventKey = active
@@ -100,17 +101,17 @@ enum BackgroundRefresh {
 
         // Fetch event details if not cached
         if cache.event == nil {
-            let eventResult = try await client.fetch(Event.self, path: Endpoints.event(key: eventKey))
-            if case .data(let event, _) = eventResult {
+            if let eventResult = try? await client.fetch(Event.self, path: Endpoints.event(key: eventKey)),
+               case .data(let event, _) = eventResult {
                 cache.event = event
             }
         }
 
-        // Fetch matches
+        // Fetch matches (non-fatal — Nexus-only events won't exist on TBA)
         let matchesPath = Endpoints.eventMatches(key: eventKey)
         let matchesLM = forceReload ? nil : refreshState.lastModified(for: matchesPath)
-        let matchesResult = try await client.fetch([Match].self, path: matchesPath, lastModified: matchesLM)
-        if case .data(let matches, let lm) = matchesResult {
+        if let matchesResult = try? await client.fetch([Match].self, path: matchesPath, lastModified: matchesLM),
+           case .data(let matches, let lm) = matchesResult {
             cache.matches = matches
             refreshState.setLastModified(lm, for: matchesPath)
         }
@@ -118,8 +119,8 @@ enum BackgroundRefresh {
         // Fetch rankings
         let rankingsPath = Endpoints.eventRankings(key: eventKey)
         let rankingsLM = forceReload ? nil : refreshState.lastModified(for: rankingsPath)
-        let rankingsResult = try await client.fetch(EventRankings.self, path: rankingsPath, lastModified: rankingsLM)
-        if case .data(let rankings, let lm) = rankingsResult {
+        if let rankingsResult = try? await client.fetch(EventRankings.self, path: rankingsPath, lastModified: rankingsLM),
+           case .data(let rankings, let lm) = rankingsResult {
             cache.rankings = rankings
             refreshState.setLastModified(lm, for: rankingsPath)
         }
@@ -127,10 +128,21 @@ enum BackgroundRefresh {
         // Fetch OPRs
         let oprsPath = Endpoints.eventOPRs(key: eventKey)
         let oprsLM = forceReload ? nil : refreshState.lastModified(for: oprsPath)
-        let oprsResult = try await client.fetch(EventOPRs.self, path: oprsPath, lastModified: oprsLM)
-        if case .data(let oprs, let lm) = oprsResult {
+        if let oprsResult = try? await client.fetch(EventOPRs.self, path: oprsPath, lastModified: oprsLM),
+           case .data(let oprs, let lm) = oprsResult {
             cache.oprs = oprs
             refreshState.setLastModified(lm, for: oprsPath)
+        }
+
+        // Fetch Nexus event status (non-fatal)
+        if let nexusKey = config.nexusApiKey, !nexusKey.isEmpty {
+            let nexusClient = NexusClient(apiKey: nexusKey)
+            let nexusResult = await nexusClient.fetchEventStatus(eventKey: eventKey)
+            cache.nexusEvent = nexusResult
+            refreshState.nexusLastRefreshDate = .now
+            refreshState.nexusLastError = nexusResult == nil ? "Nexus data unavailable" : nil
+        } else {
+            cache.nexusEvent = nil
         }
 
         // Save
@@ -161,35 +173,33 @@ enum BackgroundRefresh {
         let schedule = MatchSchedule(matches: cache.matches, teamKey: teamKey)
 
         if let next = schedule.nextMatch {
+            let nexusMatch = NexusMatchMerge.nexusInfo(for: next, in: cache.nexusEvent)
+
             if manager.hasActiveActivity {
                 await manager.updateActivity(
                     match: next,
-                    useScheduledTime: config.useScheduledTime,
-                    queueOffsetMinutes: config.queueOffsetMinutes,
-                    ranking: cache.rankings?.rankings.first { $0.teamKey == teamKey },
-                    oprs: cache.oprs
+                    nexusMatch: nexusMatch,
+                    nexusEvent: cache.nexusEvent
                 )
             } else if schedule.shouldStartLiveActivity(
                 now: .now, mode: config.liveActivityMode,
                 useScheduledTime: config.useScheduledTime,
-                hasActiveLiveActivity: false
+                hasActiveLiveActivity: false,
+                nexusEvent: cache.nexusEvent
             ) {
                 let _ = try? manager.startActivity(
                     match: next,
                     teamNumber: config.teamNumber ?? 0,
                     teamKey: teamKey,
-                    eventName: cache.event?.shortName ?? cache.event?.name ?? "",
-                    useScheduledTime: config.useScheduledTime,
-                    queueOffsetMinutes: config.queueOffsetMinutes,
-                    ranking: cache.rankings?.rankings.first { $0.teamKey == teamKey },
-                    oprs: cache.oprs
+                    nexusMatch: nexusMatch,
+                    nexusEvent: cache.nexusEvent
                 )
             }
         }
 
         // End completed match Live Activities
         if let last = schedule.lastPlayedMatch {
-            await manager.endActivity(for: last.key)
+            await manager.endActivity(matchLabel: last.shortLabel)
         }
         #endif
     }

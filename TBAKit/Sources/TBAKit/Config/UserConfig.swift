@@ -7,6 +7,7 @@ public struct UserConfig: Codable, Sendable, Equatable {
     public var useScheduledTime: Bool
     public var queueOffsetMinutes: Int
     public var liveActivityMode: LiveActivityMode
+    public var nexusApiKey: String?
 
     public init() {
         self.teamNumber = nil
@@ -15,10 +16,15 @@ public struct UserConfig: Codable, Sendable, Equatable {
         self.useScheduledTime = false
         self.queueOffsetMinutes = 0
         self.liveActivityMode = .nearMatch
+        self.nexusApiKey = nil
     }
 
     public var isConfigured: Bool {
         teamNumber != nil && apiKey != nil && !apiKey!.isEmpty
+    }
+
+    public var isNexusConfigured: Bool {
+        nexusApiKey != nil && !nexusApiKey!.isEmpty
     }
 
     public var teamKey: String? {

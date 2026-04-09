@@ -22,7 +22,16 @@ struct SmallWidgetView: View {
             Spacer()
             if let next = entry.nextMatch {
                 VStack(spacing: 2) {
-                    Text("NEXT MATCH").font(.system(size: 10)).foregroundStyle(.secondary)
+                    HStack(spacing: 4) {
+                        Text("NEXT MATCH").font(.system(size: 10)).foregroundStyle(.secondary)
+                        if let status = entry.nexusStatus {
+                            Text(status.uppercased())
+                                .font(.system(size: 7, weight: .bold))
+                                .padding(.horizontal, 3).padding(.vertical, 1)
+                                .background(nexusStatusColor(status).opacity(0.2), in: Capsule())
+                                .foregroundStyle(nexusStatusColor(status))
+                        }
+                    }
                     Text(next.shortLabel).font(.system(size: 26, weight: .bold))
                     if let target = entry.countdownTarget {
                         Text(target, style: .relative).font(.system(size: 12)).foregroundStyle(.secondary)
