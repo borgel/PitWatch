@@ -80,7 +80,14 @@ struct SettingsView: View {
             }
 
             Section("Account") {
-                LabeledContent("Team", value: "\(config.teamNumber ?? 0)")
+                HStack {
+                    Text("Team")
+                    Spacer()
+                    TextField("Number", value: $config.teamNumber, format: .number)
+                        .keyboardType(.numberPad)
+                        .multilineTextAlignment(.trailing)
+                        .frame(width: 80)
+                }
 
                 LabeledContent("TBA API Key") {
                     Text(maskedKey(config.apiKey)).foregroundStyle(.secondary)
