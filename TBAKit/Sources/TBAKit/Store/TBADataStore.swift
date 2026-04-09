@@ -6,6 +6,7 @@ public struct EventCache: Codable, Sendable {
     public var rankings: EventRankings?
     public var oprs: EventOPRs?
     public var teams: [Team]
+    public var nexusEvent: NexusEvent?
 }
 
 extension EventCache {
@@ -16,6 +17,7 @@ extension EventCache {
         self.rankings = nil
         self.oprs = nil
         self.teams = []
+        self.nexusEvent = nil
     }
 }
 
@@ -24,12 +26,16 @@ public struct RefreshState: Codable, Sendable {
     public var lastModifiedHeaders: [String: String]
     public var isRefreshing: Bool
     public var lastError: String?
+    public var nexusLastRefreshDate: Date?
+    public var nexusLastError: String?
 
     public init() {
         self.lastRefreshDate = nil
         self.lastModifiedHeaders = [:]
         self.isRefreshing = false
         self.lastError = nil
+        self.nexusLastRefreshDate = nil
+        self.nexusLastError = nil
     }
 
     public func lastModified(for path: String) -> String? {

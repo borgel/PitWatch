@@ -51,3 +51,12 @@ import Foundation
     config.queueOffsetMinutes = 20
     #expect(config.queueOffset == 1200)
 }
+
+@Test func nexusApiKeyConfig() {
+    var config = UserConfig()
+    #expect(config.nexusApiKey == nil)
+    #expect(config.isNexusConfigured == false)
+
+    config.nexusApiKey = "test-nexus-key"
+    #expect(config.isNexusConfigured == true)
+}
