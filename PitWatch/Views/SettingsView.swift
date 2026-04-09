@@ -70,7 +70,13 @@ struct SettingsView: View {
 
                 #if DEBUG
                 Button("Preview Live Activity (Demo)") {
+                    injectDemoMatch()
                     startDemoLiveActivity()
+                }
+                .foregroundStyle(.orange)
+
+                Button("Inject Demo Match (Widgets)") {
+                    injectDemoMatch()
                 }
                 .foregroundStyle(.orange)
                 #endif
@@ -316,6 +322,35 @@ struct SettingsView: View {
             }
         }
         return (compLevel, 1, Int(numberStr) ?? 1)
+    }
+
+    private func injectDemoMatch() {
+        let teamNum = config.teamNumber ?? 1234
+        let teamKey = "frc\(teamNum)"
+        let matchTime = Date.now.addingTimeInterval(5 * 60) // 5 min from now
+
+        let match = Match.mock(
+            key: "2026demo_qm32",
+            compLevel: "qm",
+            setNumber: 1,
+            matchNumber: 32,
+            eventKey: "2026demo",
+            time: Int64(matchTime.timeIntervalSince1970),
+            redTeamKeys: [teamKey, "frc5678", "frc9012"],
+            blueTeamKeys: ["frc3456", "frc7890", "frc1111"]
+        )
+
+        let event = Event.mock(key: "2026demo", name: "Demo Regional", shortName: "Demo")
+
+        var cache = store.loadEventCache()
+        // Keep existing matches but add the demo one if not already there
+        cache.matches.removeAll { $0.key == "2026demo_qm32" }
+        cache.matches.append(match)
+        cache.event = event
+        store.saveEventCache(cache)
+
+        WidgetCenter.shared.reloadAllTimelines()
+        print("✅ Demo match injected — widgets should update")
     }
 
     private func startDemoLiveActivity() {

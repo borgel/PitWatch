@@ -30,13 +30,18 @@ struct WidgetEntryView: View {
     let entry: MatchWidgetEntry
 
     var body: some View {
-        switch family {
-        case .systemSmall: SmallWidgetView(entry: entry)
-        case .systemMedium: MediumWidgetView(entry: entry)
-        case .systemLarge: LargeWidgetView(entry: entry)
-        case .accessoryCircular: CircularLockScreenView(entry: entry)
-        case .accessoryRectangular: RectangularLockScreenView(entry: entry)
-        default: SmallWidgetView(entry: entry)
+        Group {
+            switch family {
+            case .systemSmall: SmallWidgetView(entry: entry)
+            case .systemMedium: MediumWidgetView(entry: entry)
+            case .systemLarge: LargeWidgetView(entry: entry)
+            case .accessoryCircular: CircularLockScreenView(entry: entry)
+            case .accessoryRectangular: RectangularLockScreenView(entry: entry)
+            default: SmallWidgetView(entry: entry)
+            }
+        }
+        .containerBackground(for: .widget) {
+            Color.clear
         }
     }
 }
