@@ -62,7 +62,9 @@ enum MatchDynamicIsland {
                 .font(.system(size: 11, weight: .bold))
                 .foregroundStyle(.green)
         case .upcoming, .imminent:
-            if let target = context.state.queueTime ?? context.state.matchTime {
+            let target = nextNexusPhaseDate(state: context.state)
+                ?? context.state.queueTime ?? context.state.matchTime
+            if let target {
                 Text(target, style: .timer)
                     .font(.system(size: 12, weight: .bold))
                     .monospacedDigit()
@@ -90,19 +92,25 @@ enum MatchDynamicIsland {
                 .fontWeight(.bold)
                 .foregroundStyle(.green)
         case .upcoming, .imminent:
-            if let target = context.state.queueTime ?? context.state.matchTime {
-                VStack(alignment: .trailing) {
+            VStack(alignment: .trailing) {
+                if let status = context.state.nexusStatus {
+                    Text(status.uppercased())
+                        .font(.system(size: 8, weight: .bold))
+                        .padding(.horizontal, 4).padding(.vertical, 1)
+                        .background(nexusStatusColor(status).opacity(0.2), in: Capsule())
+                        .foregroundStyle(nexusStatusColor(status))
+                }
+                let target = nextNexusPhaseDate(state: context.state)
+                    ?? context.state.queueTime ?? context.state.matchTime
+                if let target {
                     Text(target, style: .timer)
                         .font(.system(size: 18, weight: .bold))
                         .monospacedDigit()
-                    Text(context.state.queueTime != nil ? "to queue" : "to match")
+                    Text(nextNexusPhaseLabel(state: context.state)
+                         ?? (context.state.queueTime != nil ? "to queue" : "to match"))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
-            } else {
-                Text("--")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(.secondary)
             }
         }
     }
@@ -127,4 +135,27 @@ enum MatchDynamicIsland {
             }
         }
     }
+}
+
+private func nextNexusPhaseDate(state: MatchActivityAttributes.ContentState) -> Date? {
+    let now = Date.now
+    let phases: [Date?] = [
+        state.nexusQueueTime, state.nexusOnDeckTime,
+        state.nexusOnFieldTime, state.nexusStartTime
+    ]
+    return phases.compactMap { $0 }.first { $0 > now }
+}
+
+private func nextNexusPhaseLabel(state: MatchActivityAttributes.ContentState) -> String? {
+    let now = Date.now
+    let phases: [(String, Date?)] = [
+        ("to queue", state.nexusQueueTime),
+        ("to on deck", state.nexusOnDeckTime),
+        ("to on field", state.nexusOnFieldTime),
+        ("to start", state.nexusStartTime),
+    ]
+    return phases.first { _, date in
+        guard let date else { return false }
+        return date > now
+    }?.0
 }

@@ -10,19 +10,31 @@ struct LiveActivityLockScreenView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text(context.attributes.matchLabel).font(.headline)
+                if let status = context.state.nexusStatus {
+                    Text(status.uppercased())
+                        .font(.system(size: 9, weight: .bold))
+                        .padding(.horizontal, 6).padding(.vertical, 2)
+                        .background(nexusStatusColor(status).opacity(0.2), in: Capsule())
+                        .foregroundStyle(nexusStatusColor(status))
+                }
                 Spacer()
                 Text(context.attributes.eventName).font(.subheadline).foregroundStyle(.secondary)
             }
 
             switch context.state.matchState {
             case .upcoming, .imminent:
-                VStack(spacing: 2) {
-                    let target = context.state.queueTime ?? context.state.matchTime
+                VStack(spacing: 4) {
+                    if context.state.nexusStartTime != nil {
+                        NexusLiveActivityTimes(state: context.state)
+                    }
+                    let target = nextNexusPhaseDate(state: context.state)
+                        ?? context.state.queueTime ?? context.state.matchTime
                     if let target {
                         Text(target, style: .timer)
                             .font(.system(size: 32, weight: .bold)).monospacedDigit()
                             .frame(maxWidth: .infinity, alignment: .center)
-                        Text(context.state.queueTime != nil ? "to queue" : "to match")
+                        Text(nextNexusPhaseLabel(state: context.state)
+                             ?? (context.state.queueTime != nil ? "to queue" : "to match"))
                             .font(.caption).foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, alignment: .center)
                     }
@@ -76,4 +88,64 @@ struct LiveActivityLockScreenView: View {
             }
         }
     }
+}
+
+private struct NexusLiveActivityTimes: View {
+    let state: MatchActivityAttributes.ContentState
+
+    private var phases: [(label: String, date: Date, isPast: Bool)] {
+        let now = Date.now
+        var result: [(String, Date, Bool)] = []
+        if let d = state.nexusQueueTime { result.append(("Queue", d, d <= now)) }
+        if let d = state.nexusOnDeckTime { result.append(("Deck", d, d <= now)) }
+        if let d = state.nexusOnFieldTime { result.append(("Field", d, d <= now)) }
+        if let d = state.nexusStartTime { result.append(("Start", d, d <= now)) }
+        return result
+    }
+
+    private var nextIndex: Int? { phases.firstIndex { !$0.isPast } }
+
+    var body: some View {
+        HStack(spacing: 10) {
+            ForEach(Array(phases.enumerated()), id: \.offset) { index, phase in
+                VStack(spacing: 1) {
+                    Text(phase.label)
+                        .font(.system(size: 8))
+                        .foregroundStyle(index == nextIndex ? .primary : .tertiary)
+                    Text(formatTime(phase.date))
+                        .font(.system(size: 11, weight: index == nextIndex ? .bold : .regular))
+                        .foregroundColor(index == nextIndex ? .accentColor : (phase.isPast ? .gray : .secondary))
+                }
+            }
+        }
+    }
+
+    private func formatTime(_ date: Date) -> String {
+        let fmt = DateFormatter()
+        fmt.dateFormat = "h:mm"
+        return fmt.string(from: date)
+    }
+}
+
+private func nextNexusPhaseDate(state: MatchActivityAttributes.ContentState) -> Date? {
+    let now = Date.now
+    let phases: [Date?] = [
+        state.nexusQueueTime, state.nexusOnDeckTime,
+        state.nexusOnFieldTime, state.nexusStartTime
+    ]
+    return phases.compactMap { $0 }.first { $0 > now }
+}
+
+private func nextNexusPhaseLabel(state: MatchActivityAttributes.ContentState) -> String? {
+    let now = Date.now
+    let phases: [(String, Date?)] = [
+        ("to queue", state.nexusQueueTime),
+        ("to on deck", state.nexusOnDeckTime),
+        ("to on field", state.nexusOnFieldTime),
+        ("to start", state.nexusStartTime),
+    ]
+    return phases.first { _, date in
+        guard let date else { return false }
+        return date > now
+    }?.0
 }
