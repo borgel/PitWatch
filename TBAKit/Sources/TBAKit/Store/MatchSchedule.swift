@@ -21,9 +21,31 @@ public struct MatchSchedule: Sendable {
     }
 
     /// Adaptive refresh interval in seconds based on proximity to next match.
-    public func refreshInterval(now: Date, useScheduledTime: Bool) -> TimeInterval {
-        guard let next = nextMatch,
-              let matchDate = referenceDate(for: next, useScheduledTime: useScheduledTime) else {
+    /// When `nexusEvent` is provided and the next match has correlated Nexus data,
+    /// uses the nearest Nexus phase time for tighter intervals.
+    public func refreshInterval(now: Date, useScheduledTime: Bool, nexusEvent: NexusEvent? = nil) -> TimeInterval {
+        guard let next = nextMatch else {
+            return 86400 // No upcoming match — once per day
+        }
+
+        // If Nexus data available, use the nearest phase time for tighter refresh
+        if let nexusEvent,
+           let nexusMatch = NexusMatchMerge.nexusInfo(for: next, in: nexusEvent),
+           let nextPhase = nexusMatch.times.nextPhaseDate(after: now) {
+            let timeUntil = nextPhase.date.timeIntervalSince(now)
+            if timeUntil < 0 && timeUntil > -900 {
+                return 300  // Phase just passed -> 5 minutes
+            } else if timeUntil <= 600 {
+                return 300  // Within 10 min of phase -> 5 minutes
+            } else if timeUntil <= 1800 {
+                return 600  // Within 30 min -> 10 minutes
+            } else {
+                return 900  // More than 30 min -> 15 minutes
+            }
+        }
+
+        // Fall back to TBA-based intervals (existing logic)
+        guard let matchDate = referenceDate(for: next, useScheduledTime: useScheduledTime) else {
             return 86400 // No upcoming match — once per day
         }
 
@@ -41,8 +63,8 @@ public struct MatchSchedule: Sendable {
     }
 
     /// The date at which the next widget reload should be requested.
-    public func nextReloadDate(now: Date, useScheduledTime: Bool) -> Date {
-        now.addingTimeInterval(refreshInterval(now: now, useScheduledTime: useScheduledTime))
+    public func nextReloadDate(now: Date, useScheduledTime: Bool, nexusEvent: NexusEvent? = nil) -> Date {
+        now.addingTimeInterval(refreshInterval(now: now, useScheduledTime: useScheduledTime, nexusEvent: nexusEvent))
     }
 
     /// Whether a Live Activity should be auto-started given the mode and current time.
