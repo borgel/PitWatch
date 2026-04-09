@@ -34,4 +34,21 @@ public final class NexusClient: Sendable {
             return nil
         }
     }
+
+    /// Fetches pit map data from Nexus. Returns nil on any failure.
+    public func fetchPitMap(eventKey: String) async -> PitMap? {
+        let url = baseURL.appendingPathComponent("event/\(eventKey)/map")
+        var request = URLRequest(url: url)
+        request.setValue(apiKey, forHTTPHeaderField: "Nexus-Api-Key")
+        request.setValue("PitWatch", forHTTPHeaderField: "User-Agent")
+        do {
+            let (data, response) = try await session.data(for: request)
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+                return nil
+            }
+            return try JSONDecoder().decode(PitMap.self, from: data)
+        } catch {
+            return nil
+        }
+    }
 }

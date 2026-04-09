@@ -8,6 +8,8 @@ struct MatchListView: View {
     @State private var eventCache: EventCache
     @State private var isLoading = false
     @State private var errorMessage: String?
+    @State private var pitMap: PitMap?
+    @State private var pitMapLoading = false
 
     init(config: Binding<UserConfig>, store: TBADataStore) {
         self._config = config
@@ -74,6 +76,20 @@ struct MatchListView: View {
                             Text("Nexus unavailable — showing TBA times")
                                 .font(.caption2)
                                 .foregroundStyle(.tertiary)
+                        }
+                    }
+
+                    if config.isNexusConfigured {
+                        NavigationLink {
+                            if let pitMap {
+                                PitMapView(pitMap: pitMap, teamNumber: config.teamNumber ?? 0)
+                            } else {
+                                ProgressView("Loading pit map...")
+                                    .task { await loadPitMap() }
+                            }
+                        } label: {
+                            Label("Pit Map", systemImage: "map")
+                                .foregroundStyle(.orange)
                         }
                     }
                 }
@@ -158,6 +174,15 @@ struct MatchListView: View {
             errorMessage = "Failed to load: \(error.localizedDescription)"
         }
         isLoading = false
+    }
+
+    private func loadPitMap() async {
+        guard let nexusKey = config.nexusApiKey, !nexusKey.isEmpty,
+              let eventKey = config.eventKeyOverride ?? eventCache.event?.key else { return }
+        pitMapLoading = true
+        let client = NexusClient(apiKey: nexusKey)
+        pitMap = await client.fetchPitMap(eventKey: eventKey)
+        pitMapLoading = false
     }
 
     private func forceRefresh() async {
