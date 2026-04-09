@@ -77,6 +77,7 @@ enum BackgroundRefresh {
                 cache.matches = []
                 cache.rankings = nil
                 cache.oprs = nil
+                cache.nexusEvent = nil
             }
         } else if let active = cache.event?.key {
             eventKey = active
@@ -131,6 +132,17 @@ enum BackgroundRefresh {
         if case .data(let oprs, let lm) = oprsResult {
             cache.oprs = oprs
             refreshState.setLastModified(lm, for: oprsPath)
+        }
+
+        // Fetch Nexus event status (non-fatal)
+        if let nexusKey = config.nexusApiKey, !nexusKey.isEmpty {
+            let nexusClient = NexusClient(apiKey: nexusKey)
+            let nexusResult = await nexusClient.fetchEventStatus(eventKey: eventKey)
+            cache.nexusEvent = nexusResult
+            refreshState.nexusLastRefreshDate = .now
+            refreshState.nexusLastError = nexusResult == nil ? "Nexus data unavailable" : nil
+        } else {
+            cache.nexusEvent = nil
         }
 
         // Save
