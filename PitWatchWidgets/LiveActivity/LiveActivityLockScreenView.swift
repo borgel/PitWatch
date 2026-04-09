@@ -10,7 +10,7 @@ struct LiveActivityLockScreenView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text(context.attributes.matchLabel).font(.headline)
-                if let status = context.state.nexusStatus {
+                if let status = context.state.nexusStatus ?? currentNexusPhase(state: context.state) {
                     Text(status.uppercased())
                         .font(.system(size: 9, weight: .bold))
                         .padding(.horizontal, 6).padding(.vertical, 2)
@@ -148,4 +148,20 @@ private func nextNexusPhaseLabel(state: MatchActivityAttributes.ContentState) ->
         guard let date else { return false }
         return date > now
     }?.0
+}
+
+/// Returns the current phase the team is in (most recent past phase).
+private func currentNexusPhase(state: MatchActivityAttributes.ContentState) -> String? {
+    let now = Date.now
+    let phases: [(String, Date?)] = [
+        ("ON FIELD", state.nexusOnFieldTime),
+        ("ON DECK", state.nexusOnDeckTime),
+        ("QUEUING", state.nexusQueueTime),
+    ]
+    for (label, date) in phases {
+        if let date, date <= now {
+            return label
+        }
+    }
+    return nil
 }

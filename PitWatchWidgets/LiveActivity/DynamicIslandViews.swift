@@ -42,8 +42,15 @@ enum MatchDynamicIsland {
             Circle()
                 .fill(context.attributes.trackedAllianceColor == "red" ? Color.red : Color.blue)
                 .frame(width: 6, height: 6)
-            Text(context.attributes.matchLabel)
-                .font(.system(size: 12, weight: .semibold))
+            // Show current phase state if available, otherwise match label
+            if let phase = currentNexusPhase(state: context.state) {
+                Text(phase)
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(nexusStatusColor(phase))
+            } else {
+                Text(context.attributes.matchLabel)
+                    .font(.system(size: 12, weight: .semibold))
+            }
         }
     }
 
@@ -158,4 +165,26 @@ private func nextNexusPhaseLabel(state: MatchActivityAttributes.ContentState) ->
         guard let date else { return false }
         return date > now
     }?.0
+}
+
+/// Returns the current phase the team is in (most recent past phase).
+/// e.g., if queue time has passed but on-deck hasn't, returns "QUEUING".
+private func currentNexusPhase(state: MatchActivityAttributes.ContentState) -> String? {
+    let now = Date.now
+    let phases: [(String, Date?)] = [
+        ("ON FIELD", state.nexusOnFieldTime),
+        ("ON DECK", state.nexusOnDeckTime),
+        ("QUEUING", state.nexusQueueTime),
+    ]
+    // Return the most advanced phase that has passed
+    for (label, date) in phases {
+        if let date, date <= now {
+            return label
+        }
+    }
+    // No phase has passed yet — check if we have Nexus times at all
+    if state.nexusQueueTime != nil {
+        return nil // Has Nexus data but not queuing yet
+    }
+    return nil
 }
