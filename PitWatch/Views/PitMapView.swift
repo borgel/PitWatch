@@ -64,7 +64,7 @@ struct PitMapView: View {
                     }
                 }
         }
-        .background(Color(hex: "#1C1C1E"))
+        .background(Color(.systemBackground))
         .navigationTitle("Pit Map")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -76,15 +76,15 @@ struct PitMapView: View {
                 ForEach(Array(areas.keys), id: \.self) { key in
                     if let area = areas[key] {
                         Rectangle()
-                            .fill(Color.gray.opacity(0.15))
+                            .fill(Color(.secondarySystemFill))
                             .frame(
                                 width: area.size.x * scale,
                                 height: area.size.y * scale
                             )
                             .overlay(
                                 Text(area.label)
-                                    .font(.system(size: max(6, 9 * scale), weight: .medium))
-                                    .foregroundStyle(.white.opacity(0.3))
+                                    .font(.system(size: max(8, 12 * scale), weight: .semibold))
+                                    .foregroundStyle(.secondary)
                             )
                             .offset(
                                 x: area.position.x * scale,
@@ -99,7 +99,7 @@ struct PitMapView: View {
                 ForEach(Array(walls.keys), id: \.self) { key in
                     if let wall = walls[key] {
                         Rectangle()
-                            .fill(Color.gray.opacity(0.4))
+                            .fill(Color(.separator))
                             .frame(
                                 width: max(1, wall.size.x * scale),
                                 height: max(1, wall.size.y * scale)
@@ -117,22 +117,22 @@ struct PitMapView: View {
                 if let pit = pitMap.pits[key] {
                     let isMyTeam = pit.team == teamStr
                     Rectangle()
-                        .fill(isMyTeam ? Color(hex: "#FF9500") : Color.gray.opacity(0.25))
+                        .fill(isMyTeam ? Color(hex: "#FF9500") : Color(.tertiarySystemFill))
                         .frame(
                             width: pit.size.x * scale,
                             height: pit.size.y * scale
                         )
                         .overlay(
                             Text(pit.team ?? "")
-                                .font(.system(size: max(4, 6 * scale), weight: isMyTeam ? .bold : .regular, design: .monospaced))
-                                .foregroundStyle(isMyTeam ? .black : .white.opacity(0.5))
+                                .font(.system(size: max(8, 16 * scale), weight: isMyTeam ? .bold : .medium, design: .monospaced))
+                                .foregroundStyle(isMyTeam ? .black : .primary)
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.3)
                         )
                         .overlay(
                             Rectangle()
                                 .strokeBorder(
-                                    isMyTeam ? Color(hex: "#FF9500") : .white.opacity(0.1),
+                                    isMyTeam ? Color(hex: "#FF9500") : Color(.separator),
                                     lineWidth: isMyTeam ? 2 : 0.5
                                 )
                         )
@@ -149,8 +149,8 @@ struct PitMapView: View {
                 ForEach(Array(labels.keys), id: \.self) { key in
                     if let label = labels[key] {
                         Text(label.label)
-                            .font(.system(size: max(5, 7 * scale), weight: .medium))
-                            .foregroundStyle(.white.opacity(0.4))
+                            .font(.system(size: max(8, 11 * scale), weight: .semibold))
+                            .foregroundStyle(.secondary)
                             .frame(
                                 width: label.size.x * scale,
                                 height: label.size.y * scale
