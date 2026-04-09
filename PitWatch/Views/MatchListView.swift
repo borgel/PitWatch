@@ -70,6 +70,11 @@ struct MatchListView: View {
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                         }
+                        if config.isNexusConfigured && eventCache.nexusEvent == nil {
+                            Text("Nexus unavailable — showing TBA times")
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                        }
                     }
                 }
             }
@@ -79,14 +84,6 @@ struct MatchListView: View {
                     Label(error, systemImage: "exclamationmark.triangle.fill")
                         .foregroundStyle(.red)
                         .font(.caption)
-                }
-            }
-
-            if config.isNexusConfigured && eventCache.nexusEvent == nil && eventCache.event != nil {
-                Section {
-                    Label("Nexus unavailable — showing TBA times", systemImage: "info.circle")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
                 }
             }
 
