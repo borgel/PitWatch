@@ -15,46 +15,50 @@ struct LargeWidgetView: View {
             HStack {
                 Text(String(entry.teamNumber ?? 0))
                     .font(.system(size: 14, weight: .bold, design: .monospaced))
+                if let color = entry.nextMatchAllianceColor, let next = entry.nextMatch {
+                    AllianceBadge(allianceColor: color, matchLabel: next.shortLabel)
+                }
                 if let name = entry.eventName {
                     Text("· \(name)")
                         .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(widgetLabelDim.opacity(0.65))
                 }
                 Spacer()
                 if let ranking = entry.ranking {
                     Text("#\(String(ranking.rank)) · \(ranking.record?.display ?? "")")
                         .font(.system(size: 11, design: .monospaced))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(widgetLabelDim.opacity(0.65))
                 }
             }
 
             if let nowQueuing = entry.nowQueuing {
                 HStack(spacing: 4) {
                     Circle()
-                        .fill(Color(hex: "#FF9500"))
+                        .fill(Phase.queueing.color)
                         .frame(width: 6, height: 6)
-                    Text("Queuing: \(nowQueuing)")
+                    Text("Now Queuing: \(nowQueuing)")
                         .font(.system(size: 10, weight: .medium, design: .monospaced))
-                        .foregroundStyle(Color(hex: "#FF9500"))
+                        .foregroundStyle(Phase.queueing.color)
                 }
             }
 
-            // Next match card
+            // Next match section (flat, no card background)
             if let next = entry.nextMatch {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
                         Text("NEXT")
                             .font(.system(size: 8, weight: .semibold, design: .monospaced))
                             .tracking(0.5)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(widgetLabelDim.opacity(0.45))
                         Text(next.label)
                             .font(.system(size: 14, weight: .bold, design: .monospaced))
                         if let status = entry.nexusStatus {
+                            let pillColor = entry.nextMatchPhase?.color ?? nexusStatusColor(status)
                             Text(status.uppercased())
                                 .font(.system(size: 8, weight: .bold, design: .monospaced))
                                 .padding(.horizontal, 4).padding(.vertical, 1)
-                                .background(nexusStatusColor(status).opacity(0.2), in: Capsule())
-                                .foregroundStyle(nexusStatusColor(status))
+                                .background(pillColor.opacity(0.2), in: Capsule())
+                                .foregroundStyle(pillColor)
                         }
                         Spacer()
                         VStack(alignment: .trailing, spacing: 1) {
@@ -62,12 +66,12 @@ struct LargeWidgetView: View {
                                 Text(target, style: .relative)
                                     .font(.system(size: 12, design: .monospaced))
                                     .monospacedDigit()
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(entry.nextMatchPhase?.color ?? widgetLabelDim.opacity(0.65))
                             }
                             if let time = matchTime {
                                 Text(formatMatchTime(time, prefix: entry.timePrefix))
                                     .font(.system(size: 10, design: .monospaced))
-                                    .foregroundStyle(.tertiary)
+                                    .foregroundStyle(widgetLabelDim.opacity(0.45))
                             }
                         }
                     }
@@ -80,8 +84,6 @@ struct LargeWidgetView: View {
                         )
                     }
                 }
-                .padding(8)
-                .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
             }
 
             // Upcoming matches
@@ -144,7 +146,7 @@ struct LargeWidgetView: View {
             Spacer(minLength: 0)
         }
         .containerBackground(for: .widget) {
-            Color(hex: "#1C1C1E")
+            widgetCardBackground
         }
     }
 }
