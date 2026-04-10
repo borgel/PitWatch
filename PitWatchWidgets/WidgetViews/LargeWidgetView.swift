@@ -50,7 +50,7 @@ struct LargeWidgetView: View {
             // Next match section (flat, no card background)
             if let next = entry.nextMatch {
                 VStack(alignment: .leading, spacing: 6) {
-                    HStack {
+                    HStack(alignment: .firstTextBaseline) {
                         Text("NEXT")
                             .font(.system(size: 8, weight: .semibold, design: .monospaced))
                             .tracking(0.5)
@@ -66,18 +66,19 @@ struct LargeWidgetView: View {
                                 .foregroundStyle(pillColor)
                         }
                         Spacer()
-                        VStack(alignment: .trailing, spacing: 1) {
-                            if let target = entry.countdownTarget {
-                                Text(target, style: .relative)
-                                    .font(.system(size: 12, design: .monospaced))
-                                    .monospacedDigit()
-                                    .foregroundStyle(entry.nextMatchPhase?.color ?? widgetLabelDim.opacity(0.65))
-                            }
-                            if let time = matchTime {
-                                Text(formatMatchTime(time, prefix: entry.timePrefix))
-                                    .font(.system(size: 10, design: .monospaced))
-                                    .foregroundStyle(widgetLabelDim.opacity(0.45))
-                            }
+                        if let target = entry.countdownTarget {
+                            Text(target, style: .relative)
+                                .font(.system(size: 12, design: .monospaced))
+                                .monospacedDigit()
+                                .foregroundStyle(entry.nextMatchPhase?.color ?? widgetLabelDim.opacity(0.65))
+                        }
+                    }
+                    if let time = matchTime {
+                        HStack {
+                            Spacer()
+                            Text(formatMatchTime(time, prefix: entry.timePrefix))
+                                .font(.system(size: 10, design: .monospaced))
+                                .foregroundStyle(widgetLabelDim.opacity(0.45))
                         }
                     }
                     ForEach(["red", "blue"], id: \.self) { color in
