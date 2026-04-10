@@ -5,10 +5,11 @@ import TBAKit
 struct LargeWidgetView: View {
     let entry: MatchWidgetEntry
 
-    /// Maximum number of upcoming match rows to render. Starts at 4; if preview
-    /// validation (Task 12) finds that 4 rows clip on the smallest iPhone large
-    /// widget, drop to 3. Locked in before implementation wraps.
-    private let upcomingRowTarget: Int = 4
+    /// Maximum number of upcoming match rows to render. Single-line horizontal
+    /// rows fit many more than the old 3-line stacked rows; bumped from 4 to 8
+    /// to match the timeline provider's prefix(8) headroom. Drop if the iPhone
+    /// SE large widget clips.
+    private let upcomingRowTarget: Int = 8
 
     private var matchTime: Date? {
         entry.nextMatch?.matchDate(useScheduled: true)
@@ -92,7 +93,7 @@ struct LargeWidgetView: View {
                 }
             }
 
-            // Upcoming matches — flat, 3-line rows with tracked alliance highlighted
+            // Upcoming matches — single-line rows: label, both alliances inline, time
             if !entry.upcomingMatches.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("UPCOMING")
@@ -100,29 +101,31 @@ struct LargeWidgetView: View {
                         .tracking(0.5)
                         .foregroundStyle(widgetLabelDim.opacity(0.45))
                     ForEach(entry.upcomingMatches.prefix(upcomingRowTarget)) { match in
-                        VStack(alignment: .leading, spacing: 3) {
-                            HStack {
-                                Text(match.shortLabel)
-                                    .font(.system(size: 12, weight: .semibold, design: .monospaced))
-                                Spacer()
-                                if let date = match.matchDate(useScheduled: entry.useScheduledTime) {
-                                    Text(formatMatchTime(date, prefix: entry.timePrefix))
-                                        .font(.system(size: 11, design: .monospaced))
-                                        .foregroundStyle(widgetLabelDim.opacity(0.45))
-                                }
-                            }
-                            let trackedAlliance = match.allianceColor(for: entry.teamKey)
-                            ForEach(["red", "blue"], id: \.self) { color in
-                                let keys = match.alliances[color]?.teamKeys ?? []
-                                AllianceLineCompact(
-                                    allianceColor: color, teamKeys: keys,
-                                    trackedTeamKey: entry.teamKey,
-                                    opr: nil,
-                                    highlighted: color == trackedAlliance
-                                )
+                        let trackedAlliance = match.allianceColor(for: entry.teamKey)
+                        HStack(spacing: 6) {
+                            Text(match.shortLabel)
+                                .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                            AllianceLineCompact(
+                                allianceColor: "red",
+                                teamKeys: match.alliances["red"]?.teamKeys ?? [],
+                                trackedTeamKey: entry.teamKey,
+                                opr: nil,
+                                highlighted: "red" == trackedAlliance
+                            )
+                            AllianceLineCompact(
+                                allianceColor: "blue",
+                                teamKeys: match.alliances["blue"]?.teamKeys ?? [],
+                                trackedTeamKey: entry.teamKey,
+                                opr: nil,
+                                highlighted: "blue" == trackedAlliance
+                            )
+                            Spacer()
+                            if let date = match.matchDate(useScheduled: entry.useScheduledTime) {
+                                Text(formatMatchTime(date, prefix: entry.timePrefix))
+                                    .font(.system(size: 11, design: .monospaced))
+                                    .foregroundStyle(widgetLabelDim.opacity(0.45))
                             }
                         }
-                        .padding(.vertical, 2)
                     }
                 }
             }
