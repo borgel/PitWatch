@@ -55,6 +55,11 @@ struct MatchWidgetEntry: TimelineEntry {
         return NexusMatchMerge.nexusInfo(for: match, in: nexusEvent)?.status
     }
 
+    var nextMatchPhase: Phase? {
+        guard let match = nextMatch else { return nil }
+        return PhaseDerivation.phaseFor(match: match, nexusEvent: nexusEvent)
+    }
+
     var isNexusAvailable: Bool {
         nexusEvent != nil
     }
@@ -107,8 +112,8 @@ struct MatchTimelineProvider: TimelineProvider {
             eventName: cache.event?.shortName ?? cache.event?.name,
             nextMatch: schedule.nextMatch,
             lastMatch: schedule.lastPlayedMatch,
-            upcomingMatches: Array(schedule.upcomingMatches.dropFirst().prefix(2)),
-            pastMatches: Array(schedule.pastMatches.prefix(3)),
+            upcomingMatches: Array(schedule.upcomingMatches.dropFirst().prefix(8)),
+            pastMatches: Array(schedule.pastMatches.prefix(1)),
             ranking: cache.rankings?.rankings.first { $0.teamKey == config.teamKey },
             oprs: cache.oprs,
             teamKey: config.teamKey ?? "",
