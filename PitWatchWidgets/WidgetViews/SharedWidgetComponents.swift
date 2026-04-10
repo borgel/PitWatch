@@ -103,9 +103,20 @@ struct AllianceBadge: View {
 
     private var textColor: Color {
         switch allianceColor {
-        case "red":  return Color(red: 1.0, green: 0.72, blue: 0.72)
-        case "blue": return Color(red: 0.72, green: 0.80, blue: 1.0)
-        default:     return widgetLabelDim.opacity(0.75)
+        case "red":
+            return Color(UIColor { traits in
+                traits.userInterfaceStyle == .dark
+                    ? UIColor(red: 1.0, green: 0.72, blue: 0.72, alpha: 1.0)
+                    : UIColor(red: 0.15, green: 0.0, blue: 0.0, alpha: 1.0)
+            })
+        case "blue":
+            return Color(UIColor { traits in
+                traits.userInterfaceStyle == .dark
+                    ? UIColor(red: 0.72, green: 0.80, blue: 1.0, alpha: 1.0)
+                    : UIColor(red: 0.0, green: 0.0, blue: 0.15, alpha: 1.0)
+            })
+        default:
+            return widgetLabelDim.opacity(0.75)
         }
     }
 
