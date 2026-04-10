@@ -28,6 +28,33 @@ import Foundation
     #expect(noTimes.replayOf == nil)
 }
 
+@Test func decodeNexusEventTolleratesNullTeamSlot() throws {
+    // Real Nexus responses can contain `null` in redTeams/blueTeams when a slot is
+    // unassigned (e.g. practice matches, dropped teams). A single null historically
+    // blew up the entire decode via DecodingError.valueNotFound, making `nexusEvent`
+    // nil and triggering the "Nexus unavailable" banner for the whole event.
+    let json = """
+    {
+      "dataAsOfTime": 1712000000000,
+      "matches": [
+        {
+          "label": "Practice 1",
+          "status": "Queuing soon",
+          "redTeams": ["1234", null, "9012"],
+          "blueTeams": ["3456", "7890", null],
+          "times": {}
+        }
+      ]
+    }
+    """.data(using: .utf8)!
+
+    let event = try JSONDecoder().decode(NexusEvent.self, from: json)
+
+    #expect(event.matches.count == 1)
+    #expect(event.matches[0].redTeams == ["1234", "9012"])
+    #expect(event.matches[0].blueTeams == ["3456", "7890"])
+}
+
 @Test func nexusMatchTimesAsDate() throws {
     let times = NexusMatchTimes(
         estimatedQueueTime: 1712000000000,

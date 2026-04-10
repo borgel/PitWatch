@@ -25,6 +25,22 @@ public struct NexusMatch: Codable, Sendable, Hashable {
         self.times = times
         self.replayOf = replayOf
     }
+
+    private enum CodingKeys: String, CodingKey {
+        case label, status, redTeams, blueTeams, times, replayOf
+    }
+
+    // Nexus sends null for unassigned team slots (practice matches, dropped teams).
+    // Drop them so one null doesn't blow up the whole event decode.
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.label = try container.decode(String.self, forKey: .label)
+        self.status = try container.decodeIfPresent(String.self, forKey: .status)
+        self.redTeams = try container.decode([String?].self, forKey: .redTeams).compactMap { $0 }
+        self.blueTeams = try container.decode([String?].self, forKey: .blueTeams).compactMap { $0 }
+        self.times = try container.decode(NexusMatchTimes.self, forKey: .times)
+        self.replayOf = try container.decodeIfPresent(String.self, forKey: .replayOf)
+    }
 }
 
 /// Queue timing data from FRC Nexus. All timestamps are Unix milliseconds.
