@@ -12,17 +12,17 @@ struct SmallWidgetView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Header
-            HStack(spacing: 4) {
+            HStack(spacing: 6) {
                 Text(String(entry.teamNumber ?? 0))
                     .font(.system(size: 14, weight: .bold, design: .monospaced))
-                if let color = entry.nextMatchAllianceColor {
-                    AllianceDot(color, size: 6)
+                if let color = entry.nextMatchAllianceColor, let next = entry.nextMatch {
+                    AllianceBadge(allianceColor: color, matchLabel: next.shortLabel)
                 }
             }
             if let ranking = entry.ranking {
                 Text("#\(String(ranking.rank)) · \(ranking.record?.display ?? "")")
                     .font(.system(size: 10, design: .monospaced))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(widgetLabelDim.opacity(0.65))
             }
 
             Spacer()
@@ -33,12 +33,12 @@ struct SmallWidgetView: View {
                     .font(.system(size: 28, weight: .bold, design: .monospaced))
                     .frame(maxWidth: .infinity, alignment: .center)
 
-                // Countdown
+                // Countdown — phase-colored when Nexus provides a phase
                 if let target = entry.countdownTarget {
                     Text(target, style: .relative)
                         .font(.system(size: 13, weight: .medium, design: .monospaced))
                         .monospacedDigit()
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(entry.nextMatchPhase?.color ?? widgetLabelDim.opacity(0.65))
                         .frame(maxWidth: .infinity, alignment: .center)
                 }
 
@@ -46,13 +46,13 @@ struct SmallWidgetView: View {
                 if let time = matchTime {
                     Text(formatMatchTime(time, prefix: entry.timePrefix))
                         .font(.system(size: 10, design: .monospaced))
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(widgetLabelDim.opacity(0.45))
                         .frame(maxWidth: .infinity, alignment: .center)
                 }
             } else {
                 Text("No match")
                     .font(.system(size: 12, design: .monospaced))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(widgetLabelDim.opacity(0.65))
                     .frame(maxWidth: .infinity, alignment: .center)
             }
 
@@ -61,13 +61,13 @@ struct SmallWidgetView: View {
             if let name = entry.eventName {
                 Text(name)
                     .font(.system(size: 9))
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(widgetLabelDim.opacity(0.45))
                     .lineLimit(1)
                     .frame(maxWidth: .infinity, alignment: .trailing)
             }
         }
         .containerBackground(for: .widget) {
-            Color(hex: "#1C1C1E")
+            widgetCardBackground
         }
     }
 }
