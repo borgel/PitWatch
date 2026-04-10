@@ -41,7 +41,7 @@ struct WidgetEntryView: View {
             }
         }
         .containerBackground(for: .widget) {
-            Color.clear
+            widgetCardBackground
         }
     }
 }
