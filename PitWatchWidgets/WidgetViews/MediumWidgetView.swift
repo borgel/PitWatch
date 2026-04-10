@@ -111,3 +111,9 @@ struct MediumWidgetView: View {
         }
     }
 }
+
+#Preview("Medium · Empty", as: .systemMedium) {
+    NextMatchWidget()
+} timeline: {
+    MatchWidgetEntry.placeholder
+}

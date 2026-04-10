@@ -152,3 +152,9 @@ struct LargeWidgetView: View {
         }
     }
 }
+
+#Preview("Large · Empty", as: .systemLarge) {
+    NextMatchWidget()
+} timeline: {
+    MatchWidgetEntry.placeholder
+}

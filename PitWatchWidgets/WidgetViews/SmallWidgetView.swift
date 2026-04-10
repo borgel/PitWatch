@@ -71,3 +71,9 @@ struct SmallWidgetView: View {
         }
     }
 }
+
+#Preview("Small · Empty", as: .systemSmall) {
+    NextMatchWidget()
+} timeline: {
+    MatchWidgetEntry.placeholder
+}
