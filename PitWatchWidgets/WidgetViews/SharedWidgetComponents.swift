@@ -52,6 +52,50 @@ struct AllianceLineCompact: View {
     }
 }
 
+/// Colored rounded-rect pill showing alliance + match label, matching the
+/// Live Activity expanded view header. Render only when alliance color is known;
+/// call sites should guard on `entry.nextMatchAllianceColor` before instantiating.
+struct AllianceBadge: View {
+    let allianceColor: String   // "red" or "blue"
+    let matchLabel: String      // e.g., "Q32"
+
+    private var backgroundColor: Color {
+        switch allianceColor {
+        case "red":  return Color.red.opacity(0.25)
+        case "blue": return Color.blue.opacity(0.25)
+        default:     return Color.gray.opacity(0.25)
+        }
+    }
+
+    private var textColor: Color {
+        switch allianceColor {
+        case "red":  return Color(red: 1.0, green: 0.72, blue: 0.72)
+        case "blue": return Color(red: 0.72, green: 0.80, blue: 1.0)
+        default:     return widgetLabelDim.opacity(0.75)
+        }
+    }
+
+    private var displayName: String {
+        switch allianceColor {
+        case "red":  return "Red"
+        case "blue": return "Blue"
+        default:     return "—"
+        }
+    }
+
+    var body: some View {
+        Text("\(displayName) · \(matchLabel)")
+            .font(.system(size: 10, weight: .medium))
+            .foregroundStyle(textColor)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(backgroundColor)
+            )
+    }
+}
+
 struct ScoreDisplay: View {
     let match: Match
     var body: some View {
