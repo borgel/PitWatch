@@ -30,9 +30,19 @@ struct AllianceLineCompact: View {
     let teamKeys: [String]
     let trackedTeamKey: String
     let opr: Double?
+    var highlighted: Bool = false
+
+    private var highlightBackground: Color {
+        guard highlighted else { return .clear }
+        switch allianceColor {
+        case "red":  return Color.red.opacity(0.12)
+        case "blue": return Color.blue.opacity(0.12)
+        default:     return .clear
+        }
+    }
 
     var body: some View {
-        HStack(spacing: 2) {
+        let content = HStack(spacing: 2) {
             AllianceDot(allianceColor, size: 5)
             ForEach(teamKeys, id: \.self) { key in
                 let num = key.replacingOccurrences(of: "frc", with: "")
@@ -48,6 +58,17 @@ struct AllianceLineCompact: View {
                     .font(.system(size: 8))
                     .foregroundStyle(allianceColor == "red" ? .red : .blue)
             }
+        }
+        if highlighted {
+            content
+                .padding(.horizontal, 4)
+                .padding(.vertical, 2)
+                .background(
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(highlightBackground)
+                )
+        } else {
+            content
         }
     }
 }
