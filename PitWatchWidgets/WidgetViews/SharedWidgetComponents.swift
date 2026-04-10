@@ -1,16 +1,29 @@
 import SwiftUI
 import WidgetKit
+import UIKit
 import TBAKit
 
 // MARK: - Shared Color Tokens
 
-/// Dark card background matching the Live Activity expanded view.
-let widgetCardBackground = Color(hex: "#1C1C1E")
+/// Adaptive card background. Dark (#1C1C1E, matching the Live Activity) in dark
+/// mode; iOS `.secondarySystemBackground` in light mode so the widget reads as
+/// a soft off-white card rather than a stark pure-white rectangle.
+let widgetCardBackground = Color(UIColor { traits in
+    traits.userInterfaceStyle == .dark
+        ? UIColor(red: 0x1C / 255.0, green: 0x1C / 255.0, blue: 0x1E / 255.0, alpha: 1.0)
+        : UIColor.secondarySystemBackground
+})
 
-/// Dim label base color used by the Live Activity for secondary text.
-/// Apply opacities 0.30 (tertiary), 0.45 (secondary-dim), 0.65 (secondary)
-/// for the three levels of de-emphasis used throughout the widgets.
-let widgetLabelDim = Color(red: 235/255, green: 235/255, blue: 245/255)
+/// Adaptive dim label base color. Mirrors iOS's system label tokens so opacity
+/// steps (0.30 tertiary / 0.45 secondary-dim / 0.65 secondary) produce the same
+/// relative visual weight in both appearances. In dark mode the base is
+/// `235/235/245` (matching the Live Activity); in light mode it flips to
+/// `60/60/67`, iOS's system label RGB.
+let widgetLabelDim = Color(UIColor { traits in
+    traits.userInterfaceStyle == .dark
+        ? UIColor(red: 235 / 255.0, green: 235 / 255.0, blue: 245 / 255.0, alpha: 1.0)
+        : UIColor(red: 60 / 255.0, green: 60 / 255.0, blue: 67 / 255.0, alpha: 1.0)
+})
 
 struct AllianceDot: View {
     let color: String?
