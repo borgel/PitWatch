@@ -86,6 +86,15 @@ public enum PhaseDerivation {
         )
     }
 
+    /// Find the Nexus match corresponding to a TBA match and derive its current phase.
+    /// Returns nil when no Nexus event is provided or no correlated Nexus match is found.
+    public static func phaseFor(match: Match, nexusEvent: NexusEvent?) -> Phase? {
+        guard let nexusMatch = NexusMatchMerge.nexusInfo(for: match, in: nexusEvent) else {
+            return nil
+        }
+        return derivePhase(from: nexusMatch).phase
+    }
+
     /// Find the match number currently on the field by scanning Nexus match statuses.
     public static func currentMatchOnField(
         matches: [NexusMatch],

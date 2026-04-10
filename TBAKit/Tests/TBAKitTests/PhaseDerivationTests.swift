@@ -125,4 +125,126 @@ struct PhaseDerivationTests {
         )
         #expect(result == 42)
     }
+
+    // MARK: - phaseFor(match:nexusEvent:) tests
+
+    private func makeTBAMatch(matchNumber: Int,
+                              redTeams: [String] = ["frc1234", "frc5678", "frc9012"],
+                              blueTeams: [String] = ["frc3456", "frc7890", "frc1111"]) -> Match {
+        let redJSON = "[" + redTeams.map { "\"\($0)\"" }.joined(separator: ", ") + "]"
+        let blueJSON = "[" + blueTeams.map { "\"\($0)\"" }.joined(separator: ", ") + "]"
+        let json = """
+        {
+          "key": "2026test_qm\(matchNumber)",
+          "comp_level": "qm",
+          "set_number": 1,
+          "match_number": \(matchNumber),
+          "event_key": "2026test",
+          "time": 1712000000,
+          "predicted_time": null,
+          "actual_time": null,
+          "alliances": {
+            "red": {
+              "score": -1,
+              "team_keys": \(redJSON),
+              "surrogate_team_keys": [],
+              "dq_team_keys": []
+            },
+            "blue": {
+              "score": -1,
+              "team_keys": \(blueJSON),
+              "surrogate_team_keys": [],
+              "dq_team_keys": []
+            }
+          },
+          "winning_alliance": "",
+          "score_breakdown": null,
+          "videos": []
+        }
+        """.data(using: .utf8)!
+        return try! JSONDecoder().decode(Match.self, from: json)
+    }
+
+    @Test("phaseFor: nil nexusEvent → nil")
+    func phaseForNilEvent() {
+        let tbaMatch = makeTBAMatch(matchNumber: 32)
+        let result = PhaseDerivation.phaseFor(match: tbaMatch, nexusEvent: nil)
+        #expect(result == nil)
+    }
+
+    @Test("phaseFor: nexusEvent present but no correlated match → nil")
+    func phaseForNoCorrelation() {
+        let tbaMatch = makeTBAMatch(matchNumber: 32)
+        let unrelated = NexusMatch(
+            label: "Qualification 99",
+            status: nil,
+            redTeams: ["9999", "8888", "7777"],
+            blueTeams: ["6666", "5555", "4444"],
+            times: NexusMatchTimes(
+                estimatedQueueTime: nil, estimatedOnDeckTime: nil,
+                estimatedOnFieldTime: nil, estimatedStartTime: nil,
+                actualQueueTime: nil
+            )
+        )
+        let event = NexusEvent(dataAsOfTime: 0, nowQueuing: nil, matches: [unrelated])
+        let result = PhaseDerivation.phaseFor(match: tbaMatch, nexusEvent: event)
+        #expect(result == nil)
+    }
+
+    @Test("phaseFor: correlated match with status 'Now queuing' → .queueing")
+    func phaseForQueueingStatus() {
+        let tbaMatch = makeTBAMatch(matchNumber: 32)
+        let correlated = NexusMatch(
+            label: "Qualification 32",
+            status: "Now queuing",
+            redTeams: ["1234", "5678", "9012"],
+            blueTeams: ["3456", "7890", "1111"],
+            times: NexusMatchTimes(
+                estimatedQueueTime: 1712000000000, estimatedOnDeckTime: 1712000300000,
+                estimatedOnFieldTime: 1712000600000, estimatedStartTime: 1712000900000,
+                actualQueueTime: nil
+            )
+        )
+        let event = NexusEvent(dataAsOfTime: 0, nowQueuing: nil, matches: [correlated])
+        let result = PhaseDerivation.phaseFor(match: tbaMatch, nexusEvent: event)
+        #expect(result == .queueing)
+    }
+
+    @Test("phaseFor: correlated match with status 'On field' → .onField")
+    func phaseForOnFieldStatus() {
+        let tbaMatch = makeTBAMatch(matchNumber: 32)
+        let correlated = NexusMatch(
+            label: "Qualification 32",
+            status: "On field",
+            redTeams: ["1234", "5678", "9012"],
+            blueTeams: ["3456", "7890", "1111"],
+            times: NexusMatchTimes(
+                estimatedQueueTime: 1712000000000, estimatedOnDeckTime: 1712000300000,
+                estimatedOnFieldTime: 1712000600000, estimatedStartTime: 1712000900000,
+                actualQueueTime: nil
+            )
+        )
+        let event = NexusEvent(dataAsOfTime: 0, nowQueuing: nil, matches: [correlated])
+        let result = PhaseDerivation.phaseFor(match: tbaMatch, nexusEvent: event)
+        #expect(result == .onField)
+    }
+
+    @Test("phaseFor: correlated match with status 'On deck' → .onDeck")
+    func phaseForOnDeckStatus() {
+        let tbaMatch = makeTBAMatch(matchNumber: 32)
+        let correlated = NexusMatch(
+            label: "Qualification 32",
+            status: "On deck",
+            redTeams: ["1234", "5678", "9012"],
+            blueTeams: ["3456", "7890", "1111"],
+            times: NexusMatchTimes(
+                estimatedQueueTime: 1712000000000, estimatedOnDeckTime: 1712000300000,
+                estimatedOnFieldTime: 1712000600000, estimatedStartTime: 1712000900000,
+                actualQueueTime: nil
+            )
+        )
+        let event = NexusEvent(dataAsOfTime: 0, nowQueuing: nil, matches: [correlated])
+        let result = PhaseDerivation.phaseFor(match: tbaMatch, nexusEvent: event)
+        #expect(result == .onDeck)
+    }
 }
