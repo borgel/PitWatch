@@ -5,6 +5,11 @@ import TBAKit
 struct LargeWidgetView: View {
     let entry: MatchWidgetEntry
 
+    /// Maximum number of upcoming match rows to render. Starts at 4; if preview
+    /// validation (Task 12) finds that 4 rows clip on the smallest iPhone large
+    /// widget, drop to 3. Locked in before implementation wraps.
+    private let upcomingRowTarget: Int = 4
+
     private var matchTime: Date? {
         entry.nextMatch?.matchDate(useScheduled: true)
     }
@@ -86,32 +91,39 @@ struct LargeWidgetView: View {
                 }
             }
 
-            // Upcoming matches
+            // Upcoming matches — flat, 3-line rows with tracked alliance highlighted
             if !entry.upcomingMatches.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("UPCOMING")
                         .font(.system(size: 8, weight: .semibold, design: .monospaced))
                         .tracking(0.5)
-                        .foregroundStyle(.tertiary)
-                    ForEach(entry.upcomingMatches) { match in
-                        HStack {
-                            Text(match.shortLabel)
-                                .font(.system(size: 12, weight: .semibold, design: .monospaced))
-                            if let color = match.allianceColor(for: entry.teamKey) {
-                                AllianceDot(color, size: 5)
+                        .foregroundStyle(widgetLabelDim.opacity(0.45))
+                    ForEach(entry.upcomingMatches.prefix(upcomingRowTarget)) { match in
+                        VStack(alignment: .leading, spacing: 3) {
+                            HStack {
+                                Text(match.shortLabel)
+                                    .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                                Spacer()
+                                if let date = match.matchDate(useScheduled: entry.useScheduledTime) {
+                                    Text(formatMatchTime(date, prefix: entry.timePrefix))
+                                        .font(.system(size: 11, design: .monospaced))
+                                        .foregroundStyle(widgetLabelDim.opacity(0.45))
+                                }
                             }
-                            Spacer()
-                            if let date = match.matchDate(useScheduled: entry.useScheduledTime) {
-                                Text(formatMatchTime(date, prefix: entry.timePrefix))
-                                    .font(.system(size: 11, design: .monospaced))
-                                    .foregroundStyle(.secondary)
+                            let trackedAlliance = match.allianceColor(for: entry.teamKey)
+                            ForEach(["red", "blue"], id: \.self) { color in
+                                let keys = match.alliances[color]?.teamKeys ?? []
+                                AllianceLineCompact(
+                                    allianceColor: color, teamKeys: keys,
+                                    trackedTeamKey: entry.teamKey,
+                                    opr: nil,
+                                    highlighted: color == trackedAlliance
+                                )
                             }
                         }
-                        .padding(.horizontal, 10).padding(.vertical, 5)
+                        .padding(.vertical, 2)
                     }
                 }
-                .padding(.vertical, 6)
-                .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
             }
 
             // Recent results
