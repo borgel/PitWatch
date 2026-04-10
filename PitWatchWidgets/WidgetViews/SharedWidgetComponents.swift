@@ -2,6 +2,16 @@ import SwiftUI
 import WidgetKit
 import TBAKit
 
+// MARK: - Shared Color Tokens
+
+/// Dark card background matching the Live Activity expanded view.
+let widgetCardBackground = Color(hex: "#1C1C1E")
+
+/// Dim label base color used by the Live Activity for secondary text.
+/// Apply opacities 0.30 (tertiary), 0.45 (secondary-dim), 0.65 (secondary)
+/// for the three levels of de-emphasis used throughout the widgets.
+let widgetLabelDim = Color(red: 235/255, green: 235/255, blue: 245/255)
+
 struct AllianceDot: View {
     let color: String?
     let size: CGFloat
