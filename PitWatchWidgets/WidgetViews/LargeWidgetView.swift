@@ -126,34 +126,24 @@ struct LargeWidgetView: View {
                 }
             }
 
-            // Recent results
-            if !entry.pastMatches.isEmpty {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("RESULTS")
+            // Last match — single flat row
+            if let last = entry.lastMatch {
+                HStack(spacing: 8) {
+                    Text("LAST")
                         .font(.system(size: 8, weight: .semibold, design: .monospaced))
                         .tracking(0.5)
-                        .foregroundStyle(.tertiary)
-                    ForEach(entry.pastMatches) { match in
-                        HStack {
-                            Text(match.shortLabel)
-                                .font(.system(size: 12, weight: .semibold, design: .monospaced))
-                            if let color = match.allianceColor(for: entry.teamKey) {
-                                AllianceDot(color, size: 5)
-                            }
-                            Spacer()
-                            if let date = match.matchDate(useScheduled: entry.useScheduledTime) {
-                                Text(formatMatchTime(date, prefix: entry.timePrefix))
-                                    .font(.system(size: 10, design: .monospaced))
-                                    .foregroundStyle(.tertiary)
-                            }
-                            ScoreDisplay(match: match).font(.system(size: 11))
-                            WinLossLabel(match: match, teamKey: entry.teamKey)
-                        }
-                        .padding(.horizontal, 10).padding(.vertical, 5)
+                        .foregroundStyle(widgetLabelDim.opacity(0.45))
+                    Text(last.shortLabel)
+                        .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                    Spacer()
+                    ScoreDisplay(match: last).font(.system(size: 12))
+                    WinLossLabel(match: last, teamKey: entry.teamKey)
+                    if let date = last.matchDate(useScheduled: entry.useScheduledTime) {
+                        Text(formatMatchTime(date, prefix: entry.timePrefix))
+                            .font(.system(size: 10, design: .monospaced))
+                            .foregroundStyle(widgetLabelDim.opacity(0.45))
                     }
                 }
-                .padding(.vertical, 6)
-                .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
             }
             Spacer(minLength: 0)
         }
