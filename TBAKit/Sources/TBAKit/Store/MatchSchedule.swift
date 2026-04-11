@@ -124,3 +124,63 @@ public struct MatchSchedule: Sendable {
         return match.matchDate(useScheduled: false)
     }
 }
+
+// MARK: - Upcoming timeline with schedule breaks
+
+/// A single row in the upcoming timeline: either an FRC match or an
+/// inferred schedule break (lunch, overnight, session break) derived from
+/// gaps in the Nexus match schedule.
+public enum UpcomingScheduleItem: Sendable, Identifiable {
+    case match(Match)
+    case breakInterval(ScheduleBreak)
+
+    public var id: String {
+        switch self {
+        case .match(let m):         return "match:\(m.key)"
+        case .breakInterval(let b): return "break:\(b.startsAfter)->\(b.endsBefore)"
+        }
+    }
+}
+
+extension MatchSchedule {
+    /// Composes the team's upcoming matches with any schedule breaks that fall
+    /// between consecutive upcoming matches in wall-clock time.
+    ///
+    /// Breaks are inferred from `nexusEvent.matches` via `ScheduleBreakDetector`.
+    /// When `nexusEvent` is `nil`, the return value is the plain list of upcoming
+    /// matches with no breaks. When either side of a pair has no effective time,
+    /// breaks are not inserted around that pair.
+    public func upcomingTimeline(
+        nexusEvent: NexusEvent?,
+        timeZone: TimeZone
+    ) -> [UpcomingScheduleItem] {
+        guard let nexusEvent else {
+            return upcomingMatches.map(UpcomingScheduleItem.match)
+        }
+
+        let allBreaks = ScheduleBreakDetector.detectBreaks(
+            in: nexusEvent.matches,
+            timeZone: timeZone
+        )
+
+        func effectiveTime(_ match: Match) -> Date? {
+            NexusMatchMerge.nexusInfo(for: match, in: nexusEvent)?.times.startDate
+                ?? match.matchDate(useScheduled: true)
+        }
+
+        var result: [UpcomingScheduleItem] = []
+        for (index, match) in upcomingMatches.enumerated() {
+            result.append(.match(match))
+            guard index < upcomingMatches.count - 1 else { continue }
+            guard
+                let prevTime = effectiveTime(match),
+                let nextTime = effectiveTime(upcomingMatches[index + 1])
+            else { continue }
+            for scheduleBreak in allBreaks
+                where scheduleBreak.start >= prevTime && scheduleBreak.start < nextTime {
+                result.append(.breakInterval(scheduleBreak))
+            }
+        }
+        return result
+    }
+}
