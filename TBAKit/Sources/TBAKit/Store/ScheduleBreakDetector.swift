@@ -22,6 +22,14 @@ public struct ScheduleBreak: Sendable, Hashable {
     public let end: Date
 
     public var duration: TimeInterval { end.timeIntervalSince(start) }
+
+    public init(kind: Kind, startsAfter: String, endsBefore: String, start: Date, end: Date) {
+        self.kind = kind
+        self.startsAfter = startsAfter
+        self.endsBefore = endsBefore
+        self.start = start
+        self.end = end
+    }
 }
 
 public enum ScheduleBreakDetector {
