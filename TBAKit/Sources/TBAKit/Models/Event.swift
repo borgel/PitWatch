@@ -18,6 +18,7 @@ public struct Event: Codable, Sendable, Identifiable {
     public let eventTypeString: String?
     public let week: Int?
     public let locationName: String?
+    public let timezone: String?
 
     enum CodingKeys: String, CodingKey {
         case key
@@ -34,6 +35,7 @@ public struct Event: Codable, Sendable, Identifiable {
         case eventTypeString = "event_type_string"
         case week
         case locationName = "location_name"
+        case timezone
     }
 
     // MARK: - Computed Properties

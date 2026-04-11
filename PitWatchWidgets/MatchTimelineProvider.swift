@@ -8,6 +8,11 @@ struct MatchWidgetEntry: TimelineEntry {
     let nextMatch: Match?
     let lastMatch: Match?
     let upcomingMatches: [Match]
+    /// The team's upcoming matches interleaved with inferred schedule breaks
+    /// (lunch/overnight/session). First item is always `.match(nextMatch)` when
+    /// non-empty; the large widget drops it and renders the remainder under
+    /// the UPCOMING section. Bounded to ~9 items to keep entry payload small.
+    let upcomingTimeline: [UpcomingScheduleItem]
     let pastMatches: [Match]
     let ranking: Ranking?
     let oprs: EventOPRs?
@@ -71,7 +76,9 @@ struct MatchWidgetEntry: TimelineEntry {
     static var placeholder: MatchWidgetEntry {
         MatchWidgetEntry(
             date: .now, teamNumber: 1234, eventName: "Regional",
-            nextMatch: nil, lastMatch: nil, upcomingMatches: [], pastMatches: [],
+            nextMatch: nil, lastMatch: nil, upcomingMatches: [],
+            upcomingTimeline: [],
+            pastMatches: [],
             ranking: nil, oprs: nil, teamKey: "frc1234",
             useScheduledTime: false, queueOffsetMinutes: 0,
             nexusEvent: nil
@@ -105,6 +112,12 @@ struct MatchTimelineProvider: TimelineProvider {
         let config = store.loadConfig()
         let cache = store.loadEventCache()
         let schedule = MatchSchedule(matches: cache.matches, teamKey: config.teamKey ?? "")
+        let effectiveNexus: NexusEvent? = config.effectiveTimeSource == .nexus ? cache.nexusEvent : nil
+        let eventTimeZone = cache.event?.timezone.flatMap(TimeZone.init(identifier:)) ?? .current
+        // Full timeline bounded to 9 items: 1 NEXT match + 8 UPCOMING items (matches + breaks).
+        let timeline = Array(
+            schedule.upcomingTimeline(nexusEvent: effectiveNexus, timeZone: eventTimeZone).prefix(9)
+        )
 
         return MatchWidgetEntry(
             date: .now,
@@ -113,13 +126,14 @@ struct MatchTimelineProvider: TimelineProvider {
             nextMatch: schedule.nextMatch,
             lastMatch: schedule.lastPlayedMatch,
             upcomingMatches: Array(schedule.upcomingMatches.dropFirst().prefix(8)),
+            upcomingTimeline: timeline,
             pastMatches: Array(schedule.pastMatches.prefix(1)),
             ranking: cache.rankings?.rankings.first { $0.teamKey == config.teamKey },
             oprs: cache.oprs,
             teamKey: config.teamKey ?? "",
             useScheduledTime: config.useScheduledTime,
             queueOffsetMinutes: config.queueOffsetMinutes,
-            nexusEvent: config.effectiveTimeSource == .nexus ? cache.nexusEvent : nil
+            nexusEvent: effectiveNexus
         )
     }
 }
