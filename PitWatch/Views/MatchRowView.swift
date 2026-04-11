@@ -17,7 +17,7 @@ struct MatchRowView: View {
             HStack {
                 allianceDot
                 Text(match.label).font(.headline)
-                if let status = nexusMatch?.status {
+                if let status = nexusMatch?.status, !match.isPlayed {
                     NexusStatusBadge(status: status)
                 }
                 Spacer()
