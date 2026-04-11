@@ -18,7 +18,9 @@ struct MatchRowView: View {
                 allianceDot
                 Text(match.label).font(.headline)
                 if let status = nexusMatch?.status, !match.isPlayed {
-                    NexusStatusBadge(status: status)
+                    let matchDate = match.matchDate(useScheduled: useScheduledTime)
+                    let farFuture = matchDate.map { $0.timeIntervalSince(.now) > 3600 } ?? false
+                    NexusStatusBadge(status: farFuture ? "Upcoming" : status)
                 }
                 Spacer()
                 if let nexusMatch, !match.isPlayed {
