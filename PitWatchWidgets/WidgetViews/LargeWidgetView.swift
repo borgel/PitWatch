@@ -15,6 +15,25 @@ struct LargeWidgetView: View {
         entry.nextMatch?.matchDate(useScheduled: true)
     }
 
+    private struct UpcomingRow {
+        let match: Match
+        let showDayDivider: Bool
+    }
+
+    private func upcomingRowsWithDayBreaks() -> [UpcomingRow] {
+        let calendar = Calendar.current
+        var rows: [UpcomingRow] = []
+        var previousDay: Date?
+        for match in entry.upcomingMatches.prefix(upcomingRowTarget) {
+            let day = match.matchDate(useScheduled: entry.useScheduledTime)
+                .map { calendar.startOfDay(for: $0) }
+            let show = previousDay != nil && day != nil && day != previousDay
+            rows.append(UpcomingRow(match: match, showDayDivider: show))
+            if day != nil { previousDay = day }
+        }
+        return rows
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             // Header
@@ -95,12 +114,19 @@ struct LargeWidgetView: View {
 
             // Upcoming matches — single-line rows: label, both alliances inline, time
             if !entry.upcomingMatches.isEmpty {
+                let upcomingRows = upcomingRowsWithDayBreaks()
                 VStack(alignment: .leading, spacing: 4) {
                     Text("UPCOMING")
                         .font(.system(size: 8, weight: .semibold, design: .monospaced))
                         .tracking(0.5)
                         .foregroundStyle(widgetLabelDim.opacity(0.45))
-                    ForEach(entry.upcomingMatches.prefix(upcomingRowTarget)) { match in
+                    ForEach(upcomingRows, id: \.match.id) { row in
+                        if row.showDayDivider {
+                            Rectangle()
+                                .fill(widgetLabelDim.opacity(0.2))
+                                .frame(height: 0.5)
+                        }
+                        let match = row.match
                         let trackedAlliance = match.allianceColor(for: entry.teamKey)
                         HStack(spacing: 6) {
                             Text(match.shortLabel)
