@@ -37,22 +37,25 @@ struct LargeWidgetView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             // Header
-            HStack {
-                Text(String(entry.teamNumber ?? 0))
-                    .font(.system(size: 14, weight: .bold, design: .monospaced))
-                if let color = entry.nextMatchAllianceColor, let next = entry.nextMatch {
-                    AllianceBadge(allianceColor: color, matchLabel: next.shortLabel)
+            VStack(alignment: .leading, spacing: 2) {
+                HStack {
+                    Text(String(entry.teamNumber ?? 0))
+                        .font(.system(size: 14, weight: .bold, design: .monospaced))
+                    if let color = entry.nextMatchAllianceColor, let next = entry.nextMatch {
+                        AllianceBadge(allianceColor: color, matchLabel: next.shortLabel)
+                    }
+                    Spacer()
+                    if let ranking = entry.ranking {
+                        Text("#\(String(ranking.rank)) · \(ranking.record?.display ?? "")")
+                            .font(.system(size: 11, design: .monospaced))
+                            .foregroundStyle(widgetLabelDim.opacity(0.65))
+                    }
                 }
                 if let name = entry.eventName {
-                    Text("· \(name)")
+                    Text(name)
                         .font(.system(size: 12))
                         .foregroundStyle(widgetLabelDim.opacity(0.65))
-                }
-                Spacer()
-                if let ranking = entry.ranking {
-                    Text("#\(String(ranking.rank)) · \(ranking.record?.display ?? "")")
-                        .font(.system(size: 11, design: .monospaced))
-                        .foregroundStyle(widgetLabelDim.opacity(0.65))
+                        .lineLimit(2)
                 }
             }
 

@@ -62,7 +62,8 @@ struct SmallWidgetView: View {
                 Text(name)
                     .font(.system(size: 9))
                     .foregroundStyle(widgetLabelDim.opacity(0.45))
-                    .lineLimit(1)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.trailing)
                     .frame(maxWidth: .infinity, alignment: .trailing)
             }
         }

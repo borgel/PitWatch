@@ -109,7 +109,7 @@ struct MatchTimelineProvider: TimelineProvider {
         return MatchWidgetEntry(
             date: .now,
             teamNumber: config.teamNumber,
-            eventName: cache.event?.shortName ?? cache.event?.name,
+            eventName: cache.event?.name ?? cache.event?.shortName,
             nextMatch: schedule.nextMatch,
             lastMatch: schedule.lastPlayedMatch,
             upcomingMatches: Array(schedule.upcomingMatches.dropFirst().prefix(8)),
