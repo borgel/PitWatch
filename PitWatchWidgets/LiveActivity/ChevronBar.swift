@@ -76,7 +76,7 @@ struct ChevronSegment: View {
                             .tracking(0.5)
                             .foregroundStyle(.black)
                         if let deadline {
-                            Text(deadline, style: .timer)
+                            Text(timerInterval: Date.now...deadline, countsDown: true)
                                 .font(.system(size: 9, weight: .medium, design: .monospaced))
                                 .foregroundStyle(.black.opacity(0.65))
                                 .monospacedDigit()
@@ -89,7 +89,7 @@ struct ChevronSegment: View {
                             .font(.system(size: 10, weight: .medium, design: .monospaced))
                             .tracking(0.5)
                         if let deadline {
-                            Text(deadline, style: .timer)
+                            Text(timerInterval: Date.now...deadline, countsDown: true)
                                 .font(.system(size: 9, weight: .medium, design: .monospaced))
                                 .monospacedDigit()
                                 .opacity(0.7)
@@ -103,7 +103,7 @@ struct ChevronSegment: View {
                             .font(.system(size: 10, weight: .medium, design: .monospaced))
                             .tracking(0.5)
                         if let deadline {
-                            Text(deadline, style: .timer)
+                            Text(timerInterval: Date.now...deadline, countsDown: true)
                                 .font(.system(size: 9, weight: .medium, design: .monospaced))
                                 .monospacedDigit()
                                 .opacity(0.7)

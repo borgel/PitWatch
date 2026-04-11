@@ -87,7 +87,7 @@ struct ExpandedLiveActivityView: View {
                     .tracking(1.0)
                     .foregroundStyle(state.currentPhase.color)
 
-                Text(state.phaseDeadline, style: .timer)
+                Text(timerInterval: Date.now...state.phaseDeadline, countsDown: true)
                     .font(.system(size: 50, weight: .bold, design: .monospaced))
                     .kerning(-2)
                     .foregroundStyle(.white)
