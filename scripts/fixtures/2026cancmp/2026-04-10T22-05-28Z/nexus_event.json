@@ -1,0 +1,2891 @@
+{
+  "eventKey": "2026cancmp",
+  "dataAsOfTime": 1775858731186,
+  "nowQueuing": "Qualification 19",
+  "matches": [
+    {
+      "label": "Practice 1",
+      "status": "On field",
+      "redTeams": [
+        "6814",
+        "1967",
+        "5700"
+      ],
+      "blueTeams": [
+        "5940",
+        "6418",
+        "8033"
+      ],
+      "times": {
+        "scheduledStartTime": 1775838600000,
+        "estimatedQueueTime": 1775837811457,
+        "estimatedOnDeckTime": 1775837811457,
+        "estimatedOnFieldTime": 1775838464050,
+        "estimatedStartTime": 1775838884050,
+        "actualQueueTime": 1775837811457,
+        "actualOnDeckTime": 1775837811457,
+        "actualOnFieldTime": 1775838464050
+      }
+    },
+    {
+      "label": "Practice 2",
+      "status": "On field",
+      "redTeams": [
+        "7137",
+        "5507",
+        "3501"
+      ],
+      "blueTeams": [
+        "2135",
+        "5104",
+        "7419"
+      ],
+      "times": {
+        "scheduledStartTime": 1775839200000,
+        "estimatedQueueTime": 1775837812616,
+        "estimatedOnDeckTime": 1775838464064,
+        "estimatedOnFieldTime": 1775839201369,
+        "estimatedStartTime": 1775839621369,
+        "actualQueueTime": 1775837812616,
+        "actualOnDeckTime": 1775838464064,
+        "actualOnFieldTime": 1775839201369
+      }
+    },
+    {
+      "label": "Practice 3",
+      "status": "On field",
+      "redTeams": [
+        "6036",
+        "192",
+        "8793"
+      ],
+      "blueTeams": [
+        "1671",
+        "1678",
+        "8048"
+      ],
+      "times": {
+        "scheduledStartTime": 1775839800000,
+        "estimatedQueueTime": 1775838464801,
+        "estimatedOnDeckTime": 1775839201383,
+        "estimatedOnFieldTime": 1775840056958,
+        "estimatedStartTime": 1775840476958,
+        "actualQueueTime": 1775838464801,
+        "actualOnDeckTime": 1775839201383,
+        "actualOnFieldTime": 1775840056958
+      }
+    },
+    {
+      "label": "Practice 4",
+      "status": "On field",
+      "redTeams": [
+        "9400",
+        "971",
+        "3045"
+      ],
+      "blueTeams": [
+        "841",
+        "115",
+        "6665"
+      ],
+      "times": {
+        "scheduledStartTime": 1775840400000,
+        "estimatedQueueTime": 1775839201965,
+        "estimatedOnDeckTime": 1775840056974,
+        "estimatedOnFieldTime": 1775840516912,
+        "estimatedStartTime": 1775840936912,
+        "actualQueueTime": 1775839201965,
+        "actualOnDeckTime": 1775840056974,
+        "actualOnFieldTime": 1775840516912
+      }
+    },
+    {
+      "label": "Practice 5",
+      "status": "On field",
+      "redTeams": [
+        "581",
+        "6238",
+        "2204"
+      ],
+      "blueTeams": [
+        "10339",
+        "253",
+        "6662"
+      ],
+      "times": {
+        "scheduledStartTime": 1775841000000,
+        "estimatedQueueTime": 1775840057777,
+        "estimatedOnDeckTime": 1775840516931,
+        "estimatedOnFieldTime": 1775841273041,
+        "estimatedStartTime": 1775841693041,
+        "actualQueueTime": 1775840057777,
+        "actualOnDeckTime": 1775840516931,
+        "actualOnFieldTime": 1775841273041
+      }
+    },
+    {
+      "label": "Practice 6",
+      "status": "On field",
+      "redTeams": [
+        "9470",
+        "701",
+        "5817"
+      ],
+      "blueTeams": [
+        "3598",
+        "114",
+        "254"
+      ],
+      "times": {
+        "scheduledStartTime": 1775841600000,
+        "estimatedQueueTime": 1775840517783,
+        "estimatedOnDeckTime": 1775841273055,
+        "estimatedOnFieldTime": 1775841829953,
+        "estimatedStartTime": 1775842249953,
+        "actualQueueTime": 1775840517783,
+        "actualOnDeckTime": 1775841273055,
+        "actualOnFieldTime": 1775841829953
+      }
+    },
+    {
+      "label": "Practice 7",
+      "status": "On field",
+      "redTeams": [
+        "604",
+        "581",
+        "649"
+      ],
+      "blueTeams": [
+        "6962",
+        "1868",
+        "2813"
+      ],
+      "times": {
+        "scheduledStartTime": 1775842200000,
+        "estimatedQueueTime": 1775841273755,
+        "estimatedOnDeckTime": 1775841829967,
+        "estimatedOnFieldTime": 1775842291807,
+        "estimatedStartTime": 1775842711807,
+        "actualQueueTime": 1775841273755,
+        "actualOnDeckTime": 1775841829967,
+        "actualOnFieldTime": 1775842291807
+      }
+    },
+    {
+      "label": "Practice 8",
+      "status": "On field",
+      "redTeams": [
+        "6305",
+        "4990",
+        "5026"
+      ],
+      "blueTeams": [
+        "4135",
+        "846",
+        "7667"
+      ],
+      "times": {
+        "scheduledStartTime": 1775842800000,
+        "estimatedQueueTime": 1775841830604,
+        "estimatedOnDeckTime": 1775842291824,
+        "estimatedOnFieldTime": 1775843024754,
+        "estimatedStartTime": 1775843444754,
+        "actualQueueTime": 1775841830604,
+        "actualOnDeckTime": 1775842291824,
+        "actualOnFieldTime": 1775843024754
+      }
+    },
+    {
+      "label": "Practice 9",
+      "status": "On field",
+      "redTeams": [
+        "2073",
+        "3256",
+        "5419"
+      ],
+      "blueTeams": [
+        "1323",
+        "6665",
+        "3970"
+      ],
+      "times": {
+        "scheduledStartTime": 1775843400000,
+        "estimatedQueueTime": 1775842292449,
+        "estimatedOnDeckTime": 1775843024777,
+        "estimatedOnFieldTime": 1775843724987,
+        "estimatedStartTime": 1775844144987,
+        "actualQueueTime": 1775842292449,
+        "actualOnDeckTime": 1775843024777,
+        "actualOnFieldTime": 1775843724987
+      }
+    },
+    {
+      "label": "Practice 10",
+      "status": "On field",
+      "redTeams": [
+        "840",
+        "670",
+        "3501"
+      ],
+      "blueTeams": [
+        "972",
+        "8",
+        "3257"
+      ],
+      "times": {
+        "scheduledStartTime": 1775844000000,
+        "estimatedQueueTime": 1775843025786,
+        "estimatedOnDeckTime": 1775843725004,
+        "estimatedOnFieldTime": 1775844328704,
+        "estimatedStartTime": 1775844748704,
+        "actualQueueTime": 1775843025786,
+        "actualOnDeckTime": 1775843725004,
+        "actualOnFieldTime": 1775844328704
+      }
+    },
+    {
+      "label": "Practice 11",
+      "status": "On field",
+      "redTeams": [
+        "6036",
+        "6418",
+        "9400"
+      ],
+      "blueTeams": [
+        "8033",
+        "5940",
+        "1678"
+      ],
+      "times": {
+        "estimatedQueueTime": 1775843725673,
+        "estimatedOnDeckTime": 1775844328718,
+        "estimatedOnFieldTime": 1775845418826,
+        "estimatedStartTime": 1775845838826,
+        "actualQueueTime": 1775843725673,
+        "actualOnDeckTime": 1775844328718,
+        "actualOnFieldTime": 1775845418826
+      },
+      "breakAfter": "Lunch"
+    },
+    {
+      "label": "Qualification 1",
+      "status": "On field",
+      "redTeams": [
+        "5507",
+        "4135",
+        "670"
+      ],
+      "blueTeams": [
+        "8033",
+        "1868",
+        "6814"
+      ],
+      "times": {
+        "scheduledStartTime": 1775849400000,
+        "estimatedQueueTime": 1775848538222,
+        "estimatedOnDeckTime": 1775848538222,
+        "estimatedOnFieldTime": 1775849259485,
+        "estimatedStartTime": 1775849568485,
+        "actualQueueTime": 1775848538222,
+        "actualOnDeckTime": 1775848538222,
+        "actualOnFieldTime": 1775849259485
+      }
+    },
+    {
+      "label": "Qualification 2",
+      "status": "On field",
+      "redTeams": [
+        "581",
+        "3501",
+        "2813"
+      ],
+      "blueTeams": [
+        "846",
+        "1323",
+        "3045"
+      ],
+      "times": {
+        "scheduledStartTime": 1775849880000,
+        "estimatedQueueTime": 1775848539145,
+        "estimatedOnDeckTime": 1775849259498,
+        "estimatedOnFieldTime": 1775849691491,
+        "estimatedStartTime": 1775850000491,
+        "actualQueueTime": 1775848539145,
+        "actualOnDeckTime": 1775849259498,
+        "actualOnFieldTime": 1775849691491
+      }
+    },
+    {
+      "label": "Qualification 3",
+      "status": "On field",
+      "redTeams": [
+        "9470",
+        "5104",
+        "10339"
+      ],
+      "blueTeams": [
+        "3970",
+        "2204",
+        "7137"
+      ],
+      "times": {
+        "scheduledStartTime": 1775850480000,
+        "estimatedQueueTime": 1775849261470,
+        "estimatedOnDeckTime": 1775849691503,
+        "estimatedOnFieldTime": 1775850236251,
+        "estimatedStartTime": 1775850545251,
+        "actualQueueTime": 1775849261470,
+        "actualOnDeckTime": 1775849691503,
+        "actualOnFieldTime": 1775850236251
+      }
+    },
+    {
+      "label": "Qualification 4",
+      "status": "On field",
+      "redTeams": [
+        "6305",
+        "254",
+        "1671"
+      ],
+      "blueTeams": [
+        "1678",
+        "3256",
+        "972"
+      ],
+      "times": {
+        "scheduledStartTime": 1775851080000,
+        "estimatedQueueTime": 1775849692120,
+        "estimatedOnDeckTime": 1775850236266,
+        "estimatedOnFieldTime": 1775850711638,
+        "estimatedStartTime": 1775851020638,
+        "actualQueueTime": 1775849692120,
+        "actualOnDeckTime": 1775850236266,
+        "actualOnFieldTime": 1775850711638
+      }
+    },
+    {
+      "label": "Qualification 5",
+      "status": "On field",
+      "redTeams": [
+        "6418",
+        "115",
+        "7667"
+      ],
+      "blueTeams": [
+        "1967",
+        "5026",
+        "6238"
+      ],
+      "times": {
+        "scheduledStartTime": 1775851680000,
+        "estimatedQueueTime": 1775850236828,
+        "estimatedOnDeckTime": 1775850711650,
+        "estimatedOnFieldTime": 1775851272052,
+        "estimatedStartTime": 1775851581052,
+        "actualQueueTime": 1775850236828,
+        "actualOnDeckTime": 1775850711650,
+        "actualOnFieldTime": 1775851272052
+      }
+    },
+    {
+      "label": "Qualification 6",
+      "status": "On field",
+      "redTeams": [
+        "841",
+        "2073",
+        "971"
+      ],
+      "blueTeams": [
+        "7419",
+        "5817",
+        "701"
+      ],
+      "times": {
+        "scheduledStartTime": 1775852280000,
+        "estimatedQueueTime": 1775850712837,
+        "estimatedOnDeckTime": 1775851272066,
+        "estimatedOnFieldTime": 1775851773734,
+        "estimatedStartTime": 1775852082734,
+        "actualQueueTime": 1775850712837,
+        "actualOnDeckTime": 1775851272066,
+        "actualOnFieldTime": 1775851773734
+      }
+    },
+    {
+      "label": "Qualification 7",
+      "status": "On field",
+      "redTeams": [
+        "253",
+        "5419",
+        "3257"
+      ],
+      "blueTeams": [
+        "2135",
+        "1072",
+        "649"
+      ],
+      "times": {
+        "scheduledStartTime": 1775852880000,
+        "estimatedQueueTime": 1775851273177,
+        "estimatedOnDeckTime": 1775851773747,
+        "estimatedOnFieldTime": 1775852282839,
+        "estimatedStartTime": 1775852591839,
+        "actualQueueTime": 1775851273177,
+        "actualOnDeckTime": 1775851773747,
+        "actualOnFieldTime": 1775852282839
+      }
+    },
+    {
+      "label": "Qualification 8",
+      "status": "On field",
+      "redTeams": [
+        "8793",
+        "840",
+        "114"
+      ],
+      "blueTeams": [
+        "6036",
+        "9400",
+        "604"
+      ],
+      "times": {
+        "scheduledStartTime": 1775853480000,
+        "estimatedQueueTime": 1775851774126,
+        "estimatedOnDeckTime": 1775852282852,
+        "estimatedOnFieldTime": 1775852797970,
+        "estimatedStartTime": 1775853106970,
+        "actualQueueTime": 1775851774126,
+        "actualOnDeckTime": 1775852282852,
+        "actualOnFieldTime": 1775852797970
+      }
+    },
+    {
+      "label": "Qualification 9",
+      "status": "On field",
+      "redTeams": [
+        "766",
+        "6962",
+        "6665"
+      ],
+      "blueTeams": [
+        "3598",
+        "4698",
+        "5700"
+      ],
+      "times": {
+        "scheduledStartTime": 1775854080000,
+        "estimatedQueueTime": 1775852283470,
+        "estimatedOnDeckTime": 1775852797985,
+        "estimatedOnFieldTime": 1775853557425,
+        "estimatedStartTime": 1775853866425,
+        "actualQueueTime": 1775852283470,
+        "actualOnDeckTime": 1775852797985,
+        "actualOnFieldTime": 1775853557425
+      }
+    },
+    {
+      "label": "Qualification 10",
+      "status": "On field",
+      "redTeams": [
+        "5940",
+        "6662",
+        "8048"
+      ],
+      "blueTeams": [
+        "4990",
+        "8",
+        "192"
+      ],
+      "times": {
+        "scheduledStartTime": 1775854680000,
+        "estimatedQueueTime": 1775852798616,
+        "estimatedOnDeckTime": 1775853557438,
+        "estimatedOnFieldTime": 1775854016368,
+        "estimatedStartTime": 1775854325368,
+        "actualQueueTime": 1775852798616,
+        "actualOnDeckTime": 1775853557438,
+        "actualOnFieldTime": 1775854016368
+      }
+    },
+    {
+      "label": "Qualification 11",
+      "status": "On field",
+      "redTeams": [
+        "9470",
+        "1671",
+        "3045"
+      ],
+      "blueTeams": [
+        "2204",
+        "5104",
+        "4135"
+      ],
+      "times": {
+        "scheduledStartTime": 1775855280000,
+        "estimatedQueueTime": 1775853558255,
+        "estimatedOnDeckTime": 1775854016380,
+        "estimatedOnFieldTime": 1775854553049,
+        "estimatedStartTime": 1775854862049,
+        "actualQueueTime": 1775853558255,
+        "actualOnDeckTime": 1775854016380,
+        "actualOnFieldTime": 1775854553049
+      }
+    },
+    {
+      "label": "Qualification 12",
+      "status": "On field",
+      "redTeams": [
+        "1967",
+        "3256",
+        "1323"
+      ],
+      "blueTeams": [
+        "8033",
+        "5026",
+        "3501"
+      ],
+      "times": {
+        "scheduledStartTime": 1775855760000,
+        "estimatedQueueTime": 1775854017489,
+        "estimatedOnDeckTime": 1775854553062,
+        "estimatedOnFieldTime": 1775855023316,
+        "estimatedStartTime": 1775855332316,
+        "actualQueueTime": 1775854017489,
+        "actualOnDeckTime": 1775854553062,
+        "actualOnFieldTime": 1775855023316
+      }
+    },
+    {
+      "label": "Qualification 13",
+      "status": "On field",
+      "redTeams": [
+        "115",
+        "7419",
+        "254"
+      ],
+      "blueTeams": [
+        "1868",
+        "7137",
+        "6418"
+      ],
+      "times": {
+        "scheduledStartTime": 1775856240000,
+        "estimatedQueueTime": 1775854553847,
+        "estimatedOnDeckTime": 1775855023329,
+        "estimatedOnFieldTime": 1775855744652,
+        "estimatedStartTime": 1775856053652,
+        "actualQueueTime": 1775854553847,
+        "actualOnDeckTime": 1775855023329,
+        "actualOnFieldTime": 1775855744652
+      }
+    },
+    {
+      "label": "Qualification 14",
+      "status": "On field",
+      "redTeams": [
+        "2073",
+        "3257",
+        "5507"
+      ],
+      "blueTeams": [
+        "253",
+        "971",
+        "2813"
+      ],
+      "times": {
+        "scheduledStartTime": 1775856720000,
+        "estimatedQueueTime": 1775855023852,
+        "estimatedOnDeckTime": 1775855744663,
+        "estimatedOnFieldTime": 1775856195493,
+        "estimatedStartTime": 1775856504493,
+        "actualQueueTime": 1775855023852,
+        "actualOnDeckTime": 1775855744663,
+        "actualOnFieldTime": 1775856195493
+      }
+    },
+    {
+      "label": "Qualification 15",
+      "status": "On field",
+      "redTeams": [
+        "581",
+        "114",
+        "9400"
+      ],
+      "blueTeams": [
+        "6305",
+        "7667",
+        "10339"
+      ],
+      "times": {
+        "scheduledStartTime": 1775857200000,
+        "estimatedQueueTime": 1775855745322,
+        "estimatedOnDeckTime": 1775856195505,
+        "estimatedOnFieldTime": 1775856704657,
+        "estimatedStartTime": 1775857013657,
+        "actualQueueTime": 1775855745322,
+        "actualOnDeckTime": 1775856195505,
+        "actualOnFieldTime": 1775856704657
+      }
+    },
+    {
+      "label": "Qualification 16",
+      "status": "On field",
+      "redTeams": [
+        "846",
+        "5419",
+        "6962"
+      ],
+      "blueTeams": [
+        "670",
+        "5817",
+        "1678"
+      ],
+      "times": {
+        "scheduledStartTime": 1775857680000,
+        "estimatedQueueTime": 1775856195873,
+        "estimatedOnDeckTime": 1775856704667,
+        "estimatedOnFieldTime": 1775857302558,
+        "estimatedStartTime": 1775857611558,
+        "actualQueueTime": 1775856195873,
+        "actualOnDeckTime": 1775856704667,
+        "actualOnFieldTime": 1775857302558
+      }
+    },
+    {
+      "label": "Qualification 17",
+      "status": "On field",
+      "redTeams": [
+        "649",
+        "6238",
+        "841"
+      ],
+      "blueTeams": [
+        "6036",
+        "8",
+        "8048"
+      ],
+      "times": {
+        "scheduledStartTime": 1775858160000,
+        "estimatedQueueTime": 1775856706221,
+        "estimatedOnDeckTime": 1775857302569,
+        "estimatedOnFieldTime": 1775858252961,
+        "estimatedStartTime": 1775858561961,
+        "actualQueueTime": 1775856706221,
+        "actualOnDeckTime": 1775857302569,
+        "actualOnFieldTime": 1775858252961
+      }
+    },
+    {
+      "label": "Qualification 18",
+      "status": "On deck",
+      "redTeams": [
+        "8793",
+        "6665",
+        "6814"
+      ],
+      "blueTeams": [
+        "192",
+        "840",
+        "1072"
+      ],
+      "times": {
+        "scheduledStartTime": 1775858640000,
+        "estimatedQueueTime": 1775857303030,
+        "estimatedOnDeckTime": 1775858252971,
+        "estimatedOnFieldTime": 1775858741971,
+        "estimatedStartTime": 1775859050971,
+        "actualQueueTime": 1775857303030,
+        "actualOnDeckTime": 1775858252971
+      }
+    },
+    {
+      "label": "Qualification 19",
+      "status": "Now queuing",
+      "redTeams": [
+        "4698",
+        "701",
+        "766"
+      ],
+      "blueTeams": [
+        "972",
+        "3970",
+        "6662"
+      ],
+      "times": {
+        "scheduledStartTime": 1775859120000,
+        "estimatedQueueTime": 1775858253537,
+        "estimatedOnDeckTime": 1775858741971,
+        "estimatedOnFieldTime": 1775859230971,
+        "estimatedStartTime": 1775859539971,
+        "actualQueueTime": 1775858253537
+      }
+    },
+    {
+      "label": "Qualification 20",
+      "status": "Queuing soon",
+      "redTeams": [
+        "5940",
+        "4990",
+        "5700"
+      ],
+      "blueTeams": [
+        "2135",
+        "604",
+        "3598"
+      ],
+      "times": {
+        "scheduledStartTime": 1775859600000,
+        "estimatedQueueTime": 1775858741971,
+        "estimatedOnDeckTime": 1775859230971,
+        "estimatedOnFieldTime": 1775859719971,
+        "estimatedStartTime": 1775860028971
+      }
+    },
+    {
+      "label": "Qualification 21",
+      "status": "Queuing soon",
+      "redTeams": [
+        "3256",
+        "115",
+        "2204"
+      ],
+      "blueTeams": [
+        "971",
+        "7137",
+        "1323"
+      ],
+      "times": {
+        "scheduledStartTime": 1775860080000,
+        "estimatedQueueTime": 1775859230971,
+        "estimatedOnDeckTime": 1775859719971,
+        "estimatedOnFieldTime": 1775860208971,
+        "estimatedStartTime": 1775860517971
+      }
+    },
+    {
+      "label": "Qualification 22",
+      "status": "Queuing soon",
+      "redTeams": [
+        "9400",
+        "6418",
+        "5104"
+      ],
+      "blueTeams": [
+        "5507",
+        "2813",
+        "8033"
+      ],
+      "times": {
+        "scheduledStartTime": 1775860560000,
+        "estimatedQueueTime": 1775859719971,
+        "estimatedOnDeckTime": 1775860208971,
+        "estimatedOnFieldTime": 1775860697971,
+        "estimatedStartTime": 1775861006971
+      }
+    },
+    {
+      "label": "Qualification 23",
+      "status": "Queuing soon",
+      "redTeams": [
+        "846",
+        "253",
+        "5817"
+      ],
+      "blueTeams": [
+        "114",
+        "9470",
+        "7667"
+      ],
+      "times": {
+        "scheduledStartTime": 1775861040000,
+        "estimatedQueueTime": 1775860208971,
+        "estimatedOnDeckTime": 1775860697971,
+        "estimatedOnFieldTime": 1775861186971,
+        "estimatedStartTime": 1775861495971
+      }
+    },
+    {
+      "label": "Qualification 24",
+      "status": "Queuing soon",
+      "redTeams": [
+        "8",
+        "841",
+        "1967"
+      ],
+      "blueTeams": [
+        "10339",
+        "670",
+        "1671"
+      ],
+      "times": {
+        "scheduledStartTime": 1775861520000,
+        "estimatedQueueTime": 1775860697971,
+        "estimatedOnDeckTime": 1775861186971,
+        "estimatedOnFieldTime": 1775861675971,
+        "estimatedStartTime": 1775861984971
+      }
+    },
+    {
+      "label": "Qualification 25",
+      "status": "Queuing soon",
+      "redTeams": [
+        "6962",
+        "254",
+        "1678"
+      ],
+      "blueTeams": [
+        "6665",
+        "6238",
+        "1072"
+      ],
+      "times": {
+        "scheduledStartTime": 1775862000000,
+        "estimatedQueueTime": 1775861186971,
+        "estimatedOnDeckTime": 1775861675971,
+        "estimatedOnFieldTime": 1775862164971,
+        "estimatedStartTime": 1775862473971
+      }
+    },
+    {
+      "label": "Qualification 26",
+      "status": "Queuing soon",
+      "redTeams": [
+        "3970",
+        "8048",
+        "5419"
+      ],
+      "blueTeams": [
+        "7419",
+        "972",
+        "3501"
+      ],
+      "times": {
+        "scheduledStartTime": 1775862480000,
+        "estimatedQueueTime": 1775861675971,
+        "estimatedOnDeckTime": 1775862164971,
+        "estimatedOnFieldTime": 1775862653971,
+        "estimatedStartTime": 1775862962971
+      }
+    },
+    {
+      "label": "Qualification 27",
+      "status": "Queuing soon",
+      "redTeams": [
+        "6036",
+        "6305",
+        "3598"
+      ],
+      "blueTeams": [
+        "4135",
+        "2135",
+        "192"
+      ],
+      "times": {
+        "scheduledStartTime": 1775862960000,
+        "estimatedQueueTime": 1775862164971,
+        "estimatedOnDeckTime": 1775862653971,
+        "estimatedOnFieldTime": 1775863142971,
+        "estimatedStartTime": 1775863451971
+      }
+    },
+    {
+      "label": "Qualification 28",
+      "status": "Queuing soon",
+      "redTeams": [
+        "5940",
+        "3045",
+        "5026"
+      ],
+      "blueTeams": [
+        "6662",
+        "4698",
+        "8793"
+      ],
+      "times": {
+        "scheduledStartTime": 1775863440000,
+        "estimatedQueueTime": 1775862653971,
+        "estimatedOnDeckTime": 1775863142971,
+        "estimatedOnFieldTime": 1775863631971,
+        "estimatedStartTime": 1775863940971
+      }
+    },
+    {
+      "label": "Qualification 29",
+      "status": "Queuing soon",
+      "redTeams": [
+        "4990",
+        "604",
+        "6814"
+      ],
+      "blueTeams": [
+        "2073",
+        "766",
+        "581"
+      ],
+      "times": {
+        "scheduledStartTime": 1775863920000,
+        "estimatedQueueTime": 1775863142971,
+        "estimatedOnDeckTime": 1775863631971,
+        "estimatedOnFieldTime": 1775864120971,
+        "estimatedStartTime": 1775864429971
+      }
+    },
+    {
+      "label": "Qualification 30",
+      "status": "Queuing soon",
+      "redTeams": [
+        "5700",
+        "840",
+        "701"
+      ],
+      "blueTeams": [
+        "649",
+        "3257",
+        "1868"
+      ],
+      "times": {
+        "scheduledStartTime": 1775864400000,
+        "estimatedQueueTime": 1775863631971,
+        "estimatedOnDeckTime": 1775864120971,
+        "estimatedOnFieldTime": 1775864609971,
+        "estimatedStartTime": 1775864918971
+      }
+    },
+    {
+      "label": "Qualification 31",
+      "status": "Queuing soon",
+      "redTeams": [
+        "8033",
+        "7137",
+        "8"
+      ],
+      "blueTeams": [
+        "7667",
+        "2813",
+        "846"
+      ],
+      "times": {
+        "scheduledStartTime": 1775864880000,
+        "estimatedQueueTime": 1775864120971,
+        "estimatedOnDeckTime": 1775864609971,
+        "estimatedOnFieldTime": 1775865098971,
+        "estimatedStartTime": 1775865407971
+      }
+    },
+    {
+      "label": "Qualification 32",
+      "status": "Queuing soon",
+      "redTeams": [
+        "1323",
+        "6238",
+        "114"
+      ],
+      "blueTeams": [
+        "670",
+        "841",
+        "6665"
+      ],
+      "times": {
+        "scheduledStartTime": 1775865360000,
+        "estimatedQueueTime": 1775864609971,
+        "estimatedOnDeckTime": 1775865098971,
+        "estimatedOnFieldTime": 1775865587971,
+        "estimatedStartTime": 1775865896971
+      }
+    },
+    {
+      "label": "Qualification 33",
+      "status": "Queuing soon",
+      "redTeams": [
+        "1671",
+        "971",
+        "3970"
+      ],
+      "blueTeams": [
+        "1072",
+        "8048",
+        "6418"
+      ],
+      "times": {
+        "scheduledStartTime": 1775865840000,
+        "estimatedQueueTime": 1775865098971,
+        "estimatedOnDeckTime": 1775865587971,
+        "estimatedOnFieldTime": 1775866076971,
+        "estimatedStartTime": 1775866385971
+      }
+    },
+    {
+      "label": "Qualification 34",
+      "status": "Queuing soon",
+      "redTeams": [
+        "192",
+        "3598",
+        "3501"
+      ],
+      "blueTeams": [
+        "254",
+        "2204",
+        "972"
+      ],
+      "times": {
+        "scheduledStartTime": 1775866320000,
+        "estimatedQueueTime": 1775865587971,
+        "estimatedOnDeckTime": 1775866076971,
+        "estimatedOnFieldTime": 1775866565971,
+        "estimatedStartTime": 1775866874971
+      }
+    },
+    {
+      "label": "Qualification 35",
+      "status": "Queuing soon",
+      "redTeams": [
+        "2135",
+        "253",
+        "7419"
+      ],
+      "blueTeams": [
+        "3045",
+        "9400",
+        "6962"
+      ],
+      "times": {
+        "scheduledStartTime": 1775866800000,
+        "estimatedQueueTime": 1775866076971,
+        "estimatedOnDeckTime": 1775866565971,
+        "estimatedOnFieldTime": 1775867054971,
+        "estimatedStartTime": 1775867363971
+      }
+    },
+    {
+      "label": "Qualification 36",
+      "status": "Queuing soon",
+      "redTeams": [
+        "4698",
+        "5507",
+        "1678"
+      ],
+      "blueTeams": [
+        "6036",
+        "9470",
+        "6814"
+      ],
+      "times": {
+        "scheduledStartTime": 1775867280000,
+        "estimatedQueueTime": 1775866565971,
+        "estimatedOnDeckTime": 1775867054971,
+        "estimatedOnFieldTime": 1775867543971,
+        "estimatedStartTime": 1775867852971
+      }
+    },
+    {
+      "label": "Qualification 37",
+      "status": "Queuing soon",
+      "redTeams": [
+        "10339",
+        "649",
+        "604"
+      ],
+      "blueTeams": [
+        "3256",
+        "4990",
+        "5026"
+      ],
+      "times": {
+        "scheduledStartTime": 1775867760000,
+        "estimatedQueueTime": 1775867054971,
+        "estimatedOnDeckTime": 1775867543971,
+        "estimatedOnFieldTime": 1775868032971,
+        "estimatedStartTime": 1775868341971
+      }
+    },
+    {
+      "label": "Qualification 38",
+      "status": "Queuing soon",
+      "redTeams": [
+        "701",
+        "3257",
+        "1967"
+      ],
+      "blueTeams": [
+        "8793",
+        "581",
+        "4135"
+      ],
+      "times": {
+        "scheduledStartTime": 1775868240000,
+        "estimatedQueueTime": 1775867543971,
+        "estimatedOnDeckTime": 1775868032971,
+        "estimatedOnFieldTime": 1775868521971,
+        "estimatedStartTime": 1775868830971
+      },
+      "breakAfter": "End of day"
+    },
+    {
+      "label": "Qualification 39",
+      "status": "Queuing soon",
+      "redTeams": [
+        "5700",
+        "6305",
+        "2073"
+      ],
+      "blueTeams": [
+        "6662",
+        "5419",
+        "115"
+      ],
+      "times": {
+        "scheduledStartTime": 1775922600000,
+        "estimatedQueueTime": 1775920500000,
+        "estimatedOnDeckTime": 1775920500000,
+        "estimatedOnFieldTime": 1775922600000,
+        "estimatedStartTime": 1775922909000
+      }
+    },
+    {
+      "label": "Qualification 40",
+      "status": "Queuing soon",
+      "redTeams": [
+        "5817",
+        "5104",
+        "766"
+      ],
+      "blueTeams": [
+        "1868",
+        "5940",
+        "840"
+      ],
+      "times": {
+        "scheduledStartTime": 1775923080000,
+        "estimatedQueueTime": 1775920500000,
+        "estimatedOnDeckTime": 1775922600000,
+        "estimatedOnFieldTime": 1775923089000,
+        "estimatedStartTime": 1775923398000
+      }
+    },
+    {
+      "label": "Qualification 41",
+      "status": "Queuing soon",
+      "redTeams": [
+        "254",
+        "3598",
+        "8033"
+      ],
+      "blueTeams": [
+        "841",
+        "1671",
+        "846"
+      ],
+      "times": {
+        "scheduledStartTime": 1775923560000,
+        "estimatedQueueTime": 1775922600000,
+        "estimatedOnDeckTime": 1775923089000,
+        "estimatedOnFieldTime": 1775923578000,
+        "estimatedStartTime": 1775923887000
+      }
+    },
+    {
+      "label": "Qualification 42",
+      "status": "Queuing soon",
+      "redTeams": [
+        "192",
+        "670",
+        "972"
+      ],
+      "blueTeams": [
+        "9400",
+        "7137",
+        "1072"
+      ],
+      "times": {
+        "scheduledStartTime": 1775924040000,
+        "estimatedQueueTime": 1775923089000,
+        "estimatedOnDeckTime": 1775923578000,
+        "estimatedOnFieldTime": 1775924067000,
+        "estimatedStartTime": 1775924376000
+      }
+    },
+    {
+      "label": "Qualification 43",
+      "status": "Queuing soon",
+      "redTeams": [
+        "6238",
+        "2135",
+        "5507"
+      ],
+      "blueTeams": [
+        "114",
+        "4698",
+        "7419"
+      ],
+      "times": {
+        "scheduledStartTime": 1775924520000,
+        "estimatedQueueTime": 1775923578000,
+        "estimatedOnDeckTime": 1775924067000,
+        "estimatedOnFieldTime": 1775924556000,
+        "estimatedStartTime": 1775924865000
+      }
+    },
+    {
+      "label": "Qualification 44",
+      "status": "Queuing soon",
+      "redTeams": [
+        "6814",
+        "10339",
+        "5026"
+      ],
+      "blueTeams": [
+        "6962",
+        "2813",
+        "9470"
+      ],
+      "times": {
+        "scheduledStartTime": 1775925000000,
+        "estimatedQueueTime": 1775924067000,
+        "estimatedOnDeckTime": 1775924556000,
+        "estimatedOnFieldTime": 1775925045000,
+        "estimatedStartTime": 1775925354000
+      }
+    },
+    {
+      "label": "Qualification 45",
+      "status": "Queuing soon",
+      "redTeams": [
+        "8048",
+        "1323",
+        "4990"
+      ],
+      "blueTeams": [
+        "6665",
+        "4135",
+        "701"
+      ],
+      "times": {
+        "scheduledStartTime": 1775925480000,
+        "estimatedQueueTime": 1775924556000,
+        "estimatedOnDeckTime": 1775925045000,
+        "estimatedOnFieldTime": 1775925534000,
+        "estimatedStartTime": 1775925843000
+      }
+    },
+    {
+      "label": "Qualification 46",
+      "status": "Queuing soon",
+      "redTeams": [
+        "7667",
+        "604",
+        "3970"
+      ],
+      "blueTeams": [
+        "5700",
+        "649",
+        "971"
+      ],
+      "times": {
+        "scheduledStartTime": 1775925960000,
+        "estimatedQueueTime": 1775925045000,
+        "estimatedOnDeckTime": 1775925534000,
+        "estimatedOnFieldTime": 1775926023000,
+        "estimatedStartTime": 1775926332000
+      }
+    },
+    {
+      "label": "Qualification 47",
+      "status": "Queuing soon",
+      "redTeams": [
+        "5104",
+        "115",
+        "581"
+      ],
+      "blueTeams": [
+        "5817",
+        "5419",
+        "5940"
+      ],
+      "times": {
+        "scheduledStartTime": 1775926440000,
+        "estimatedQueueTime": 1775925534000,
+        "estimatedOnDeckTime": 1775926023000,
+        "estimatedOnFieldTime": 1775926512000,
+        "estimatedStartTime": 1775926821000
+      }
+    },
+    {
+      "label": "Qualification 48",
+      "status": "Queuing soon",
+      "redTeams": [
+        "766",
+        "840",
+        "3501"
+      ],
+      "blueTeams": [
+        "6418",
+        "1678",
+        "2073"
+      ],
+      "times": {
+        "scheduledStartTime": 1775926920000,
+        "estimatedQueueTime": 1775926023000,
+        "estimatedOnDeckTime": 1775926512000,
+        "estimatedOnFieldTime": 1775927001000,
+        "estimatedStartTime": 1775927310000
+      }
+    },
+    {
+      "label": "Qualification 49",
+      "status": "Queuing soon",
+      "redTeams": [
+        "8",
+        "1868",
+        "3256"
+      ],
+      "blueTeams": [
+        "3045",
+        "8793",
+        "253"
+      ],
+      "times": {
+        "scheduledStartTime": 1775927400000,
+        "estimatedQueueTime": 1775926512000,
+        "estimatedOnDeckTime": 1775927001000,
+        "estimatedOnFieldTime": 1775927490000,
+        "estimatedStartTime": 1775927799000
+      }
+    },
+    {
+      "label": "Qualification 50",
+      "status": "Queuing soon",
+      "redTeams": [
+        "2204",
+        "6036",
+        "3257"
+      ],
+      "blueTeams": [
+        "1967",
+        "6662",
+        "6305"
+      ],
+      "times": {
+        "scheduledStartTime": 1775927880000,
+        "estimatedQueueTime": 1775927001000,
+        "estimatedOnDeckTime": 1775927490000,
+        "estimatedOnFieldTime": 1775927979000,
+        "estimatedStartTime": 1775928288000
+      }
+    },
+    {
+      "label": "Qualification 51",
+      "status": "Queuing soon",
+      "redTeams": [
+        "1072",
+        "7419",
+        "9470"
+      ],
+      "blueTeams": [
+        "10339",
+        "846",
+        "3598"
+      ],
+      "times": {
+        "scheduledStartTime": 1775928360000,
+        "estimatedQueueTime": 1775927490000,
+        "estimatedOnDeckTime": 1775927979000,
+        "estimatedOnFieldTime": 1775928468000,
+        "estimatedStartTime": 1775928777000
+      }
+    },
+    {
+      "label": "Qualification 52",
+      "status": "Queuing soon",
+      "redTeams": [
+        "5026",
+        "5507",
+        "6665"
+      ],
+      "blueTeams": [
+        "4135",
+        "9400",
+        "841"
+      ],
+      "times": {
+        "scheduledStartTime": 1775928840000,
+        "estimatedQueueTime": 1775927979000,
+        "estimatedOnDeckTime": 1775928468000,
+        "estimatedOnFieldTime": 1775928957000,
+        "estimatedStartTime": 1775929266000
+      }
+    },
+    {
+      "label": "Qualification 53",
+      "status": "Queuing soon",
+      "redTeams": [
+        "8048",
+        "6814",
+        "2135"
+      ],
+      "blueTeams": [
+        "254",
+        "7667",
+        "1323"
+      ],
+      "times": {
+        "scheduledStartTime": 1775929320000,
+        "estimatedQueueTime": 1775928468000,
+        "estimatedOnDeckTime": 1775928957000,
+        "estimatedOnFieldTime": 1775929446000,
+        "estimatedStartTime": 1775929755000
+      }
+    },
+    {
+      "label": "Qualification 54",
+      "status": "Queuing soon",
+      "redTeams": [
+        "1671",
+        "581",
+        "4698"
+      ],
+      "blueTeams": [
+        "7137",
+        "192",
+        "649"
+      ],
+      "times": {
+        "scheduledStartTime": 1775929800000,
+        "estimatedQueueTime": 1775928957000,
+        "estimatedOnDeckTime": 1775929446000,
+        "estimatedOnFieldTime": 1775929935000,
+        "estimatedStartTime": 1775930244000
+      }
+    },
+    {
+      "label": "Qualification 55",
+      "status": "Queuing soon",
+      "redTeams": [
+        "972",
+        "2073",
+        "840"
+      ],
+      "blueTeams": [
+        "6238",
+        "2813",
+        "5940"
+      ],
+      "times": {
+        "scheduledStartTime": 1775930280000,
+        "estimatedQueueTime": 1775929446000,
+        "estimatedOnDeckTime": 1775929935000,
+        "estimatedOnFieldTime": 1775930424000,
+        "estimatedStartTime": 1775930733000
+      }
+    },
+    {
+      "label": "Qualification 56",
+      "status": "Queuing soon",
+      "redTeams": [
+        "971",
+        "114",
+        "5104"
+      ],
+      "blueTeams": [
+        "1678",
+        "8",
+        "8793"
+      ],
+      "times": {
+        "scheduledStartTime": 1775930760000,
+        "estimatedQueueTime": 1775929935000,
+        "estimatedOnDeckTime": 1775930424000,
+        "estimatedOnFieldTime": 1775930913000,
+        "estimatedStartTime": 1775931222000
+      }
+    },
+    {
+      "label": "Qualification 57",
+      "status": "Queuing soon",
+      "redTeams": [
+        "1868",
+        "701",
+        "6662"
+      ],
+      "blueTeams": [
+        "604",
+        "3501",
+        "5419"
+      ],
+      "times": {
+        "scheduledStartTime": 1775931240000,
+        "estimatedQueueTime": 1775930424000,
+        "estimatedOnDeckTime": 1775930913000,
+        "estimatedOnFieldTime": 1775931402000,
+        "estimatedStartTime": 1775931711000
+      }
+    },
+    {
+      "label": "Qualification 58",
+      "status": "Queuing soon",
+      "redTeams": [
+        "115",
+        "3970",
+        "6962"
+      ],
+      "blueTeams": [
+        "1967",
+        "4990",
+        "6036"
+      ],
+      "times": {
+        "scheduledStartTime": 1775931720000,
+        "estimatedQueueTime": 1775930913000,
+        "estimatedOnDeckTime": 1775931402000,
+        "estimatedOnFieldTime": 1775931891000,
+        "estimatedStartTime": 1775932200000
+      }
+    },
+    {
+      "label": "Qualification 59",
+      "status": "Queuing soon",
+      "redTeams": [
+        "6418",
+        "766",
+        "670"
+      ],
+      "blueTeams": [
+        "3256",
+        "253",
+        "6305"
+      ],
+      "times": {
+        "scheduledStartTime": 1775932200000,
+        "estimatedQueueTime": 1775931402000,
+        "estimatedOnDeckTime": 1775931891000,
+        "estimatedOnFieldTime": 1775932380000,
+        "estimatedStartTime": 1775932689000
+      }
+    },
+    {
+      "label": "Qualification 60",
+      "status": "Queuing soon",
+      "redTeams": [
+        "3257",
+        "5700",
+        "8033"
+      ],
+      "blueTeams": [
+        "2204",
+        "3045",
+        "5817"
+      ],
+      "times": {
+        "scheduledStartTime": 1775932680000,
+        "estimatedQueueTime": 1775931891000,
+        "estimatedOnDeckTime": 1775932380000,
+        "estimatedOnFieldTime": 1775932869000,
+        "estimatedStartTime": 1775933178000
+      }
+    },
+    {
+      "label": "Qualification 61",
+      "status": "Queuing soon",
+      "redTeams": [
+        "581",
+        "192",
+        "1323"
+      ],
+      "blueTeams": [
+        "5507",
+        "9470",
+        "254"
+      ],
+      "times": {
+        "scheduledStartTime": 1775933160000,
+        "estimatedQueueTime": 1775932380000,
+        "estimatedOnDeckTime": 1775932869000,
+        "estimatedOnFieldTime": 1775933358000,
+        "estimatedStartTime": 1775933667000
+      }
+    },
+    {
+      "label": "Qualification 62",
+      "status": "Queuing soon",
+      "redTeams": [
+        "840",
+        "2135",
+        "4698"
+      ],
+      "blueTeams": [
+        "10339",
+        "2073",
+        "8048"
+      ],
+      "times": {
+        "scheduledStartTime": 1775933640000,
+        "estimatedQueueTime": 1775932869000,
+        "estimatedOnDeckTime": 1775933358000,
+        "estimatedOnFieldTime": 1775933847000,
+        "estimatedStartTime": 1775934156000
+      },
+      "breakAfter": "Lunch"
+    },
+    {
+      "label": "Qualification 63",
+      "status": "Queuing soon",
+      "redTeams": [
+        "7419",
+        "649",
+        "4135"
+      ],
+      "blueTeams": [
+        "8793",
+        "972",
+        "5104"
+      ],
+      "times": {
+        "scheduledStartTime": 1775937720000,
+        "estimatedQueueTime": 1775936820000,
+        "estimatedOnDeckTime": 1775936820000,
+        "estimatedOnFieldTime": 1775937411000,
+        "estimatedStartTime": 1775937720000
+      }
+    },
+    {
+      "label": "Qualification 64",
+      "status": "Queuing soon",
+      "redTeams": [
+        "8",
+        "1671",
+        "3598"
+      ],
+      "blueTeams": [
+        "6814",
+        "7667",
+        "701"
+      ],
+      "times": {
+        "scheduledStartTime": 1775938200000,
+        "estimatedQueueTime": 1775936820000,
+        "estimatedOnDeckTime": 1775937411000,
+        "estimatedOnFieldTime": 1775937900000,
+        "estimatedStartTime": 1775938209000
+      }
+    },
+    {
+      "label": "Qualification 65",
+      "status": "Queuing soon",
+      "redTeams": [
+        "3501",
+        "6962",
+        "841"
+      ],
+      "blueTeams": [
+        "604",
+        "115",
+        "7137"
+      ],
+      "times": {
+        "scheduledStartTime": 1775938680000,
+        "estimatedQueueTime": 1775937411000,
+        "estimatedOnDeckTime": 1775937900000,
+        "estimatedOnFieldTime": 1775938389000,
+        "estimatedStartTime": 1775938698000
+      }
+    },
+    {
+      "label": "Qualification 66",
+      "status": "Queuing soon",
+      "redTeams": [
+        "9400",
+        "1967",
+        "5419"
+      ],
+      "blueTeams": [
+        "4990",
+        "971",
+        "766"
+      ],
+      "times": {
+        "scheduledStartTime": 1775939160000,
+        "estimatedQueueTime": 1775937900000,
+        "estimatedOnDeckTime": 1775938389000,
+        "estimatedOnFieldTime": 1775938878000,
+        "estimatedStartTime": 1775939187000
+      }
+    },
+    {
+      "label": "Qualification 67",
+      "status": "Queuing soon",
+      "redTeams": [
+        "3970",
+        "3256",
+        "3045"
+      ],
+      "blueTeams": [
+        "6238",
+        "3257",
+        "846"
+      ],
+      "times": {
+        "scheduledStartTime": 1775939640000,
+        "estimatedQueueTime": 1775938389000,
+        "estimatedOnDeckTime": 1775938878000,
+        "estimatedOnFieldTime": 1775939367000,
+        "estimatedStartTime": 1775939676000
+      }
+    },
+    {
+      "label": "Qualification 68",
+      "status": "Queuing soon",
+      "redTeams": [
+        "2813",
+        "6418",
+        "5817"
+      ],
+      "blueTeams": [
+        "2204",
+        "1678",
+        "6662"
+      ],
+      "times": {
+        "scheduledStartTime": 1775940120000,
+        "estimatedQueueTime": 1775938878000,
+        "estimatedOnDeckTime": 1775939367000,
+        "estimatedOnFieldTime": 1775939856000,
+        "estimatedStartTime": 1775940165000
+      }
+    },
+    {
+      "label": "Qualification 69",
+      "status": "Queuing soon",
+      "redTeams": [
+        "1072",
+        "6305",
+        "1868"
+      ],
+      "blueTeams": [
+        "8033",
+        "6665",
+        "5940"
+      ],
+      "times": {
+        "scheduledStartTime": 1775940600000,
+        "estimatedQueueTime": 1775939367000,
+        "estimatedOnDeckTime": 1775939856000,
+        "estimatedOnFieldTime": 1775940345000,
+        "estimatedStartTime": 1775940654000
+      }
+    },
+    {
+      "label": "Qualification 70",
+      "status": "Queuing soon",
+      "redTeams": [
+        "5026",
+        "5700",
+        "670"
+      ],
+      "blueTeams": [
+        "114",
+        "6036",
+        "253"
+      ],
+      "times": {
+        "scheduledStartTime": 1775941080000,
+        "estimatedQueueTime": 1775939856000,
+        "estimatedOnDeckTime": 1775940345000,
+        "estimatedOnFieldTime": 1775940834000,
+        "estimatedStartTime": 1775941143000
+      }
+    },
+    {
+      "label": "Qualification 71",
+      "status": "Queuing soon",
+      "redTeams": [
+        "1323",
+        "8793",
+        "649"
+      ],
+      "blueTeams": [
+        "2073",
+        "3598",
+        "9470"
+      ],
+      "times": {
+        "scheduledStartTime": 1775941560000,
+        "estimatedQueueTime": 1775940345000,
+        "estimatedOnDeckTime": 1775940834000,
+        "estimatedOnFieldTime": 1775941323000,
+        "estimatedStartTime": 1775941632000
+      }
+    },
+    {
+      "label": "Qualification 72",
+      "status": "Queuing soon",
+      "redTeams": [
+        "701",
+        "972",
+        "5507"
+      ],
+      "blueTeams": [
+        "840",
+        "6962",
+        "10339"
+      ],
+      "times": {
+        "scheduledStartTime": 1775942040000,
+        "estimatedQueueTime": 1775940834000,
+        "estimatedOnDeckTime": 1775941323000,
+        "estimatedOnFieldTime": 1775941812000,
+        "estimatedStartTime": 1775942121000
+      }
+    },
+    {
+      "label": "Qualification 73",
+      "status": "Queuing soon",
+      "redTeams": [
+        "4135",
+        "7667",
+        "7137"
+      ],
+      "blueTeams": [
+        "766",
+        "192",
+        "5419"
+      ],
+      "times": {
+        "scheduledStartTime": 1775942520000,
+        "estimatedQueueTime": 1775941323000,
+        "estimatedOnDeckTime": 1775941812000,
+        "estimatedOnFieldTime": 1775942301000,
+        "estimatedStartTime": 1775942610000
+      }
+    },
+    {
+      "label": "Qualification 74",
+      "status": "Queuing soon",
+      "redTeams": [
+        "115",
+        "8048",
+        "9400"
+      ],
+      "blueTeams": [
+        "3257",
+        "8",
+        "5104"
+      ],
+      "times": {
+        "scheduledStartTime": 1775943000000,
+        "estimatedQueueTime": 1775941812000,
+        "estimatedOnDeckTime": 1775942301000,
+        "estimatedOnFieldTime": 1775942790000,
+        "estimatedStartTime": 1775943099000
+      }
+    },
+    {
+      "label": "Qualification 75",
+      "status": "Queuing soon",
+      "redTeams": [
+        "581",
+        "846",
+        "2135"
+      ],
+      "blueTeams": [
+        "841",
+        "6418",
+        "6662"
+      ],
+      "times": {
+        "scheduledStartTime": 1775943480000,
+        "estimatedQueueTime": 1775942301000,
+        "estimatedOnDeckTime": 1775942790000,
+        "estimatedOnFieldTime": 1775943279000,
+        "estimatedStartTime": 1775943588000
+      }
+    },
+    {
+      "label": "Qualification 76",
+      "status": "Queuing soon",
+      "redTeams": [
+        "5817",
+        "1072",
+        "254"
+      ],
+      "blueTeams": [
+        "3045",
+        "1967",
+        "604"
+      ],
+      "times": {
+        "scheduledStartTime": 1775943960000,
+        "estimatedQueueTime": 1775942790000,
+        "estimatedOnDeckTime": 1775943279000,
+        "estimatedOnFieldTime": 1775943768000,
+        "estimatedStartTime": 1775944077000
+      }
+    },
+    {
+      "label": "Qualification 77",
+      "status": "Queuing soon",
+      "redTeams": [
+        "670",
+        "253",
+        "8033"
+      ],
+      "blueTeams": [
+        "6665",
+        "4698",
+        "4990"
+      ],
+      "times": {
+        "scheduledStartTime": 1775944440000,
+        "estimatedQueueTime": 1775943279000,
+        "estimatedOnDeckTime": 1775943768000,
+        "estimatedOnFieldTime": 1775944257000,
+        "estimatedStartTime": 1775944566000
+      }
+    },
+    {
+      "label": "Qualification 78",
+      "status": "Queuing soon",
+      "redTeams": [
+        "6238",
+        "6036",
+        "1671"
+      ],
+      "blueTeams": [
+        "5940",
+        "3501",
+        "971"
+      ],
+      "times": {
+        "scheduledStartTime": 1775944920000,
+        "estimatedQueueTime": 1775943768000,
+        "estimatedOnDeckTime": 1775944257000,
+        "estimatedOnFieldTime": 1775944746000,
+        "estimatedStartTime": 1775945055000
+      }
+    },
+    {
+      "label": "Qualification 79",
+      "status": "Queuing soon",
+      "redTeams": [
+        "2813",
+        "1678",
+        "114"
+      ],
+      "blueTeams": [
+        "3256",
+        "7419",
+        "5700"
+      ],
+      "times": {
+        "scheduledStartTime": 1775945400000,
+        "estimatedQueueTime": 1775944257000,
+        "estimatedOnDeckTime": 1775944746000,
+        "estimatedOnFieldTime": 1775945235000,
+        "estimatedStartTime": 1775945544000
+      }
+    },
+    {
+      "label": "Qualification 80",
+      "status": "Queuing soon",
+      "redTeams": [
+        "6305",
+        "6814",
+        "2204"
+      ],
+      "blueTeams": [
+        "1868",
+        "5026",
+        "3970"
+      ],
+      "times": {
+        "scheduledStartTime": 1775945880000,
+        "estimatedQueueTime": 1775944746000,
+        "estimatedOnDeckTime": 1775945235000,
+        "estimatedOnFieldTime": 1775945724000,
+        "estimatedStartTime": 1775946033000
+      }
+    },
+    {
+      "label": "Qualification 81",
+      "status": "Queuing soon",
+      "redTeams": [
+        "5419",
+        "8793",
+        "9470"
+      ],
+      "blueTeams": [
+        "766",
+        "5507",
+        "8048"
+      ],
+      "times": {
+        "scheduledStartTime": 1775946360000,
+        "estimatedQueueTime": 1775945235000,
+        "estimatedOnDeckTime": 1775945724000,
+        "estimatedOnFieldTime": 1775946213000,
+        "estimatedStartTime": 1775946522000
+      }
+    },
+    {
+      "label": "Qualification 82",
+      "status": "Queuing soon",
+      "redTeams": [
+        "1323",
+        "10339",
+        "4135"
+      ],
+      "blueTeams": [
+        "8",
+        "6662",
+        "840"
+      ],
+      "times": {
+        "scheduledStartTime": 1775946840000,
+        "estimatedQueueTime": 1775945724000,
+        "estimatedOnDeckTime": 1775946213000,
+        "estimatedOnFieldTime": 1775946702000,
+        "estimatedStartTime": 1775947011000
+      }
+    },
+    {
+      "label": "Qualification 83",
+      "status": "Queuing soon",
+      "redTeams": [
+        "604",
+        "972",
+        "846"
+      ],
+      "blueTeams": [
+        "5104",
+        "1967",
+        "2135"
+      ],
+      "times": {
+        "scheduledStartTime": 1775947320000,
+        "estimatedQueueTime": 1775946213000,
+        "estimatedOnDeckTime": 1775946702000,
+        "estimatedOnFieldTime": 1775947191000,
+        "estimatedStartTime": 1775947500000
+      }
+    },
+    {
+      "label": "Qualification 84",
+      "status": "Queuing soon",
+      "redTeams": [
+        "3598",
+        "6665",
+        "6418"
+      ],
+      "blueTeams": [
+        "7137",
+        "670",
+        "3257"
+      ],
+      "times": {
+        "scheduledStartTime": 1775947800000,
+        "estimatedQueueTime": 1775946702000,
+        "estimatedOnDeckTime": 1775947191000,
+        "estimatedOnFieldTime": 1775947680000,
+        "estimatedStartTime": 1775947989000
+      }
+    },
+    {
+      "label": "Qualification 85",
+      "status": "Queuing soon",
+      "redTeams": [
+        "7667",
+        "3045",
+        "4698"
+      ],
+      "blueTeams": [
+        "1671",
+        "701",
+        "115"
+      ],
+      "times": {
+        "scheduledStartTime": 1775948280000,
+        "estimatedQueueTime": 1775947191000,
+        "estimatedOnDeckTime": 1775947680000,
+        "estimatedOnFieldTime": 1775948169000,
+        "estimatedStartTime": 1775948478000
+      }
+    },
+    {
+      "label": "Qualification 86",
+      "status": "Queuing soon",
+      "redTeams": [
+        "841",
+        "5700",
+        "5817"
+      ],
+      "blueTeams": [
+        "3501",
+        "9400",
+        "3256"
+      ],
+      "times": {
+        "scheduledStartTime": 1775948760000,
+        "estimatedQueueTime": 1775947680000,
+        "estimatedOnDeckTime": 1775948169000,
+        "estimatedOnFieldTime": 1775948658000,
+        "estimatedStartTime": 1775948967000
+      }
+    },
+    {
+      "label": "Qualification 87",
+      "status": "Queuing soon",
+      "redTeams": [
+        "649",
+        "2204",
+        "4990"
+      ],
+      "blueTeams": [
+        "114",
+        "6814",
+        "5940"
+      ],
+      "times": {
+        "scheduledStartTime": 1775949240000,
+        "estimatedQueueTime": 1775948169000,
+        "estimatedOnDeckTime": 1775948658000,
+        "estimatedOnFieldTime": 1775949147000,
+        "estimatedStartTime": 1775949456000
+      }
+    },
+    {
+      "label": "Qualification 88",
+      "status": "Queuing soon",
+      "redTeams": [
+        "1678",
+        "3970",
+        "6238"
+      ],
+      "blueTeams": [
+        "253",
+        "1868",
+        "192"
+      ],
+      "times": {
+        "scheduledStartTime": 1775949720000,
+        "estimatedQueueTime": 1775948658000,
+        "estimatedOnDeckTime": 1775949147000,
+        "estimatedOnFieldTime": 1775949636000,
+        "estimatedStartTime": 1775949945000
+      }
+    },
+    {
+      "label": "Qualification 89",
+      "status": "Queuing soon",
+      "redTeams": [
+        "971",
+        "6962",
+        "6305"
+      ],
+      "blueTeams": [
+        "2073",
+        "254",
+        "2813"
+      ],
+      "times": {
+        "scheduledStartTime": 1775950200000,
+        "estimatedQueueTime": 1775949147000,
+        "estimatedOnDeckTime": 1775949636000,
+        "estimatedOnFieldTime": 1775950125000,
+        "estimatedStartTime": 1775950434000
+      }
+    },
+    {
+      "label": "Qualification 90",
+      "status": "Queuing soon",
+      "redTeams": [
+        "5026",
+        "7419",
+        "6036"
+      ],
+      "blueTeams": [
+        "1072",
+        "8033",
+        "581"
+      ],
+      "times": {
+        "scheduledStartTime": 1775950680000,
+        "estimatedQueueTime": 1775949636000,
+        "estimatedOnDeckTime": 1775950125000,
+        "estimatedOnFieldTime": 1775950614000,
+        "estimatedStartTime": 1775950923000
+      }
+    },
+    {
+      "label": "Qualification 91",
+      "status": "Queuing soon",
+      "redTeams": [
+        "9470",
+        "6418",
+        "972"
+      ],
+      "blueTeams": [
+        "6665",
+        "604",
+        "8"
+      ],
+      "times": {
+        "scheduledStartTime": 1775951160000,
+        "estimatedQueueTime": 1775950125000,
+        "estimatedOnDeckTime": 1775950614000,
+        "estimatedOnFieldTime": 1775951103000,
+        "estimatedStartTime": 1775951412000
+      }
+    },
+    {
+      "label": "Qualification 92",
+      "status": "Queuing soon",
+      "redTeams": [
+        "1671",
+        "8793",
+        "2135"
+      ],
+      "blueTeams": [
+        "1323",
+        "670",
+        "115"
+      ],
+      "times": {
+        "scheduledStartTime": 1775951640000,
+        "estimatedQueueTime": 1775950614000,
+        "estimatedOnDeckTime": 1775951103000,
+        "estimatedOnFieldTime": 1775951592000,
+        "estimatedStartTime": 1775951901000
+      }
+    },
+    {
+      "label": "Qualification 93",
+      "status": "Queuing soon",
+      "redTeams": [
+        "3257",
+        "3256",
+        "840"
+      ],
+      "blueTeams": [
+        "5419",
+        "841",
+        "7667"
+      ],
+      "times": {
+        "scheduledStartTime": 1775952120000,
+        "estimatedQueueTime": 1775951103000,
+        "estimatedOnDeckTime": 1775951592000,
+        "estimatedOnFieldTime": 1775952081000,
+        "estimatedStartTime": 1775952390000
+      }
+    },
+    {
+      "label": "Qualification 94",
+      "status": "Queuing soon",
+      "redTeams": [
+        "7137",
+        "5940",
+        "1967"
+      ],
+      "blueTeams": [
+        "6814",
+        "5700",
+        "9400"
+      ],
+      "times": {
+        "scheduledStartTime": 1775952600000,
+        "estimatedQueueTime": 1775951592000,
+        "estimatedOnDeckTime": 1775952081000,
+        "estimatedOnFieldTime": 1775952570000,
+        "estimatedStartTime": 1775952879000
+      }
+    },
+    {
+      "label": "Qualification 95",
+      "status": "Queuing soon",
+      "redTeams": [
+        "1678",
+        "10339",
+        "192"
+      ],
+      "blueTeams": [
+        "649",
+        "3501",
+        "3045"
+      ],
+      "times": {
+        "scheduledStartTime": 1775953080000,
+        "estimatedQueueTime": 1775952081000,
+        "estimatedOnDeckTime": 1775952570000,
+        "estimatedOnFieldTime": 1775953059000,
+        "estimatedStartTime": 1775953368000
+      }
+    },
+    {
+      "label": "Qualification 96",
+      "status": "Queuing soon",
+      "redTeams": [
+        "4990",
+        "6662",
+        "253"
+      ],
+      "blueTeams": [
+        "5104",
+        "254",
+        "6238"
+      ],
+      "times": {
+        "scheduledStartTime": 1775953560000,
+        "estimatedQueueTime": 1775952570000,
+        "estimatedOnDeckTime": 1775953059000,
+        "estimatedOnFieldTime": 1775953548000,
+        "estimatedStartTime": 1775953857000
+      },
+      "breakAfter": "End of day"
+    },
+    {
+      "label": "Qualification 97",
+      "status": "Queuing soon",
+      "redTeams": [
+        "6962",
+        "8033",
+        "114"
+      ],
+      "blueTeams": [
+        "8048",
+        "581",
+        "1868"
+      ],
+      "times": {
+        "scheduledStartTime": 1776009000000,
+        "estimatedQueueTime": 1776006900000,
+        "estimatedOnDeckTime": 1776006900000,
+        "estimatedOnFieldTime": 1776009000000,
+        "estimatedStartTime": 1776009309000
+      }
+    },
+    {
+      "label": "Qualification 98",
+      "status": "Queuing soon",
+      "redTeams": [
+        "846",
+        "971",
+        "7419"
+      ],
+      "blueTeams": [
+        "6305",
+        "4135",
+        "4698"
+      ],
+      "times": {
+        "scheduledStartTime": 1776009480000,
+        "estimatedQueueTime": 1776006900000,
+        "estimatedOnDeckTime": 1776009000000,
+        "estimatedOnFieldTime": 1776009489000,
+        "estimatedStartTime": 1776009798000
+      }
+    },
+    {
+      "label": "Qualification 99",
+      "status": "Queuing soon",
+      "redTeams": [
+        "5026",
+        "5817",
+        "2073"
+      ],
+      "blueTeams": [
+        "3598",
+        "5507",
+        "3970"
+      ],
+      "times": {
+        "scheduledStartTime": 1776009960000,
+        "estimatedQueueTime": 1776009000000,
+        "estimatedOnDeckTime": 1776009489000,
+        "estimatedOnFieldTime": 1776009978000,
+        "estimatedStartTime": 1776010287000
+      }
+    },
+    {
+      "label": "Qualification 100",
+      "status": "Queuing soon",
+      "redTeams": [
+        "701",
+        "1072",
+        "6036"
+      ],
+      "blueTeams": [
+        "2813",
+        "766",
+        "2204"
+      ],
+      "times": {
+        "scheduledStartTime": 1776010440000,
+        "estimatedQueueTime": 1776009489000,
+        "estimatedOnDeckTime": 1776009978000,
+        "estimatedOnFieldTime": 1776010467000,
+        "estimatedStartTime": 1776010776000
+      }
+    },
+    {
+      "label": "Qualification 101",
+      "status": "Queuing soon",
+      "redTeams": [
+        "9470",
+        "1323",
+        "8"
+      ],
+      "blueTeams": [
+        "972",
+        "2135",
+        "5700"
+      ],
+      "times": {
+        "scheduledStartTime": 1776010920000,
+        "estimatedQueueTime": 1776009978000,
+        "estimatedOnDeckTime": 1776010467000,
+        "estimatedOnFieldTime": 1776010956000,
+        "estimatedStartTime": 1776011265000
+      }
+    },
+    {
+      "label": "Qualification 102",
+      "status": "Queuing soon",
+      "redTeams": [
+        "3045",
+        "6665",
+        "10339"
+      ],
+      "blueTeams": [
+        "5419",
+        "6814",
+        "6418"
+      ],
+      "times": {
+        "scheduledStartTime": 1776011400000,
+        "estimatedQueueTime": 1776010467000,
+        "estimatedOnDeckTime": 1776010956000,
+        "estimatedOnFieldTime": 1776011445000,
+        "estimatedStartTime": 1776011754000
+      }
+    },
+    {
+      "label": "Qualification 103",
+      "status": "Queuing soon",
+      "redTeams": [
+        "3501",
+        "1678",
+        "7667"
+      ],
+      "blueTeams": [
+        "670",
+        "5940",
+        "8793"
+      ],
+      "times": {
+        "scheduledStartTime": 1776011880000,
+        "estimatedQueueTime": 1776010956000,
+        "estimatedOnDeckTime": 1776011445000,
+        "estimatedOnFieldTime": 1776011934000,
+        "estimatedStartTime": 1776012243000
+      }
+    },
+    {
+      "label": "Qualification 104",
+      "status": "Queuing soon",
+      "redTeams": [
+        "6662",
+        "8033",
+        "9400"
+      ],
+      "blueTeams": [
+        "6962",
+        "649",
+        "1671"
+      ],
+      "times": {
+        "scheduledStartTime": 1776012360000,
+        "estimatedQueueTime": 1776011445000,
+        "estimatedOnDeckTime": 1776011934000,
+        "estimatedOnFieldTime": 1776012423000,
+        "estimatedStartTime": 1776012732000
+      }
+    },
+    {
+      "label": "Qualification 105",
+      "status": "Queuing soon",
+      "redTeams": [
+        "971",
+        "192",
+        "1967"
+      ],
+      "blueTeams": [
+        "840",
+        "4990",
+        "7419"
+      ],
+      "times": {
+        "scheduledStartTime": 1776012840000,
+        "estimatedQueueTime": 1776011934000,
+        "estimatedOnDeckTime": 1776012423000,
+        "estimatedOnFieldTime": 1776012912000,
+        "estimatedStartTime": 1776013221000
+      }
+    },
+    {
+      "label": "Qualification 106",
+      "status": "Queuing soon",
+      "redTeams": [
+        "8048",
+        "6238",
+        "7137"
+      ],
+      "blueTeams": [
+        "5817",
+        "6305",
+        "5507"
+      ],
+      "times": {
+        "scheduledStartTime": 1776013320000,
+        "estimatedQueueTime": 1776012423000,
+        "estimatedOnDeckTime": 1776012912000,
+        "estimatedOnFieldTime": 1776013401000,
+        "estimatedStartTime": 1776013710000
+      }
+    },
+    {
+      "label": "Qualification 107",
+      "status": "Queuing soon",
+      "redTeams": [
+        "701",
+        "846",
+        "254"
+      ],
+      "blueTeams": [
+        "3257",
+        "766",
+        "5026"
+      ],
+      "times": {
+        "scheduledStartTime": 1776013800000,
+        "estimatedQueueTime": 1776012912000,
+        "estimatedOnDeckTime": 1776013401000,
+        "estimatedOnFieldTime": 1776013890000,
+        "estimatedStartTime": 1776014199000
+      }
+    },
+    {
+      "label": "Qualification 108",
+      "status": "Queuing soon",
+      "redTeams": [
+        "5104",
+        "3598",
+        "1868"
+      ],
+      "blueTeams": [
+        "3970",
+        "581",
+        "6036"
+      ],
+      "times": {
+        "scheduledStartTime": 1776014280000,
+        "estimatedQueueTime": 1776013401000,
+        "estimatedOnDeckTime": 1776013890000,
+        "estimatedOnFieldTime": 1776014379000,
+        "estimatedStartTime": 1776014688000
+      }
+    },
+    {
+      "label": "Qualification 109",
+      "status": "Queuing soon",
+      "redTeams": [
+        "115",
+        "2073",
+        "1072"
+      ],
+      "blueTeams": [
+        "4135",
+        "114",
+        "3256"
+      ],
+      "times": {
+        "scheduledStartTime": 1776014760000,
+        "estimatedQueueTime": 1776013890000,
+        "estimatedOnDeckTime": 1776014379000,
+        "estimatedOnFieldTime": 1776014868000,
+        "estimatedStartTime": 1776015177000
+      }
+    },
+    {
+      "label": "Qualification 110",
+      "status": "Queuing soon",
+      "redTeams": [
+        "2813",
+        "841",
+        "604"
+      ],
+      "blueTeams": [
+        "4698",
+        "2204",
+        "253"
+      ],
+      "times": {
+        "scheduledStartTime": 1776015240000,
+        "estimatedQueueTime": 1776014379000,
+        "estimatedOnDeckTime": 1776014868000,
+        "estimatedOnFieldTime": 1776015357000,
+        "estimatedStartTime": 1776015666000
+      }
+    },
+    {
+      "label": "Qualification 111",
+      "status": "Queuing soon",
+      "redTeams": [
+        "7667",
+        "5940",
+        "649"
+      ],
+      "blueTeams": [
+        "6418",
+        "1323",
+        "6962"
+      ],
+      "times": {
+        "scheduledStartTime": 1776015720000,
+        "estimatedQueueTime": 1776014868000,
+        "estimatedOnDeckTime": 1776015357000,
+        "estimatedOnFieldTime": 1776015846000,
+        "estimatedStartTime": 1776016155000
+      }
+    },
+    {
+      "label": "Qualification 112",
+      "status": "Queuing soon",
+      "redTeams": [
+        "6662",
+        "3045",
+        "670"
+      ],
+      "blueTeams": [
+        "840",
+        "9470",
+        "971"
+      ],
+      "times": {
+        "scheduledStartTime": 1776016200000,
+        "estimatedQueueTime": 1776015357000,
+        "estimatedOnDeckTime": 1776015846000,
+        "estimatedOnFieldTime": 1776016335000,
+        "estimatedStartTime": 1776016644000
+      }
+    },
+    {
+      "label": "Qualification 113",
+      "status": "Queuing soon",
+      "redTeams": [
+        "192",
+        "8033",
+        "8793"
+      ],
+      "blueTeams": [
+        "5700",
+        "10339",
+        "6238"
+      ],
+      "times": {
+        "scheduledStartTime": 1776016680000,
+        "estimatedQueueTime": 1776015846000,
+        "estimatedOnDeckTime": 1776016335000,
+        "estimatedOnFieldTime": 1776016824000,
+        "estimatedStartTime": 1776017133000
+      }
+    },
+    {
+      "label": "Qualification 114",
+      "status": "Queuing soon",
+      "redTeams": [
+        "7137",
+        "5026",
+        "6305"
+      ],
+      "blueTeams": [
+        "2135",
+        "701",
+        "8"
+      ],
+      "times": {
+        "scheduledStartTime": 1776017160000,
+        "estimatedQueueTime": 1776016335000,
+        "estimatedOnDeckTime": 1776016824000,
+        "estimatedOnFieldTime": 1776017313000,
+        "estimatedStartTime": 1776017622000
+      }
+    },
+    {
+      "label": "Qualification 115",
+      "status": "Queuing soon",
+      "redTeams": [
+        "972",
+        "6036",
+        "6665"
+      ],
+      "blueTeams": [
+        "6814",
+        "5817",
+        "581"
+      ],
+      "times": {
+        "scheduledStartTime": 1776017640000,
+        "estimatedQueueTime": 1776016824000,
+        "estimatedOnDeckTime": 1776017313000,
+        "estimatedOnFieldTime": 1776017802000,
+        "estimatedStartTime": 1776018111000
+      }
+    },
+    {
+      "label": "Qualification 116",
+      "status": "Queuing soon",
+      "redTeams": [
+        "3501",
+        "5104",
+        "4990"
+      ],
+      "blueTeams": [
+        "5507",
+        "1072",
+        "3256"
+      ],
+      "times": {
+        "scheduledStartTime": 1776018120000,
+        "estimatedQueueTime": 1776017313000,
+        "estimatedOnDeckTime": 1776017802000,
+        "estimatedOnFieldTime": 1776018291000,
+        "estimatedStartTime": 1776018600000
+      }
+    },
+    {
+      "label": "Qualification 117",
+      "status": "Queuing soon",
+      "redTeams": [
+        "253",
+        "8048",
+        "1678"
+      ],
+      "blueTeams": [
+        "3598",
+        "1967",
+        "115"
+      ],
+      "times": {
+        "scheduledStartTime": 1776018600000,
+        "estimatedQueueTime": 1776017802000,
+        "estimatedOnDeckTime": 1776018291000,
+        "estimatedOnFieldTime": 1776018780000,
+        "estimatedStartTime": 1776019089000
+      }
+    },
+    {
+      "label": "Qualification 118",
+      "status": "Queuing soon",
+      "redTeams": [
+        "604",
+        "114",
+        "766"
+      ],
+      "blueTeams": [
+        "7419",
+        "1671",
+        "3257"
+      ],
+      "times": {
+        "scheduledStartTime": 1776019080000,
+        "estimatedQueueTime": 1776018291000,
+        "estimatedOnDeckTime": 1776018780000,
+        "estimatedOnFieldTime": 1776019269000,
+        "estimatedStartTime": 1776019578000
+      }
+    },
+    {
+      "label": "Qualification 119",
+      "status": "Queuing soon",
+      "redTeams": [
+        "9400",
+        "1868",
+        "2204"
+      ],
+      "blueTeams": [
+        "4698",
+        "846",
+        "2073"
+      ],
+      "times": {
+        "scheduledStartTime": 1776019560000,
+        "estimatedQueueTime": 1776018780000,
+        "estimatedOnDeckTime": 1776019269000,
+        "estimatedOnFieldTime": 1776019758000,
+        "estimatedStartTime": 1776020067000
+      }
+    },
+    {
+      "label": "Qualification 120",
+      "status": "Queuing soon",
+      "redTeams": [
+        "5419",
+        "4135",
+        "2813"
+      ],
+      "blueTeams": [
+        "254",
+        "3970",
+        "841"
+      ],
+      "times": {
+        "scheduledStartTime": 1776020040000,
+        "estimatedQueueTime": 1776019269000,
+        "estimatedOnDeckTime": 1776019758000,
+        "estimatedOnFieldTime": 1776020247000,
+        "estimatedStartTime": 1776020556000
+      },
+      "breakAfter": "Alliance selection"
+    }
+  ],
+  "announcements": [
+    {
+      "id": "-OpsZY_ct7kERV2psxu6",
+      "postedTime": 1775846072931,
+      "announcement": "If you need any machining, the NASA Machine Shop is open and is located outside the northeast passage. Exit pits under Section 33, turn left out the rollup door"
+    },
+    {
+      "id": "-Opt4AcN-hr6tr2HS99O",
+      "postedTime": 1775852894900,
+      "announcement": "If you lost your airpods they are at lost and found"
+    },
+    {
+      "id": "-OptGCiPLi-wlqXCQ8yb",
+      "postedTime": 1775856049137,
+      "announcement": "If you have things set up outside, particularly canopies, please go check on them. The wind has picked up and is blowing things away."
+    },
+    {
+      "id": "-OptPTTJqZLqfDklrGnz",
+      "postedTime": 1775858477045,
+      "announcement": "Playing at Learning needs volunteers for Saturday. We need FRC Ambassadors for pit tours and volunteers for the FLL Explore Festival. Check at Pit Admin."
+    }
+  ],
+  "partsRequests": [
+    {
+      "id": "-Ops_cGdvOFc-bN37LjX",
+      "postedTime": 1775844624307,
+      "parts": "40 tooth 15mm aluminum HTD pulley, 1/2\" hex bore",
+      "requestedByTeam": "8793"
+    },
+    {
+      "id": "-OpswxAxkzjpH-NNZ0z_",
+      "postedTime": 1775850738778,
+      "parts": "4' piece of netting",
+      "requestedByTeam": "4990"
+    },
+    {
+      "id": "-Opt0avEHOUjj-MH_KRk",
+      "postedTime": 1775851958071,
+      "parts": "WCP silicone tubing 2\" section",
+      "requestedByTeam": "670"
+    }
+  ]
+}
