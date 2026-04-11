@@ -176,6 +176,7 @@ extension MatchSchedule {
                 let prevTime = effectiveTime(match),
                 let nextTime = effectiveTime(upcomingMatches[index + 1])
             else { continue }
+            // Half-open interval: a break whose start equals nextTime belongs to the next pair, not this one.
             for scheduleBreak in allBreaks
                 where scheduleBreak.start >= prevTime && scheduleBreak.start < nextTime {
                 result.append(.breakInterval(scheduleBreak))
