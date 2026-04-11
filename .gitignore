@@ -18,3 +18,6 @@ Package.resolved
 
 # Superpowers brainstorming
 .superpowers/
+
+# Git worktrees
+.worktrees/
