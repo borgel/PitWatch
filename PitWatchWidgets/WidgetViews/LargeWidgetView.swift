@@ -156,7 +156,9 @@ struct LargeWidgetView: View {
                 }
             }
 
-            // Last match — single flat row
+            Spacer(minLength: 0)
+
+            // Last match — single flat row, anchored to bottom
             if let last = entry.lastMatch {
                 HStack(spacing: 8) {
                     Text("LAST")
@@ -175,7 +177,6 @@ struct LargeWidgetView: View {
                     }
                 }
             }
-            Spacer(minLength: 0)
         }
         .containerBackground(for: .widget) {
             widgetCardBackground
