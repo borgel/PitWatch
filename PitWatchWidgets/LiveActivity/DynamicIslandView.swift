@@ -27,7 +27,7 @@ enum FRCDynamicIsland {
                         .fill(context.attributes.alliance.dotColor)
                         .frame(width: 4, height: 4)
                 }
-                Text(context.state.phaseDeadline, style: .timer)
+                Text(compactCountdown(to: context.state.phaseDeadline))
                     .font(.system(size: 11, weight: .bold, design: .monospaced))
                     .foregroundStyle(.white)
                     .monospacedDigit()
@@ -67,7 +67,7 @@ enum FRCDynamicIsland {
                 .font(.system(size: 8.5, weight: .semibold, design: .monospaced))
                 .tracking(0.4)
                 .foregroundStyle(context.state.currentPhase.color)
-            Text(context.state.phaseDeadline, style: .timer)
+            Text(compactCountdown(to: context.state.phaseDeadline))
                 .font(.system(size: 15, weight: .bold, design: .monospaced))
                 .kerning(-0.5)
                 .foregroundStyle(.white)
@@ -119,5 +119,13 @@ enum FRCDynamicIsland {
         Rectangle()
             .fill(.white.opacity(0.10))
             .frame(width: 0.5, height: 30)
+    }
+
+    private static func compactCountdown(to deadline: Date) -> String {
+        let remaining = max(0, deadline.timeIntervalSinceNow)
+        let totalMinutes = Int(remaining / 60)
+        let hours = totalMinutes / 60
+        let minutes = totalMinutes % 60
+        return String(format: "%d:%02d", hours, minutes)
     }
 }
