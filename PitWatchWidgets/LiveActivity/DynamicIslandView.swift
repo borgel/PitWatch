@@ -20,14 +20,14 @@ enum FRCDynamicIsland {
         } minimal: {
             VStack(spacing: 1) {
                 HStack(spacing: 2) {
-                    Text(context.state.currentPhase.label.prefix(1))
+                    Text(context.state.currentPhase.glyph)
                         .font(.system(size: 6, weight: .bold, design: .monospaced))
                         .foregroundStyle(context.state.currentPhase.color)
                     Circle()
                         .fill(context.attributes.alliance.dotColor)
                         .frame(width: 4, height: 4)
                 }
-                Text(compactCountdown(to: context.state.phaseDeadline))
+                PhaseCountdownText(deadline: context.state.phaseDeadline)
                     .font(.system(size: 11, weight: .bold, design: .monospaced))
                     .foregroundStyle(.white)
                     .monospacedDigit()
@@ -39,11 +39,7 @@ enum FRCDynamicIsland {
     private static func compactLeading(
         context: ActivityViewContext<FRCMatchAttributes>
     ) -> some View {
-        HStack(spacing: 0) {
-            phaseColumn(context: context)
-            divider()
-            nowColumn(context: context)
-        }
+        phaseColumn(context: context)
     }
 
     @ViewBuilder
@@ -63,11 +59,11 @@ enum FRCDynamicIsland {
         context: ActivityViewContext<FRCMatchAttributes>
     ) -> some View {
         VStack(alignment: .leading, spacing: 1) {
-            Text(context.state.currentPhase.label)
+            Text(context.state.currentPhase.stateLabel)
                 .font(.system(size: 8.5, weight: .semibold, design: .monospaced))
                 .tracking(0.4)
                 .foregroundStyle(context.state.currentPhase.color)
-            Text(compactCountdown(to: context.state.phaseDeadline))
+            PhaseCountdownText(deadline: context.state.phaseDeadline)
                 .font(.system(size: 15, weight: .bold, design: .monospaced))
                 .kerning(-0.5)
                 .foregroundStyle(.white)
@@ -75,21 +71,6 @@ enum FRCDynamicIsland {
         }
         .padding(.leading, 8)
         .padding(.trailing, 6)
-    }
-
-    private static func nowColumn(
-        context: ActivityViewContext<FRCMatchAttributes>
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 1) {
-            Text("NOW")
-                .font(.system(size: 8, weight: .regular, design: .monospaced))
-                .tracking(0.4)
-                .foregroundStyle(.white.opacity(0.30))
-            Text("Q \(context.state.currentMatchOnField)")
-                .font(.system(size: 13, weight: .bold, design: .monospaced))
-                .foregroundStyle(.white.opacity(0.50))
-        }
-        .padding(.horizontal, 6)
     }
 
     private static func yourMatchColumn(
@@ -107,25 +88,4 @@ enum FRCDynamicIsland {
         .padding(.leading, 6)
     }
 
-    private static func allianceDot(
-        context: ActivityViewContext<FRCMatchAttributes>
-    ) -> some View {
-        Circle()
-            .fill(context.attributes.alliance.dotColor)
-            .frame(width: 7, height: 7)
-    }
-
-    private static func divider() -> some View {
-        Rectangle()
-            .fill(.white.opacity(0.10))
-            .frame(width: 0.5, height: 30)
-    }
-
-    private static func compactCountdown(to deadline: Date) -> String {
-        let remaining = max(0, deadline.timeIntervalSinceNow)
-        let totalMinutes = Int(remaining / 60)
-        let hours = totalMinutes / 60
-        let minutes = totalMinutes % 60
-        return String(format: "%d:%02d", hours, minutes)
-    }
 }

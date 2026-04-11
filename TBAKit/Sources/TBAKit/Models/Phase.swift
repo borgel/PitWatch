@@ -8,25 +8,46 @@ public enum Phase: Int, Codable, CaseIterable, Identifiable, Sendable, Hashable 
 
     public var id: Int { rawValue }
 
-    public var label: String {
+    /// Current state — what is happening right now.
+    public var stateLabel: String {
         switch self {
-        case .preQueue: return "PRE Q"
-        case .queueing: return "QUEUE IN"
-        case .onDeck:   return "DECK IN"
+        case .preQueue: return "UPCOMING"
+        case .queueing: return "IN QUEUE"
+        case .onDeck:   return "ON DECK"
         case .onField:  return "ON FIELD"
         }
     }
 
-    public var sublabel: String {
+    /// Timer target — what happens when the countdown hits zero.
+    public var targetLabel: String {
         switch self {
-        case .preQueue: return "UNTIL QUEUEING"
-        case .queueing: return "UNTIL ON DECK"
-        case .onDeck:   return "UNTIL ON FIELD"
-        case .onField:  return "MATCH IN PROGRESS"
+        case .preQueue: return "QUEUE STARTS"
+        case .queueing: return "MOVE TO DECK"
+        case .onDeck:   return "MOVE TO FIELD"
+        case .onField:  return "MATCH ENDS"
         }
     }
 
-    public var combinedLabel: String { "\(label) \u{00B7} \(sublabel)" }
+    /// Single-letter glyph for compact surfaces (Dynamic Island compact leading).
+    public var glyph: String {
+        switch self {
+        case .preQueue: return "U"
+        case .queueing: return "Q"
+        case .onDeck:   return "D"
+        case .onField:  return "F"
+        }
+    }
+
+    /// Lowercase prose name of the *next* phase — used for subtitles like "to on deck".
+    /// Returns nil for `.onField` since there is no next phase.
+    public var nextPhaseProse: String? {
+        switch self {
+        case .preQueue: return "queue"
+        case .queueing: return "on deck"
+        case .onDeck:   return "on field"
+        case .onField:  return nil
+        }
+    }
 
     public var color: Color {
         switch self {

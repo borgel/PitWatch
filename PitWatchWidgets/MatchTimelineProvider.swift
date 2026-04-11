@@ -44,9 +44,11 @@ struct MatchWidgetEntry: TimelineEntry {
     var countdownLabel: String {
         guard let match = nextMatch else { return "to match" }
         if let nexusEvent,
-           let nexusMatch = NexusMatchMerge.nexusInfo(for: match, in: nexusEvent),
-           let nextPhase = nexusMatch.times.nextPhaseDate(after: .now) {
-            return "to \(nextPhase.label.lowercased())"
+           let nexusMatch = NexusMatchMerge.nexusInfo(for: match, in: nexusEvent) {
+            let phase = PhaseDerivation.derivePhase(from: nexusMatch).phase
+            if let prose = phase.nextPhaseProse {
+                return "to \(prose)"
+            }
         }
         return queueOffsetMinutes > 0 ? "to queue" : "to match"
     }

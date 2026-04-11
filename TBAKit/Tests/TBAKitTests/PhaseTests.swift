@@ -12,26 +12,38 @@ struct PhaseEnumTests {
         #expect(Phase.onField.rawValue == 3)
     }
 
-    @Test("labels match spec")
-    func labels() {
-        #expect(Phase.preQueue.label == "PRE Q")
-        #expect(Phase.queueing.label == "QUEUE IN")
-        #expect(Phase.onDeck.label == "DECK IN")
-        #expect(Phase.onField.label == "ON FIELD")
+    @Test("state labels match spec")
+    func stateLabels() {
+        #expect(Phase.preQueue.stateLabel == "UPCOMING")
+        #expect(Phase.queueing.stateLabel == "IN QUEUE")
+        #expect(Phase.onDeck.stateLabel == "ON DECK")
+        #expect(Phase.onField.stateLabel == "ON FIELD")
     }
 
-    @Test("sublabels match spec")
-    func sublabels() {
-        #expect(Phase.preQueue.sublabel == "UNTIL QUEUEING")
-        #expect(Phase.queueing.sublabel == "UNTIL ON DECK")
-        #expect(Phase.onDeck.sublabel == "UNTIL ON FIELD")
-        #expect(Phase.onField.sublabel == "MATCH IN PROGRESS")
+    @Test("target labels match spec")
+    func targetLabels() {
+        #expect(Phase.preQueue.targetLabel == "QUEUE STARTS")
+        #expect(Phase.queueing.targetLabel == "MOVE TO DECK")
+        #expect(Phase.onDeck.targetLabel == "MOVE TO FIELD")
+        #expect(Phase.onField.targetLabel == "MATCH ENDS")
     }
 
-    @Test("combinedLabel joins label and sublabel")
-    func combinedLabel() {
-        #expect(Phase.queueing.combinedLabel == "QUEUE IN \u{00B7} UNTIL ON DECK")
-        #expect(Phase.onField.combinedLabel == "ON FIELD \u{00B7} MATCH IN PROGRESS")
+    @Test("glyphs are distinct single characters")
+    func glyphs() {
+        #expect(Phase.preQueue.glyph == "U")
+        #expect(Phase.queueing.glyph == "Q")
+        #expect(Phase.onDeck.glyph == "D")
+        #expect(Phase.onField.glyph == "F")
+        let all = Set(Phase.allCases.map(\.glyph))
+        #expect(all.count == Phase.allCases.count)
+    }
+
+    @Test("next phase prose is nil only for onField")
+    func nextPhaseProse() {
+        #expect(Phase.preQueue.nextPhaseProse == "queue")
+        #expect(Phase.queueing.nextPhaseProse == "on deck")
+        #expect(Phase.onDeck.nextPhaseProse == "on field")
+        #expect(Phase.onField.nextPhaseProse == nil)
     }
 
     @Test("CaseIterable has four phases")

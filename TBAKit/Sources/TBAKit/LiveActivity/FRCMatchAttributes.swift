@@ -14,6 +14,7 @@ public struct FRCMatchAttributes: ActivityAttributes, Sendable {
         public var queueDeadline: Date?
         public var onDeckDeadline: Date?
         public var onFieldDeadline: Date?
+        public var matchStartDeadline: Date?
         public var matchEndDeadline: Date?
 
         public init(
@@ -25,6 +26,7 @@ public struct FRCMatchAttributes: ActivityAttributes, Sendable {
             queueDeadline: Date? = nil,
             onDeckDeadline: Date? = nil,
             onFieldDeadline: Date? = nil,
+            matchStartDeadline: Date? = nil,
             matchEndDeadline: Date? = nil
         ) {
             self.currentPhase = currentPhase
@@ -35,6 +37,7 @@ public struct FRCMatchAttributes: ActivityAttributes, Sendable {
             self.queueDeadline = queueDeadline
             self.onDeckDeadline = onDeckDeadline
             self.onFieldDeadline = onFieldDeadline
+            self.matchStartDeadline = matchStartDeadline
             self.matchEndDeadline = matchEndDeadline
         }
 

@@ -97,11 +97,12 @@ struct MatchRowView: View {
 
     @ViewBuilder
     private func nexusTimeDisplay(_ nexus: NexusMatch) -> some View {
-        if let nextPhase = nexus.times.nextPhaseDate(after: .now) {
+        let result = PhaseDerivation.derivePhase(from: nexus)
+        if let prose = result.phase.nextPhaseProse, let deadline = result.deadline {
             VStack(alignment: .trailing, spacing: 1) {
-                Text(nextPhase.date, style: .relative)
+                Text(deadline, style: .relative)
                     .font(.subheadline).fontWeight(.semibold)
-                Text("to \(nextPhase.label.lowercased())")
+                Text("to \(prose)")
                     .font(.caption2).foregroundStyle(.secondary)
             }
         } else if let startDate = nexus.times.startDate {

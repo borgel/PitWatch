@@ -33,6 +33,7 @@ public final class LiveActivityManager: @unchecked Sendable {
         var queueDL: Date?
         var onDeckDL: Date?
         var onFieldDL: Date?
+        var matchStartDL: Date?
         var matchEndDL: Date?
 
         if let nexusMatch {
@@ -43,6 +44,7 @@ public final class LiveActivityManager: @unchecked Sendable {
             queueDL = result.queueDeadline
             onDeckDL = result.onDeckDeadline
             onFieldDL = result.onFieldDeadline
+            matchStartDL = result.matchStartDeadline
             matchEndDL = result.matchEndDeadline
         }
 
@@ -62,6 +64,7 @@ public final class LiveActivityManager: @unchecked Sendable {
             queueDeadline: queueDL,
             onDeckDeadline: onDeckDL,
             onFieldDeadline: onFieldDL,
+            matchStartDeadline: matchStartDL,
             matchEndDeadline: matchEndDL
         )
 
@@ -89,6 +92,7 @@ public final class LiveActivityManager: @unchecked Sendable {
         var queueDL: Date?
         var onDeckDL: Date?
         var onFieldDL: Date?
+        var matchStartDL: Date?
         var matchEndDL: Date?
 
         if let nexusMatch {
@@ -99,6 +103,7 @@ public final class LiveActivityManager: @unchecked Sendable {
             queueDL = result.queueDeadline
             onDeckDL = result.onDeckDeadline
             onFieldDL = result.onFieldDeadline
+            matchStartDL = result.matchStartDeadline
             matchEndDL = result.matchEndDeadline
         }
 
@@ -118,6 +123,7 @@ public final class LiveActivityManager: @unchecked Sendable {
             queueDeadline: queueDL,
             onDeckDeadline: onDeckDL,
             onFieldDeadline: onFieldDL,
+            matchStartDeadline: matchStartDL,
             matchEndDeadline: matchEndDL
         )
 

@@ -92,6 +92,43 @@ struct PhaseDerivationTests {
         #expect(result.phase == .onField)
     }
 
+    @Test("'Queuing soon' falls through to time-based (preQueue when queue is future)")
+    func queuingSoonIsPreQueue() {
+        let ref = Date(timeIntervalSince1970: 1000)
+        let nexus = makeNexusMatch(
+            queueOffset: 300, onDeckOffset: 600,
+            onFieldOffset: 900, startOffset: 1200,
+            status: "Queuing soon", reference: ref
+        )
+        let result = PhaseDerivation.derivePhase(from: nexus, now: ref)
+        #expect(result.phase == .preQueue)
+        #expect(result.deadline == nexus.times.queueDate)
+    }
+
+    @Test("'On deck soon' falls through to time-based (not .onDeck)")
+    func onDeckSoonIsNotOnDeck() {
+        let ref = Date(timeIntervalSince1970: 1000)
+        let nexus = makeNexusMatch(
+            queueOffset: 300, onDeckOffset: 600,
+            onFieldOffset: 900, startOffset: 1200,
+            status: "On deck soon", reference: ref
+        )
+        let result = PhaseDerivation.derivePhase(from: nexus, now: ref)
+        #expect(result.phase == .preQueue)
+    }
+
+    @Test("Result populates matchStartDeadline from startDate")
+    func matchStartDeadline() {
+        let ref = Date(timeIntervalSince1970: 1000)
+        let nexus = makeNexusMatch(
+            queueOffset: -600, onDeckOffset: -300,
+            onFieldOffset: -60, startOffset: 30, reference: ref
+        )
+        let result = PhaseDerivation.derivePhase(from: nexus, now: ref)
+        #expect(result.matchStartDeadline == nexus.times.startDate)
+        #expect(result.matchEndDeadline == nexus.times.startDate?.addingTimeInterval(150))
+    }
+
     @Test("no Nexus times → preQueue with nil deadline")
     func noTimes() {
         let nexus = NexusMatch(

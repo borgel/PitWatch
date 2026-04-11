@@ -44,11 +44,11 @@ struct ExpandedLiveActivityView: View {
                 )
             }
         }
-        .padding(.top, 11)
+        .padding(.top, 19)
         .padding(.bottom, showChevronBar ? 0 : 11)
         .overlay(alignment: .topTrailing) {
             lastUpdatedView
-                .padding(.top, 11)
+                .padding(.top, 19)
                 .padding(.trailing, 14)
         }
         .background(cardBackground)
@@ -81,15 +81,20 @@ struct ExpandedLiveActivityView: View {
 
     private var heroCountdownRow: some View {
         HStack(alignment: .top, spacing: 12) {
-            VStack(alignment: .leading, spacing: 0) {
-                Text(state.currentPhase.combinedLabel)
-                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+            VStack(alignment: .leading, spacing: 1) {
+                Text(state.currentPhase.stateLabel)
+                    .font(.system(size: 11, weight: .bold, design: .monospaced))
                     .tracking(1.0)
                     .foregroundStyle(state.currentPhase.color)
 
-                Text(timerInterval: Date.now...state.phaseDeadline, countsDown: true)
-                    .font(.system(size: 50, weight: .bold, design: .monospaced))
-                    .kerning(-2)
+                Text(state.currentPhase.targetLabel)
+                    .font(.system(size: 9, weight: .regular, design: .monospaced))
+                    .tracking(0.8)
+                    .foregroundStyle(state.currentPhase.color.opacity(0.60))
+
+                PhaseCountdownText(deadline: state.phaseDeadline)
+                    .font(.system(size: 40, weight: .bold, design: .monospaced))
+                    .kerning(-1.5)
                     .foregroundStyle(.white)
                     .monospacedDigit()
                     .lineLimit(1)
@@ -150,6 +155,28 @@ struct ExpandedLiveActivityView: View {
     }
 }
 
+// MARK: - PhaseCountdownText
+
+/// The `-` prefix only appears on the next widget re-render after deadline — not instantly.
+struct PhaseCountdownText: View {
+    let deadline: Date
+
+    var body: some View {
+        let now = Date.now
+        if now > deadline {
+            HStack(spacing: 0) {
+                Text(verbatim: "-")
+                Text(
+                    timerInterval: deadline...now.addingTimeInterval(86400),
+                    countsDown: false
+                )
+            }
+        } else {
+            Text(timerInterval: now...deadline, countsDown: true)
+        }
+    }
+}
+
 // MARK: - Previews
 
 #Preview("Queueing") {
@@ -162,6 +189,7 @@ struct ExpandedLiveActivityView: View {
         queueDeadline: .now.addingTimeInterval(-120),
         onDeckDeadline: .now.addingTimeInterval(300),
         onFieldDeadline: .now.addingTimeInterval(600),
+        matchStartDeadline: .now.addingTimeInterval(750),
         matchEndDeadline: .now.addingTimeInterval(900)
     )
     let attrs = FRCMatchAttributes(
@@ -185,6 +213,7 @@ struct ExpandedLiveActivityView: View {
         queueDeadline: .now.addingTimeInterval(-600),
         onDeckDeadline: .now.addingTimeInterval(-300),
         onFieldDeadline: .now.addingTimeInterval(-30),
+        matchStartDeadline: .now.addingTimeInterval(-30),
         matchEndDeadline: .now.addingTimeInterval(120)
     )
     let attrs = FRCMatchAttributes(
@@ -208,6 +237,7 @@ struct ExpandedLiveActivityView: View {
         queueDeadline: .now.addingTimeInterval(2400),
         onDeckDeadline: .now.addingTimeInterval(2700),
         onFieldDeadline: .now.addingTimeInterval(3000),
+        matchStartDeadline: .now.addingTimeInterval(3150),
         matchEndDeadline: .now.addingTimeInterval(3300)
     )
     let attrs = FRCMatchAttributes(

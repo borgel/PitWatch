@@ -10,80 +10,63 @@ public enum PhaseDerivation {
         public let queueDeadline: Date?
         public let onDeckDeadline: Date?
         public let onFieldDeadline: Date?
+        public let matchStartDeadline: Date?
         public let matchEndDeadline: Date?
     }
 
     /// Derive the current phase and countdown deadline from Nexus match data.
     /// Priority: Nexus discrete status > time-based derivation.
+    /// Nexus statuses containing "soon" (e.g. "Queuing soon", "On deck soon") are rejected
+    /// — those indicate the match is upcoming, not actively in that state.
     public static func derivePhase(
         from nexusMatch: NexusMatch,
         now: Date = .now
     ) -> Result {
         let times = nexusMatch.times
 
-        // Compute per-phase deadlines from Nexus times (same regardless of current phase)
         let queueDL = times.queueDate
         let onDeckDL = times.onDeckDate
         let onFieldDL = times.onFieldDate
+        let matchStartDL = times.startDate
         let matchEndDL = times.startDate.map { $0.addingTimeInterval(150) }
 
-        // Check discrete status first (takes priority per spec)
+        func result(phase: Phase, deadline: Date?, phaseStartDate: Date) -> Result {
+            Result(
+                phase: phase, deadline: deadline, phaseStartDate: phaseStartDate,
+                queueDeadline: queueDL, onDeckDeadline: onDeckDL,
+                onFieldDeadline: onFieldDL,
+                matchStartDeadline: matchStartDL, matchEndDeadline: matchEndDL
+            )
+        }
+
         if let status = nexusMatch.status?.lowercased() {
-            if status.contains("field") || status.contains("playing") {
-                return Result(
-                    phase: .onField, deadline: matchEndDL,
-                    phaseStartDate: times.onFieldDate ?? now,
-                    queueDeadline: queueDL, onDeckDeadline: onDeckDL,
-                    onFieldDeadline: onFieldDL, matchEndDeadline: matchEndDL
-                )
+            let isSoon = status.contains("soon")
+            if !isSoon && (status.contains("field") || status.contains("playing")) {
+                return result(phase: .onField, deadline: matchEndDL,
+                              phaseStartDate: times.onFieldDate ?? now)
             }
-            if status.contains("deck") {
-                return Result(
-                    phase: .onDeck, deadline: times.onFieldDate,
-                    phaseStartDate: times.onDeckDate ?? now,
-                    queueDeadline: queueDL, onDeckDeadline: onDeckDL,
-                    onFieldDeadline: onFieldDL, matchEndDeadline: matchEndDL
-                )
+            if !isSoon && status.contains("deck") {
+                return result(phase: .onDeck, deadline: times.onFieldDate,
+                              phaseStartDate: times.onDeckDate ?? now)
             }
-            if status.contains("queuing") || status.contains("queue") {
-                return Result(
-                    phase: .queueing, deadline: times.onDeckDate,
-                    phaseStartDate: times.queueDate ?? now,
-                    queueDeadline: queueDL, onDeckDeadline: onDeckDL,
-                    onFieldDeadline: onFieldDL, matchEndDeadline: matchEndDL
-                )
+            if !isSoon && (status.contains("queuing") || status.contains("queue")) {
+                return result(phase: .queueing, deadline: times.onDeckDate,
+                              phaseStartDate: times.queueDate ?? now)
             }
         }
 
         // Time-based derivation: find the most advanced phase that has passed
         if let onFieldDate = times.onFieldDate, onFieldDate <= now {
-            return Result(
-                phase: .onField, deadline: matchEndDL, phaseStartDate: onFieldDate,
-                queueDeadline: queueDL, onDeckDeadline: onDeckDL,
-                onFieldDeadline: onFieldDL, matchEndDeadline: matchEndDL
-            )
+            return result(phase: .onField, deadline: matchEndDL, phaseStartDate: onFieldDate)
         }
         if let onDeckDate = times.onDeckDate, onDeckDate <= now {
-            return Result(
-                phase: .onDeck, deadline: times.onFieldDate, phaseStartDate: onDeckDate,
-                queueDeadline: queueDL, onDeckDeadline: onDeckDL,
-                onFieldDeadline: onFieldDL, matchEndDeadline: matchEndDL
-            )
+            return result(phase: .onDeck, deadline: times.onFieldDate, phaseStartDate: onDeckDate)
         }
         if let queueDate = times.queueDate, queueDate <= now {
-            return Result(
-                phase: .queueing, deadline: times.onDeckDate, phaseStartDate: queueDate,
-                queueDeadline: queueDL, onDeckDeadline: onDeckDL,
-                onFieldDeadline: onFieldDL, matchEndDeadline: matchEndDL
-            )
+            return result(phase: .queueing, deadline: times.onDeckDate, phaseStartDate: queueDate)
         }
 
-        // Nothing has passed yet — preQueue
-        return Result(
-            phase: .preQueue, deadline: times.queueDate, phaseStartDate: now,
-            queueDeadline: queueDL, onDeckDeadline: onDeckDL,
-            onFieldDeadline: onFieldDL, matchEndDeadline: matchEndDL
-        )
+        return result(phase: .preQueue, deadline: times.queueDate, phaseStartDate: now)
     }
 
     /// Find the Nexus match corresponding to a TBA match and derive its current phase.

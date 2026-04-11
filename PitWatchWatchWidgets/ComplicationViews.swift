@@ -23,7 +23,7 @@ struct CircularComplicationView: View {
                     )
 
                 VStack(spacing: 2) {
-                    Text(phase.label)
+                    Text(phase.stateLabel)
                         .font(.system(size: 9, weight: .semibold, design: .monospaced))
                         .tracking(0.6)
                         .foregroundStyle(phase.color)
@@ -91,7 +91,7 @@ struct RectangularComplicationView: View {
                     .frame(width: 0.5, height: 42)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(phase.label)
+                    Text(phase.stateLabel)
                         .font(.system(size: 9, weight: .semibold, design: .monospaced))
                         .tracking(0.6)
                         .foregroundStyle(phase.color)

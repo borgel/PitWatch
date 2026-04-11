@@ -373,6 +373,7 @@ struct SettingsView: View {
             queueDeadline: .now.addingTimeInterval(-120),
             onDeckDeadline: .now.addingTimeInterval(300),
             onFieldDeadline: .now.addingTimeInterval(600),
+            matchStartDeadline: .now.addingTimeInterval(750),
             matchEndDeadline: .now.addingTimeInterval(900)
         )
 
