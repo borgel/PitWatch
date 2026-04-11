@@ -21,6 +21,10 @@ struct MatchListView: View {
         MatchSchedule(matches: eventCache.matches, teamKey: config.teamKey ?? "")
     }
 
+    private var eventTimeZone: TimeZone {
+        eventCache.event?.timezone.flatMap(TimeZone.init(identifier:)) ?? .current
+    }
+
     var body: some View {
         ZStack {
             if isLoading && eventCache.event == nil {
@@ -113,10 +117,19 @@ struct MatchListView: View {
                 }
             }
 
-            if !schedule.upcomingMatches.isEmpty {
+            let upcomingTimeline = schedule.upcomingTimeline(
+                nexusEvent: eventCache.nexusEvent,
+                timeZone: eventTimeZone
+            )
+            if !upcomingTimeline.isEmpty {
                 Section("Upcoming") {
-                    ForEach(schedule.upcomingMatches) { match in
-                        matchLink(match)
+                    ForEach(upcomingTimeline) { item in
+                        switch item {
+                        case .match(let match):
+                            matchLink(match)
+                        case .breakInterval(let scheduleBreak):
+                            ScheduleBreakRow(scheduleBreak: scheduleBreak)
+                        }
                     }
                 }
             }
