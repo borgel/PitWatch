@@ -20,3 +20,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "PitWatch"
 include(":core")
+include(":app")
