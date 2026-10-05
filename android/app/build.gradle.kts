@@ -15,6 +15,9 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "0.1.0"
+        // Overridable for the local fake API (see docs/android-manual-test.md).
+        buildConfigField("String", "TBA_BASE_URL", "\"${providers.gradleProperty("pitwatch.tbaBaseUrl").getOrElse("https://www.thebluealliance.com/api/v3")}\"")
+        buildConfigField("String", "NEXUS_BASE_URL", "\"${providers.gradleProperty("pitwatch.nexusBaseUrl").getOrElse("https://frc.nexus/api/v1")}\"")
     }
 
     buildFeatures {
@@ -31,9 +34,9 @@ android {
     }
 
     // Same fixtures as :core — never copied.
-    sourceSets.getByName("test").resources.srcDirs(
-        rootProject.file("../ios/TBAKit/Tests/TBAKitTests/Fixtures"),
-        rootProject.file("../scripts/fixtures"),
+    sourceSets.getByName("test").resources.directories += listOf(
+        rootProject.file("../ios/TBAKit/Tests/TBAKitTests/Fixtures").path,
+        rootProject.file("../scripts/fixtures").path,
     )
 }
 

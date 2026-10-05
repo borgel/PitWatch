@@ -121,3 +121,32 @@ fun snapshotTba() = FakeApi().apply {
 fun snapshotNexus() = FakeApi().apply {
     on("/event/2026cancmp") { fixture("$SNAP/nexus_event.json") }
 }
+
+/** Replaces the Robolectric app's container with one backed by temp files and fake HTTP. */
+fun installTestContainer(
+    dir: java.io.File,
+    tba: FakeApi = snapshotTba(),
+    nexus: FakeApi = snapshotNexus(),
+    clock: () -> Instant = { SNAP_NOW },
+): AppContainer {
+    val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO)
+    val stores = com.pitwatch.app.data.Stores(dir, scope)
+    val repository = com.pitwatch.app.data.Repository(
+        stores,
+        { com.pitwatch.core.api.TbaClient(it, tba.client, "https://tba.test/api/v3") },
+        { com.pitwatch.core.api.NexusClient(it, nexus.client, "https://nexus.test/api/v1") },
+    )
+    val container = AppContainer(stores, repository, scope, clock)
+    androidx.test.core.app.ApplicationProvider.getApplicationContext<PitWatchApp>().container = container
+    return container
+}
+
+/** Polls [condition] while letting the Robolectric main looper run, for up to [timeoutMs]. */
+fun awaitMain(timeoutMs: Long = 5_000, condition: () -> Boolean) {
+    val deadline = System.currentTimeMillis() + timeoutMs
+    while (!condition()) {
+        check(System.currentTimeMillis() < deadline) { "Timed out waiting for condition" }
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+        Thread.sleep(10)
+    }
+}

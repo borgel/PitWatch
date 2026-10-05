@@ -1,6 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <!-- Sideloaded: granted at install. Google Play would restrict this permission. -->
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+
     <application
+        android:name=".PitWatchApp"
         android:icon="@drawable/ic_stat_pitwatch"
         android:label="PitWatch">
         <activity
@@ -11,5 +22,18 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name=".live.LiveMatchService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Live queue status of a robotics match the user chose to track" />
+        </service>
+
+        <receiver
+            android:name=".schedule.AutoStartReceiver"
+            android:exported="false" />
     </application>
 </manifest>
