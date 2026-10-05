@@ -23,7 +23,7 @@ object PollCadence {
         now: Instant,
         consecutiveFailures: Int,
     ): Duration {
-        if (consecutiveFailures > 0) return BACKOFF[minOf(consecutiveFailures, BACKOFF.size) - 1]
+        if (consecutiveFailures > 0) return backoff(consecutiveFailures)
         if (config.effectiveTimeSource != TimeSource.NEXUS) return SLOW
         val match = cache.matches.firstOrNull { it.key == trackedMatchKey } ?: return SLOW
         val times = NexusMatchMerge.nexusInfo(match, cache.nexusEvent)?.times ?: return SLOW
@@ -33,6 +33,9 @@ object PollCadence {
         }
         return if (near) FAST else SLOW
     }
+
+    /** Wait after [consecutiveFailures] (≥ 1) failed polls: 30 s, 60 s, then 120 s. */
+    fun backoff(consecutiveFailures: Int): Duration = BACKOFF[consecutiveFailures.coerceIn(1, BACKOFF.size) - 1]
 
     fun isTbaDue(lastTbaPoll: Instant?, now: Instant): Boolean =
         lastTbaPoll == null || Duration.between(lastTbaPoll, now) >= TBA_INTERVAL

@@ -33,11 +33,12 @@ class LiveMatchServiceTest {
     val tmp = TemporaryFolder()
 
     private val context: Context = ApplicationProvider.getApplicationContext()
+    private val nexus = com.pitwatch.app.snapshotNexus()
     private lateinit var container: AppContainer
 
     @Before
     fun setUp() {
-        container = installTestContainer(tmp.root)
+        container = installTestContainer(tmp.root, nexus = nexus)
         runBlocking { container.stores.config.updateData { UserConfig(teamNumber = 5507, apiKey = "k", nexusApiKey = "n") } }
     }
 
@@ -70,10 +71,75 @@ class LiveMatchServiceTest {
     }
 
     @Test
-    fun `restart after process death resumes tracking`() {
+    fun `restart after process death resumes tracking inside the window`() {
+        // All-day + TBA times: qm36 (65 s out) keeps the window open. The cache survives process death on disk.
         // START_STICKY redelivers a null intent.
+        runBlocking {
+            container.stores.config.updateData {
+                it.copy(liveActivityMode = com.pitwatch.core.config.LiveActivityMode.ALL_DAY, timeSource = com.pitwatch.core.config.TimeSource.TBA)
+            }
+            container.repository.refresh(com.pitwatch.app.SNAP_NOW)
+        }
         val service = startService(intentAction = null)
         assertNotNull(shadowOf(service).lastForegroundNotification)
+        awaitMain { runBlocking { container.stores.refreshState.data.first().lastRefreshEpochMs != null } }
+        repeat(20) { org.robolectric.shadows.ShadowLooper.idleMainLooper(); Thread.sleep(10) }
+        assertTrue(!shadowOf(service).isStoppedBySelf)
+    }
+
+    @Test
+    fun `restart outside the live window stops instead of tracking`() {
+        // Near-match + Nexus: qm36 queued 22 min ago, past the 15-min grace, so the window is closed.
+        runBlocking { container.repository.refresh(com.pitwatch.app.SNAP_NOW) } // cache survives process death
+        val service = startService(intentAction = null)
+        awaitMain { shadowOf(service).isStoppedBySelf }
+    }
+
+    @Test
+    fun `redundant start keeps the live notification`() {
+        shadowOf(context as Application).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
+        val service = startService()
+        awaitMain { posted()?.extras?.getCharSequence(Notification.EXTRA_TITLE)?.startsWith("Q36") == true }
+        service.onStartCommand(LiveMatchService.intent(context, LiveMatchService.ACTION_START), 0, 2)
+        val foreground = shadowOf(service).lastForegroundNotification
+        assertEquals("Q36 · RED · ON FIELD", foreground.extras.getCharSequence(Notification.EXTRA_TITLE).toString())
+    }
+
+    @Test
+    fun `screen on triggers an immediate poll`() {
+        shadowOf(context as Application).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
+        startService()
+        awaitMain { posted()?.extras?.getCharSequence(Notification.EXTRA_TITLE)?.startsWith("Q36") == true }
+        val before = nexus.requests.size
+        context.sendBroadcast(android.content.Intent(android.content.Intent.ACTION_SCREEN_ON))
+        awaitMain { nexus.requests.size > before }
+    }
+
+    @Test
+    fun `event without Nexus coverage is not reported stale`() {
+        container.scope.cancel()
+        container = installTestContainer(tmp.newFolder(), nexus = com.pitwatch.app.FakeApi()) // every Nexus call 404s
+        runBlocking { container.stores.config.updateData { UserConfig(teamNumber = 5507, apiKey = "k", nexusApiKey = "n") } }
+        shadowOf(context as Application).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
+        startService()
+        awaitMain { posted()?.extras?.getCharSequence(Notification.EXTRA_TITLE)?.startsWith("Q36") == true }
+        assertEquals(null, posted()!!.extras.getCharSequence(Notification.EXTRA_SUB_TEXT))
+    }
+
+    @Test
+    fun `an unexpected exception does not kill the live loop`() {
+        container.scope.cancel()
+        var calls = 0
+        val nexusApi = com.pitwatch.app.snapshotNexus()
+        container = installTestContainer(tmp.newFolder(), nexus = nexusApi, clock = { if (++calls == 3) error("boom") else com.pitwatch.app.SNAP_NOW })
+        runBlocking { container.stores.config.updateData { UserConfig(teamNumber = 5507, apiKey = "k", nexusApiKey = "n") } }
+        shadowOf(context as Application).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
+        val service = startService()
+        awaitMain { posted()?.extras?.getCharSequence(Notification.EXTRA_TITLE)?.startsWith("Q36") == true }
+        // The loop must still be alive: a Refresh poke produces another poll.
+        val before = nexusApi.requests.size
+        service.onStartCommand(LiveMatchService.intent(context, LiveMatchService.ACTION_REFRESH), 0, 2)
+        awaitMain { nexusApi.requests.size > before }
     }
 
     @Test
