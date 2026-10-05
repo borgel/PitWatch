@@ -5,7 +5,7 @@ Glanceable FRC match info (next match, queue status, rankings) from The Blue All
 ## Layout
 
 ```
-ios/        iOS + watchOS app (XcodeGen: `cd ios && xcodegen generate`)
+ios/        iOS + watchOS app — PAUSED, see ios/STATUS.md (XcodeGen: `cd ios && xcodegen generate`)
   TBAKit/   Shared Swift logic + tests (`cd ios/TBAKit && swift test`)
 android/    Android app (planned — see docs/superpowers/specs)
 scripts/    Platform-agnostic tooling (fixture capture)
