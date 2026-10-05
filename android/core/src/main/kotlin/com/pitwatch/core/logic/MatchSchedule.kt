@@ -67,11 +67,10 @@ class MatchSchedule(matches: List<Match>, teamKey: String) {
         val next = nextMatch ?: return false
         val ref = liveReference(next, useScheduledTime, nexusEvent) ?: return false
         val until = secondsBetween(now, ref.date)
+        // With Nexus, both modes open 2 h before the queue time. Deliberate divergence from iOS, whose
+        // all-day rule had no lead limit and so re-armed for tomorrow's first match right after the last one.
         return if (ref.fromNexus) {
-            when (mode) {
-                LiveActivityMode.NEAR_MATCH -> until > -900 && until <= 7200
-                LiveActivityMode.ALL_DAY -> until > -900
-            }
+            until > -900 && until <= 7200
         } else {
             when (mode) {
                 LiveActivityMode.NEAR_MATCH -> until > 0 && until <= 7200
@@ -95,7 +94,7 @@ class MatchSchedule(matches: List<Match>, teamKey: String) {
         val opens = ref.date.minus(LIVE_LEAD)
         if (ref.fromNexus) {
             if (!now.isBefore(ref.date.plus(NEXUS_GRACE))) return null
-            return if (mode == LiveActivityMode.ALL_DAY) now else maxOf(now, opens)
+            return maxOf(now, opens)
         }
         if (mode == LiveActivityMode.NEAR_MATCH && !now.isBefore(ref.date)) return null
         return maxOf(now, opens)

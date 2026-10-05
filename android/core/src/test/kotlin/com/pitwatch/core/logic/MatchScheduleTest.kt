@@ -176,4 +176,13 @@ class MatchScheduleTest {
             }
         }
     }
+
+    @Test
+    fun `all-day nexus window still opens two hours before the queue time`() {
+        // Otherwise stopping after the day's last match re-arms for tomorrow's first match at once.
+        val tomorrowQueue = nexusFor(now.plusSeconds(10 * 3600), null)
+        assertEquals(now.plusSeconds(8 * 3600), windowStart(12 * 3600, LiveActivityMode.ALL_DAY, tomorrowQueue))
+        val schedule = MatchSchedule(listOf(testMatch(32, time = now.plusSeconds(12 * 3600).epochSecond)), "frc1234")
+        assertFalse(schedule.shouldStartLiveActivity(now, LiveActivityMode.ALL_DAY, true, false, tomorrowQueue))
+    }
 }
