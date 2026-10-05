@@ -197,4 +197,28 @@ class RepositoryTest {
         coroutineScope { repeat(3) { launch(Dispatchers.IO) { repo.refresh(now) } } }
         assertEquals(1, tba.maxInFlight)
     }
+
+    @Test
+    fun `TBA endpoint failure is reported while partial data is kept`() = runBlocking {
+        configure()
+        repo.refresh(now)
+        tba.on("/event/2026cancmp/matches", HttpStatusCode.InternalServerError) { "boom" }
+        val outcome = repo.refresh(now.plusSeconds(60))
+        assertNotNull(outcome.error)
+        val state = stores.refreshState.data.first()
+        assertEquals(outcome.error, state.lastError)
+        assertEquals(now.toEpochMilli(), state.lastRefreshEpochMs) // not advanced by a failed refresh
+        assertTrue(cache().matches.isNotEmpty())
+    }
+
+    @Test
+    fun `unchanged refresh does not rewrite the cache file`() = runBlocking {
+        configure()
+        repo.refresh(now)
+        val file = java.io.File(tmp.root, "event_cache.json")
+        val before = file.lastModified()
+        Thread.sleep(1100) // filesystem mtime resolution
+        repo.refresh(now)
+        assertEquals(before, file.lastModified())
+    }
 }

@@ -51,19 +51,30 @@ class Repository(
         var state = stores.refreshState.data.first()
         try {
             var cache = old
+            var tbaError: String? = null
+            // A failed TBA call is remembered so the refresh reports it, while the data that did arrive is kept.
+            suspend fun <T> fetchRecording(block: suspend () -> T): T? =
+                try {
+                    block()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    if (tbaError == null) tbaError = e.message ?: e::class.simpleName ?: "TBA request failed"
+                    null
+                }
             if (includeTba) {
                 val client = tbaClient(apiKey)
                 val resolved = resolveEvent(config, old.event, client, now)
                     ?: return@withLock RefreshOutcome(changed = false, error = null) // no events this season
                 if (old.event?.key != resolved.key) cache = EventCache() // switching events: start clean
                 val event = resolved.event ?: cache.event
-                    ?: fetchOrNull { (client.fetch<Event>(Endpoints.event(resolved.key)) as? FetchResult.Data)?.value }
+                    ?: fetchRecording { (client.fetch<Event>(Endpoints.event(resolved.key)) as? FetchResult.Data)?.value }
                 cache = cache.copy(event = event)
 
                 // Conditional GET only when we already hold the data a 304 would refer to.
                 suspend fun <T> conditional(path: String, deserializer: DeserializationStrategy<T>, have: Boolean): T? {
                     val lastModified = if (force || !have) null else state.lastModified(path)
-                    val result = fetchOrNull { client.fetch(deserializer, path, lastModified) } as? FetchResult.Data ?: return null
+                    val result = fetchRecording { client.fetch(deserializer, path, lastModified) } as? FetchResult.Data ?: return null
                     state = state.withLastModified(result.lastModified, path)
                     return result.value
                 }
@@ -76,7 +87,11 @@ class Repository(
                     ?.let { cache = cache.copy(rankings = it) }
                 conditional(Endpoints.eventOprs(key), EventOPRs.serializer().nullable, cache.oprs != null)
                     ?.let { cache = cache.copy(oprs = it) }
-                state = state.copy(lastRefreshEpochMs = now.toEpochMilli(), lastError = null)
+                state = if (tbaError == null) {
+                    state.copy(lastRefreshEpochMs = now.toEpochMilli(), lastError = null)
+                } else {
+                    state.copy(lastError = tbaError)
+                }
             }
 
             var nexusError: String? = null
@@ -99,7 +114,7 @@ class Repository(
             stores.refreshState.updateData { finalState }
             val changed = force || old.event != cache.event || old.nexusEvent != cache.nexusEvent ||
                 ChangeDetector.detect(old, cache, config.teamKey.orEmpty()).shouldReloadWidgets
-            RefreshOutcome(changed, error = null, nexusError = nexusError)
+            RefreshOutcome(changed, error = tbaError, nexusError = nexusError)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -127,15 +142,6 @@ class Repository(
         }
         return EventSelection.autoDetect(events, now)?.let { ResolvedEvent(it.key, it) }
     }
-
-    private suspend fun <T> fetchOrNull(block: suspend () -> T): T? =
-        try {
-            block()
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            null
-        }
 
     companion object {
         const val NOT_CONFIGURED = "Not configured"
