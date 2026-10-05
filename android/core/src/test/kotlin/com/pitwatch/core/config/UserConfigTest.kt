@@ -39,6 +39,14 @@ class UserConfigTest {
     }
 
     @Test
+    fun `saved config records settings even when they equal today's defaults`() {
+        // Otherwise a future change of default would silently override a user's explicit choice.
+        val json = PitWatchJson.encodeToString(UserConfig(teamNumber = 1, liveActivityMode = LiveActivityMode.NEAR_MATCH))
+        assertTrue("\"liveActivityMode\":\"nearMatch\"" in json, json)
+        assertTrue("\"queueOffsetMinutes\":0" in json, json)
+    }
+
+    @Test
     fun `is configured needs team and non-empty key`() {
         assertFalse(UserConfig().isConfigured)
         assertFalse(UserConfig(teamNumber = 1234).isConfigured)
