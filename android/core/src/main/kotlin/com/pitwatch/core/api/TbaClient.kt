@@ -3,6 +3,7 @@ package com.pitwatch.core.api
 import com.pitwatch.core.PitWatchJson
 import com.pitwatch.core.model.Team
 import io.ktor.client.HttpClient
+import io.ktor.client.plugins.expectSuccess
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.statement.bodyAsText
@@ -22,6 +23,7 @@ class TbaClient(
         lastModified: String? = null,
     ): FetchResult<T> {
         val response = httpClient.get(baseUrl.trimEnd('/') + path) {
+            expectSuccess = false // we map 304/errors ourselves, regardless of the shared client's config
             header("X-TBA-Auth-Key", apiKey)
             header(HttpHeaders.UserAgent, "PitWatch")
             lastModified?.let { header(HttpHeaders.IfModifiedSince, it) }

@@ -56,6 +56,15 @@ class TbaClientTest {
     }
 
     @Test
+    fun `status handling does not depend on the injected client's expectSuccess`() = runTest {
+        // Plan 2 may share one HttpClient configured with expectSuccess = true; 304 must still be NotModified.
+        fun strict(status: HttpStatusCode) =
+            TbaClient("k", HttpClient(MockEngine { respond("nope", status) }) { expectSuccess = true }, "https://example.com/api/v3")
+        assertEquals(FetchResult.NotModified, strict(HttpStatusCode.NotModified).fetch<Team>("/x", "LM"))
+        assertEquals(401, assertFailsWith<TbaException> { strict(HttpStatusCode.Unauthorized).fetch<Team>("/x") }.statusCode)
+    }
+
+    @Test
     fun `validateTeam returns the team`() = runTest {
         assertEquals("frc1234", client(HttpStatusCode.OK, teamJson).validateTeam(1234).key)
         assertEquals("https://example.com/api/v3/team/frc1234", captured!!.url.toString())
