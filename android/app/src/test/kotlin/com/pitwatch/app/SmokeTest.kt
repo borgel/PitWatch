@@ -11,6 +11,14 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class SmokeTest {
+    @org.junit.Before
+    fun initWorkManager() {
+        androidx.work.testing.WorkManagerTestInitHelper.initializeTestWorkManager(
+            ApplicationProvider.getApplicationContext(),
+            androidx.work.Configuration.Builder().setExecutor(androidx.work.testing.SynchronousExecutor()).build(),
+        )
+    }
+
     @Test
     fun `runs on API 36 with our package`() {
         assertEquals(36, Build.VERSION.SDK_INT)
