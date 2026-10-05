@@ -21,3 +21,11 @@ Package.resolved
 
 # Git worktrees
 .worktrees/
+
+# Android / Gradle
+android/.gradle/
+android/**/build/
+android/build/
+android/local.properties
+android/.kotlin/
+android/.idea/
