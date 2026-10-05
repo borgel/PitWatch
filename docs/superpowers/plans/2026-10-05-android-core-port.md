@@ -3097,3 +3097,11 @@ git commit -m "docs: document android/ :core module"
 - **Plan 2 — `:app` data layer + live notification:** Android module (minSdk 36), OkHttp Ktor engine, `Repository.refresh()` (port of `BackgroundRefresh.performRefresh`, using `EventSelection.autoDetect`), DataStore/JSON persistence of `UserConfig`/`EventCache`/`RefreshState`, `RefreshWorker`, `PollCadence`, `LiveMatchService` + `LiveNotificationBuilder`, exact-alarm auto-start, minimal Setup + Settings screens.
 - **Plan 3 — screens + Glance widgets.**
 - **Open decision (not in any plan yet):** Nexus's explicit `breakAfter` markers (decoded in Task 3) vs. the inferred `ScheduleBreakDetector`.
+
+## Carry into Plan 2 (from the final review of this plan)
+
+- Bound Nexus polls with Ktor `HttpTimeout` or `withTimeoutOrNull`, not bare `withTimeout`: `NexusClient` now (correctly) propagates cancellation, so an uncaught `TimeoutCancellationException` would silently end the poll loop.
+- TBA can return a literal `null` body for `/rankings` or `/oprs` early in an event; `TbaClient.fetch` then throws `SerializationException`. Handle per endpoint in `Repository.refresh()` (or fetch with `EventRankings.serializer().nullable`).
+- Consider `coerceInputValues = true` in `PitWatchJson` so an unexpected JSON `null` in a defaulted field (e.g. `redTeams: null` before playoff alliances exist) falls back to the default instead of failing the whole Nexus decode.
+- Validate a typed `eventKeyOverride` (`^\d{4}[a-z0-9]+$`) before it reaches URL paths, which are not percent-encoded.
+- Deferred doc fixes: `NexusMatchMerge` KDoc wrongly says its whitespace tolerance matches Swift (iOS keeps the extra space and falls back to team matching); decode leniency vs Swift and the local-zone effect on `EventSelection` are undocumented.
