@@ -77,4 +77,12 @@ class NexusModelDecodingTest {
         assertEquals("A1", found?.address)
         assertNull(map.pit(forTeam = "0"))
     }
+
+    @Test
+    fun `explicit null in a defaulted field falls back to the default`() {
+        val json = """{"dataAsOfTime":1,"matches":[{"label":"Playoff 1","redTeams":null,"blueTeams":null,"times":null}]}"""
+        val match = PitWatchJson.decodeFromString<NexusEvent>(json).matches.single()
+        assertEquals(emptyList(), match.redTeams)
+        assertNull(match.times.startDate)
+    }
 }

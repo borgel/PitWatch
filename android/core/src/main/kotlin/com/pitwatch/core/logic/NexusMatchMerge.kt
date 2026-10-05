@@ -24,7 +24,7 @@ object NexusMatchMerge {
         }
     }
 
-    /** "Qualification 32" → "qm-1-32", "Quarterfinal 2-1" → "qf-2-1". Whitespace-tolerant like Swift's split. */
+    /** "Qualification 32" → "qm-1-32", "Quarterfinal 2-1" → "qf-2-1". Tolerates extra whitespace — deliberately more lenient than iOS, which keeps it and falls back to team matching. */
     private fun parseNexusLabel(label: String): String? {
         val parts = label.trim().split(WHITESPACE, limit = 2)
         if (parts.size != 2) return null

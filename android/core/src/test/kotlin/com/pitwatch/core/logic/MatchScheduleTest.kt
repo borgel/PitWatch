@@ -136,4 +136,44 @@ class MatchScheduleTest {
         // Queue 20 min ago is past the grace.
         assertFalse(startCheck(5 * 3600, LiveActivityMode.NEAR_MATCH, nexus = nexusFor(now.minusSeconds(1200), null)))
     }
+
+    private fun windowStart(matchIn: Long, mode: LiveActivityMode, nexus: NexusEvent? = null) =
+        MatchSchedule(listOf(testMatch(32, time = now.plusSeconds(matchIn).epochSecond)), "frc1234")
+            .liveActivityWindowStart(now, mode, useScheduledTime = true, nexusEvent = nexus)
+
+    @Test
+    fun `window opens two hours before the TBA time`() {
+        assertEquals(now.plusSeconds(3600), windowStart(3 * 3600, LiveActivityMode.NEAR_MATCH))
+        assertEquals(now.plusSeconds(3600), windowStart(3 * 3600, LiveActivityMode.ALL_DAY))
+    }
+
+    @Test
+    fun `window start is now when already inside the window`() {
+        assertEquals(now, windowStart(3600, LiveActivityMode.NEAR_MATCH))
+    }
+
+    @Test
+    fun `near-match window closes at the TBA time, all-day stays open`() {
+        assertNull(windowStart(-60, LiveActivityMode.NEAR_MATCH))
+        assertEquals(now, windowStart(-60, LiveActivityMode.ALL_DAY))
+    }
+
+    @Test
+    fun `nexus window closes 15 minutes after the queue time`() {
+        assertEquals(now, windowStart(5 * 3600, LiveActivityMode.NEAR_MATCH, nexusFor(now.minusSeconds(600), null)))
+        assertNull(windowStart(5 * 3600, LiveActivityMode.NEAR_MATCH, nexusFor(now.minusSeconds(1200), null)))
+        assertEquals(now.plusSeconds(3600), windowStart(5 * 3600, LiveActivityMode.NEAR_MATCH, nexusFor(now.plusSeconds(3 * 3600), null)))
+    }
+
+    @Test
+    fun `window start agrees with shouldStartLiveActivity`() {
+        for (matchIn in listOf(-1200L, -60, 0, 60, 3600, 7200, 7201, 4 * 3600)) {
+            for (mode in LiveActivityMode.entries) {
+                val schedule = MatchSchedule(listOf(testMatch(32, time = now.plusSeconds(matchIn).epochSecond)), "frc1234")
+                val start = schedule.liveActivityWindowStart(now, mode, useScheduledTime = true) ?: continue
+                assertTrue(schedule.shouldStartLiveActivity(start, mode, true, false), "matchIn=$matchIn mode=$mode")
+                if (start > now) assertFalse(schedule.shouldStartLiveActivity(start.minusSeconds(1), mode, true, false))
+            }
+        }
+    }
 }

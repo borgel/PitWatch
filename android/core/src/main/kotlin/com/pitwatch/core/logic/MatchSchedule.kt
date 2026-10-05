@@ -65,23 +65,50 @@ class MatchSchedule(matches: List<Match>, teamKey: String) {
     ): Boolean {
         if (hasActiveLiveActivity) return false
         val next = nextMatch ?: return false
-
-        val nexusDate = NexusMatchMerge.nexusInfo(next, nexusEvent)?.times
-            ?.let { it.queueDate ?: it.onDeckDate ?: it.onFieldDate ?: it.startDate }
-        if (nexusDate != null) {
-            val until = secondsBetween(now, nexusDate)
-            return when (mode) {
+        val ref = liveReference(next, useScheduledTime, nexusEvent) ?: return false
+        val until = secondsBetween(now, ref.date)
+        return if (ref.fromNexus) {
+            when (mode) {
                 LiveActivityMode.NEAR_MATCH -> until > -900 && until <= 7200
                 LiveActivityMode.ALL_DAY -> until > -900
             }
+        } else {
+            when (mode) {
+                LiveActivityMode.NEAR_MATCH -> until > 0 && until <= 7200
+                LiveActivityMode.ALL_DAY -> until <= 7200
+            }
         }
+    }
 
-        val matchDate = referenceDate(next, useScheduledTime) ?: return false
-        val until = secondsBetween(now, matchDate)
-        return when (mode) {
-            LiveActivityMode.NEAR_MATCH -> until > 0 && until <= 7200
-            LiveActivityMode.ALL_DAY -> until <= 7200
+    /**
+     * Earliest instant at or after [now] when [shouldStartLiveActivity] (nothing active) is true, or null
+     * once that window has closed. Arms the auto-start alarm.
+     */
+    fun liveActivityWindowStart(
+        now: Instant,
+        mode: LiveActivityMode,
+        useScheduledTime: Boolean,
+        nexusEvent: NexusEvent? = null,
+    ): Instant? {
+        val next = nextMatch ?: return null
+        val ref = liveReference(next, useScheduledTime, nexusEvent) ?: return null
+        val opens = ref.date.minus(LIVE_LEAD)
+        if (ref.fromNexus) {
+            if (!now.isBefore(ref.date.plus(NEXUS_GRACE))) return null
+            return if (mode == LiveActivityMode.ALL_DAY) now else maxOf(now, opens)
         }
+        if (mode == LiveActivityMode.NEAR_MATCH && !now.isBefore(ref.date)) return null
+        return maxOf(now, opens)
+    }
+
+    private data class LiveReference(val date: Instant, val fromNexus: Boolean)
+
+    /** Liveness is measured against the earliest correlated Nexus phase time, else the TBA match time. */
+    private fun liveReference(next: Match, useScheduledTime: Boolean, nexusEvent: NexusEvent?): LiveReference? {
+        NexusMatchMerge.nexusInfo(next, nexusEvent)?.times
+            ?.let { it.queueDate ?: it.onDeckDate ?: it.onFieldDate ?: it.startDate }
+            ?.let { return LiveReference(it, fromNexus = true) }
+        return referenceDate(next, useScheduledTime)?.let { LiveReference(it, fromNexus = false) }
     }
 
     /**
@@ -115,6 +142,8 @@ class MatchSchedule(matches: List<Match>, teamKey: String) {
 
     private companion object {
         val ONE_DAY: Duration = Duration.ofDays(1)
+        val LIVE_LEAD: Duration = Duration.ofHours(2)
+        val NEXUS_GRACE: Duration = Duration.ofMinutes(15)
 
         /** Fractional seconds, matching Swift's TimeInterval comparisons at the thresholds. */
         fun secondsBetween(from: Instant, to: Instant): Double = Duration.between(from, to).toMillis() / 1000.0
