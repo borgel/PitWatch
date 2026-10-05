@@ -7,7 +7,7 @@ Glanceable FRC match info (next match, queue status, rankings) from The Blue All
 ```
 ios/        iOS + watchOS app — PAUSED, see ios/STATUS.md (XcodeGen: `cd ios && xcodegen generate`)
   TBAKit/   Shared Swift logic + tests (`cd ios/TBAKit && swift test`)
-android/    Android app (planned — see docs/superpowers/specs)
+android/    Android app (Gradle). :core = pure-Kotlin port of TBAKit (`cd android && ./gradlew :core:test`)
 scripts/    Platform-agnostic tooling (fixture capture)
 docs/       Design specs and implementation plans
 ```
