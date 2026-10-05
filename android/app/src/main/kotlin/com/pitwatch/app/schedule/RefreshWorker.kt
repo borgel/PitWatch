@@ -52,5 +52,8 @@ class RefreshWorker(context: Context, params: WorkerParameters) : CoroutineWorke
 
         /** App launch / after setup: refresh now unless a run is already scheduled. */
         fun ensureScheduled(context: Context) = enqueue(context, Duration.ZERO, ExistingWorkPolicy.KEEP)
+
+        /** After setup or a key/event change: run now, replacing any far-off run planned from stale state. */
+        fun refreshNow(context: Context) = enqueue(context, Duration.ZERO, ExistingWorkPolicy.REPLACE)
     }
 }

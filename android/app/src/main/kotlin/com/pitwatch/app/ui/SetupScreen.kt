@@ -68,7 +68,7 @@ fun SetupScreen(container: AppContainer, config: UserConfig) {
                                 it.copy(teamNumber = outcome.teamNumber, apiKey = outcome.apiKey, nexusApiKey = outcome.nexusApiKey)
                             }
                             notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-                            RefreshWorker.ensureScheduled(context)
+                            RefreshWorker.refreshNow(context)
                         }
                     }
                 }

@@ -48,9 +48,11 @@ fun SettingsScreen(container: AppContainer, config: UserConfig, onBack: () -> Un
     var apiKey by rememberSaveable { mutableStateOf(config.apiKey.orEmpty()) }
     var nexusKey by rememberSaveable { mutableStateOf(config.nexusApiKey.orEmpty()) }
 
-    fun update(transform: (UserConfig) -> UserConfig) = scope.launch {
+    /** Saves a config change; [refetch] for changes that alter what to fetch (keys, event). */
+    fun update(refetch: Boolean = false, transform: (UserConfig) -> UserConfig) = scope.launch {
         container.stores.config.updateData { transform(it) }
         rearmAutoStart(context, container)
+        if (refetch) RefreshWorker.refreshNow(context)
     }
 
     Column(
@@ -97,13 +99,15 @@ fun SettingsScreen(container: AppContainer, config: UserConfig, onBack: () -> Un
         )
         Button(
             enabled = eventOverride.isEmpty() || EventKeys.isValid(eventOverride),
-            onClick = { update { it.copy(eventKeyOverride = eventOverride.ifEmpty { null }) } },
+            onClick = { update(refetch = true) { it.copy(eventKeyOverride = eventOverride.ifEmpty { null }) } },
         ) { Text("Save event") }
 
         Text("API keys", style = MaterialTheme.typography.titleMedium)
         OutlinedTextField(apiKey, { apiKey = it }, label = { Text("TBA API key") }, singleLine = true)
         OutlinedTextField(nexusKey, { nexusKey = it }, label = { Text("FRC Nexus API key") }, singleLine = true)
-        Button(onClick = { update { it.copy(apiKey = apiKey.trim(), nexusApiKey = nexusKey.trim().ifEmpty { null }) } }) { Text("Save keys") }
+        Button(onClick = { update(refetch = true) { it.copy(apiKey = apiKey.trim(), nexusApiKey = nexusKey.trim().ifEmpty { null }) } }) {
+            Text("Save keys")
+        }
 
         Text("Status", style = MaterialTheme.typography.titleMedium)
         Text(RefreshStatusText.format(refreshState, container.clock()))

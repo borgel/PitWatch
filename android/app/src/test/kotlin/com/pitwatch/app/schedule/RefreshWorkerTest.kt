@@ -70,4 +70,14 @@ class RefreshWorkerTest {
         assertEquals(RefreshWorker.MIN_DELAY, RefreshWorker.nextDelay(soon, config, now))
         assertEquals(Duration.ofDays(1), RefreshWorker.nextDelay(EventCache(), config, now))
     }
+
+    @Test
+    fun `refreshNow replaces a far-off scheduled run`() {
+        // Found on-device: a launch before setup parks the next run a day out; finishing setup must not wait for it.
+        RefreshWorker.enqueue(context, Duration.ofDays(1), androidx.work.ExistingWorkPolicy.REPLACE)
+        RefreshWorker.refreshNow(context)
+        val pending = WorkManager.getInstance(context).getWorkInfosForUniqueWork(RefreshWorker.UNIQUE_NAME).get()
+            .filter { !it.state.isFinished }
+        assertEquals(listOf(0L), pending.map { it.initialDelayMillis })
+    }
 }
