@@ -31,7 +31,11 @@ enum BackgroundRefresh {
         let config = store.loadConfig()
         let cache = store.loadEventCache()
         let schedule = MatchSchedule(matches: cache.matches, teamKey: config.teamKey ?? "")
-        let interval = schedule.refreshInterval(now: .now, useScheduledTime: config.useScheduledTime)
+        let useNexus = config.effectiveTimeSource == .nexus
+        let interval = schedule.refreshInterval(
+            now: .now, useScheduledTime: config.useScheduledTime,
+            nexusEvent: useNexus ? cache.nexusEvent : nil
+        )
         let request = BGAppRefreshTaskRequest(identifier: taskIdentifier)
         request.earliestBeginDate = Date(timeIntervalSinceNow: interval)
         try? BGTaskScheduler.shared.submit(request)
