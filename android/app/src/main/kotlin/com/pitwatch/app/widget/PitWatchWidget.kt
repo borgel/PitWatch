@@ -2,6 +2,7 @@ package com.pitwatch.app.widget
 
 import android.content.Context
 import android.os.SystemClock
+import android.util.TypedValue
 import android.widget.RemoteViews
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -11,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceTheme
 import androidx.glance.LocalContext
+import androidx.glance.LocalSize
 import androidx.glance.appwidget.AndroidRemoteViews
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
@@ -81,10 +83,13 @@ fun LiveWidget(
 @Composable
 private fun ChronometerCountdown(deadline: Instant, now: Instant) {
     val context = LocalContext.current
+    // 56 sp on tall widgets, 40 sp where the 110 dp cell would clip it.
+    val textSp = if (LocalSize.current.height >= PitWatchWidget.LARGE.height) 56f else 40f
     val remaining = Duration.between(now, deadline).toMillis()
     val views = RemoteViews(context.packageName, R.layout.widget_countdown).apply {
         setChronometer(R.id.countdown, SystemClock.elapsedRealtime() + remaining, null, true)
         setChronometerCountDown(R.id.countdown, true)
+        setTextViewTextSize(R.id.countdown, TypedValue.COMPLEX_UNIT_SP, textSp)
     }
     AndroidRemoteViews(views)
 }

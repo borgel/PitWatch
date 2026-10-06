@@ -100,4 +100,12 @@ class WidgetModelTest {
         kotlin.test.assertTrue(WidgetLines.budget(300.dp) < WidgetLines.budget(450.dp))
         assertEquals(0, WidgetLines.budget(200.dp))
     }
+
+    @Test
+    fun `team split puts our team in the middle`() {
+        fun line(vararg t: String) = com.pitwatch.app.ui.matches.MatchListModel.AllianceLine(t.map { com.pitwatch.app.ui.matches.MatchListModel.TeamChip(it, it == "5507") }, null)
+        assertEquals(Triple("4698 · ", "5507", " · 1678"), TeamSplit.of(line("4698", "5507", "1678")))
+        assertEquals(Triple("", "5507", " · 1678"), TeamSplit.of(line("5507", "1678")))
+        assertEquals(Triple("6036 · 9470 · 6814", null, ""), TeamSplit.of(line("6036", "9470", "6814")))
+    }
 }

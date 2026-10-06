@@ -71,9 +71,9 @@ sealed interface WidgetLine {
 }
 
 object WidgetLines {
-    /** Height the large layout uses above the upcoming list (header, next match, alliances, last result, label). */
-    private val FIXED: Dp = 236.dp
-    private val ROW: Dp = 19.dp
+    /** Height the large layout uses above the upcoming list (header, title, next match with the 56 sp countdown, phase bar, alliances, divider, last result, label). */
+    private val FIXED: Dp = 308.dp
+    private val ROW: Dp = 22.dp
 
     /** Glance renders at most 10 children per Column; the list gets its own Column, kept under the limit. */
     const val MAX_LINES = 9
@@ -99,3 +99,14 @@ object WidgetLines {
     }
 }
 
+/** "4698 · ", "5507", " · 1678": the text either side of our team, so it can sit in its own chip. */
+object TeamSplit {
+    fun of(line: MatchListModel.AllianceLine): Triple<String, String?, String> {
+        val numbers = line.teams.map { it.number }
+        val i = line.teams.indexOfFirst { it.isUs }
+        if (i < 0) return Triple(numbers.joinToString(" · "), null, "")
+        val before = numbers.take(i).joinToString(" · ").let { if (it.isEmpty()) it else "$it · " }
+        val after = numbers.drop(i + 1).joinToString(" · ").let { if (it.isEmpty()) it else " · $it" }
+        return Triple(before, numbers[i], after)
+    }
+}
