@@ -2971,3 +2971,15 @@ Matches (light + dark), event picker, Pit map, Settings, and the widget at small
 git add android/app README.md docs/android-manual-test.md
 git commit -m "feat(app): Material You notification accent; docs for the new screens and widget"
 ```
+
+## Carry forward (from the final review of this plan)
+
+- Live tracking started offline ignores the first real reconnect (`ignoreNextAvailable` is set even when there's no network at registration).
+- Clock formatters capture the device zone at class load; row times (device zone) and day headers (event zone) aren't labeled.
+- Pit map: cache text layouts per map (not per frame); move zoom/pan writes out of the draw lambda; `clipToBounds`; draw arrows as angled lines; cache the map for offline use; refetch when the auto-detected event changes.
+- Large widget: day grouping and the event name; add a widget-picker preview.
+- Event picker: friendlier dates; a Retry button on errors.
+- Setup screen: apply system-bar insets (title sits under the status bar with edge-to-edge).
+- Settings' Live Updates hint doesn't refresh after returning from notification settings.
+- Still open from Plan 2: TBA decode on Main; Nexus blip window vs server clock; RefreshWorker stall/cadence edge cases.
+- Pit-map positions are box centers (verified against the real map); the iOS app reads them as corners and is wrong.
