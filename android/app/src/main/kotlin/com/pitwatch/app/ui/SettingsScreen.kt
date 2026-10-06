@@ -32,6 +32,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -40,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.app.NotificationManagerCompat
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pitwatch.app.AppContainer
 import com.pitwatch.app.schedule.RefreshWorker
@@ -60,6 +62,12 @@ fun SettingsScreen(container: AppContainer, config: UserConfig, onBack: (() -> U
     var eventOverride by rememberSaveable { mutableStateOf(config.eventKeyOverride.orEmpty()) }
     var apiKey by rememberSaveable { mutableStateOf(config.apiKey.orEmpty()) }
     var nexusKey by rememberSaveable { mutableStateOf(config.nexusApiKey.orEmpty()) }
+    // Re-checked on every resume: the user may have just flipped it in system notification settings.
+    var canPromote by remember { mutableStateOf(NotificationManagerCompat.from(context).canPostPromotedNotifications()) }
+    LifecycleResumeEffect(Unit) {
+        canPromote = NotificationManagerCompat.from(context).canPostPromotedNotifications()
+        onPauseOrDispose { }
+    }
 
     /** Saves a config change (and refreshes) on the app scope via [SettingsActions]. */
     fun update(transform: (UserConfig) -> UserConfig) = SettingsActions.save(context, container, transform)
@@ -102,7 +110,7 @@ fun SettingsScreen(container: AppContainer, config: UserConfig, onBack: (() -> U
                 update { it.copy(liveActivityMode = LiveActivityMode.NEAR_MATCH) }
             }
             Choice("All day", config.liveActivityMode == LiveActivityMode.ALL_DAY) { update { it.copy(liveActivityMode = LiveActivityMode.ALL_DAY) } }
-            if (PromotionHint.shouldShow(Build.VERSION.SDK_INT_FULL, NotificationManagerCompat.from(context).canPostPromotedNotifications())) {
+            if (PromotionHint.shouldShow(Build.VERSION.SDK_INT_FULL, canPromote)) {
                 ListItem(
                     headlineContent = { Text("Live Updates are off for PitWatch") },
                     supportingContent = { Text("Tracking shows as a normal notification instead of in the status bar.") },
