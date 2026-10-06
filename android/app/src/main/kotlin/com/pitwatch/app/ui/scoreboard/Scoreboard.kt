@@ -1,5 +1,6 @@
 package com.pitwatch.app.ui.scoreboard
 
+import android.os.SystemClock
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -34,6 +35,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.TextStyle
@@ -86,10 +88,10 @@ fun SectionLabel(text: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun StatusPill(text: String, container: Color, content: Color, fontSize: TextUnit = 16.sp) {
+fun StatusPill(text: String, container: Color, content: Color, fontSize: TextUnit = 13.sp) {
     Text(
         text.uppercase(),
-        Modifier.background(container, RoundedCornerShape(50)).padding(horizontal = 12.dp, vertical = 4.dp),
+        Modifier.background(container, RoundedCornerShape(50)).padding(horizontal = 10.dp, vertical = 3.dp),
         color = content,
         style = condensed(fontSize, FontWeight.ExtraBold, 1.sp),
         maxLines = 1,
@@ -97,11 +99,11 @@ fun StatusPill(text: String, container: Color, content: Color, fontSize: TextUni
 }
 
 @Composable
-fun PhasePill(phase: Phase, fontSize: TextUnit = 16.sp) =
+fun PhasePill(phase: Phase, fontSize: TextUnit = 13.sp) =
     StatusPill(phase.stateLabel, StatusColors.phase(phase), StatusColors.onPhase(phase), fontSize)
 
 @Composable
-fun OutcomePill(result: MatchListModel.Result, fontSize: TextUnit = 16.sp) {
+fun OutcomePill(result: MatchListModel.Result, fontSize: TextUnit = 13.sp) {
     val pill = StatusColors.outcome(result.outcome)
     val colors = MaterialTheme.colorScheme
     StatusPill(result.outcomeLabel, pill?.container ?: colors.surfaceVariant, pill?.content ?: colors.onSurfaceVariant, fontSize)
@@ -126,7 +128,8 @@ fun TeamChip(number: String, container: Color, content: Color, style: TextStyle)
 private fun Teams(line: MatchListModel.AllianceLine, style: TextStyle, color: Color, chipContainer: Color, chipContent: Color) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         line.teams.forEachIndexed { i, team ->
-            if (i > 0) Text(" · ", style = style, color = color)
+            // Separators are visual only: TalkBack reads the numbers, not "dot".
+            if (i > 0) Text(" · ", Modifier.clearAndSetSemantics {}, style = style, color = color)
             if (team.isUs) TeamChip(team.number, chipContainer, chipContent, style) else Text(team.number, style = style, color = color, maxLines = 1)
         }
     }
@@ -134,7 +137,7 @@ private fun Teams(line: MatchListModel.AllianceLine, style: TextStyle, color: Co
 
 @Composable
 private fun Opr(value: Double, color: Color) =
-    Text("Σ %.0f".format(value), style = TextStyle(fontFamily = Barlow, fontWeight = FontWeight.SemiBold, fontSize = 15.sp), color = color)
+    Text("Σ %.0f".format(value), style = TextStyle(fontFamily = Barlow, fontWeight = FontWeight.SemiBold, fontSize = 13.sp), color = color)
 
 /** Compact alliance row for lists: a colored edge stripe, the teams, and a trailing value (Σ OPR by default). */
 @Composable
@@ -148,10 +151,10 @@ fun AllianceLine(
     Row(
         modifier.fillMaxWidth().height(IntrinsicSize.Min),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Box(Modifier.width(6.dp).fillMaxHeight().background(StatusColors.alliance(alliance), RoundedCornerShape(3.dp)))
-        Box(Modifier.weight(1f)) { Teams(line, condensed(20.sp, letterSpacing = 0.5.sp), colors.onSurface, colors.primary, colors.onPrimary) }
+        Box(Modifier.width(5.dp).fillMaxHeight().background(StatusColors.alliance(alliance), RoundedCornerShape(3.dp)))
+        Box(Modifier.weight(1f)) { Teams(line, condensed(16.sp, letterSpacing = 0.5.sp), colors.onSurface, colors.primary, colors.onPrimary) }
         trailing()
     }
 }
@@ -162,8 +165,8 @@ fun AllianceBands(red: MatchListModel.AllianceLine, blue: MatchListModel.Allianc
     Column(modifier.fillMaxWidth()) {
         for ((alliance, line) in listOf(MatchAlliance.RED to red, MatchAlliance.BLUE to blue)) {
             val band = StatusColors.alliance(alliance)
-            Row(Modifier.fillMaxWidth().background(band).padding(horizontal = 20.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.weight(1f)) { Teams(line, condensed(26.sp, letterSpacing = 1.sp), Color.White, Color.White, band) }
+            Row(Modifier.fillMaxWidth().background(band).padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.weight(1f)) { Teams(line, condensed(20.sp, letterSpacing = 1.sp), Color.White, Color.White, band) }
                 line.summedOpr?.let { Opr(it, Color.White) }
             }
         }
@@ -195,13 +198,13 @@ fun PhaseTimeline(phase: Phase?, modifier: Modifier = Modifier) {
     val current = PhaseSteps.current(phase)
     val colors = MaterialTheme.colorScheme
     val description = PhaseSteps.description(phase)
-    Column(modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = description }, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(Modifier.fillMaxWidth().height(16.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.Bottom) {
+    Column(modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = description }, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(Modifier.fillMaxWidth().height(12.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.Bottom) {
             PhaseSteps.steps.forEachIndexed { i, (_, stepPhase) ->
                 val step = i + 1
                 val fill = stepPhase?.takeIf { current != null && step <= current }?.let(StatusColors::phase)
                 Box(
-                    Modifier.weight(1f).height(if (step == current) 16.dp else 10.dp)
+                    Modifier.weight(1f).height(if (step == current) 12.dp else 8.dp)
                         .background(fill ?: colors.surfaceContainerHighest, RoundedCornerShape(6.dp)),
                 )
             }
@@ -212,8 +215,8 @@ fun PhaseTimeline(phase: Phase?, modifier: Modifier = Modifier) {
                 Text(
                     if (isCurrent) "$label ◂" else label,
                     Modifier.weight(1f),
-                    style = condensed(16.sp, letterSpacing = 1.sp),
-                    color = if (isCurrent && stepPhase != null) StatusColors.phase(stepPhase) else colors.onSurfaceVariant,
+                    style = condensed(13.sp, letterSpacing = 1.sp),
+                    color = if (isCurrent && stepPhase != null) StatusColors.phaseText(stepPhase, onLight = colors.surface.luminance() > 0.5f) else colors.onSurfaceVariant,
                     maxLines = 1,
                     softWrap = false,
                     overflow = TextOverflow.Clip,
@@ -231,22 +234,32 @@ object HeroCountdown {
     }
 }
 
-/** The hero's big ticking countdown; [now] arrives every 30 s, so it ticks locally in between. */
+private val HERO_MAX = 88.sp
+
+/**
+ * The hero's big ticking countdown. [now] arrives every 30 s; in between it ticks on the elapsed-realtime clock
+ * (no drift from delay overshoot). The slot has a fixed height so auto-sizing never moves the list below it.
+ */
 @Composable
 fun HeroCountdownText(deadline: Instant, now: Instant, modifier: Modifier = Modifier) {
     val ticking by produceState(now, deadline, now) {
+        val start = SystemClock.elapsedRealtime()
         while (true) {
-            delay(1_000)
-            value = value.plusSeconds(1)
+            val elapsed = SystemClock.elapsedRealtime() - start
+            value = now.plusMillis(elapsed)
+            delay(1_000 - elapsed % 1_000)
         }
     }
-    BasicText(
-        HeroCountdown.text(deadline, ticking),
-        modifier.fillMaxWidth(),
-        style = PitWatchType.countdownHero.copy(color = MaterialTheme.colorScheme.onSurface),
-        maxLines = 1,
-        autoSize = TextAutoSize.StepBased(minFontSize = 48.sp, maxFontSize = 128.sp),
-    )
+    val slot = with(LocalDensity.current) { (HERO_MAX.toPx() * 0.95f).toDp() }
+    Box(modifier.fillMaxWidth().height(slot), contentAlignment = Alignment.CenterStart) {
+        BasicText(
+            HeroCountdown.text(deadline, ticking),
+            Modifier.fillMaxWidth(),
+            style = PitWatchType.countdownHero.copy(color = MaterialTheme.colorScheme.onSurface),
+            maxLines = 1,
+            autoSize = TextAutoSize.StepBased(minFontSize = 40.sp, maxFontSize = HERO_MAX),
+        )
+    }
 }
 
 /** Replaces the top app bar: condensed caps title, a muted subtitle, optional leading navigation and trailing action. */
@@ -258,13 +271,13 @@ fun ScreenHeader(
     navigation: (@Composable () -> Unit)? = null,
     action: (@Composable () -> Unit)? = null,
 ) {
-    Row(modifier.fillMaxWidth().padding(start = 20.dp, end = 16.dp, top = 18.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(modifier.fillMaxWidth().padding(start = 20.dp, end = 16.dp, top = 12.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
         navigation?.let {
             it()
             Spacer(Modifier.width(8.dp))
         }
         Column(Modifier.weight(1f)) {
-            Text(title.uppercase(), style = condensed(26.sp, letterSpacing = 0.4.sp), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(title.uppercase(), style = condensed(22.sp, letterSpacing = 0.4.sp), maxLines = 1, overflow = TextOverflow.Ellipsis)
             subtitle?.let {
                 Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
@@ -275,17 +288,17 @@ fun ScreenHeader(
 
 @Composable
 fun HeaderIconButton(icon: ImageVector, description: String, onClick: () -> Unit) {
-    FilledTonalIconButton(onClick = onClick, modifier = Modifier.size(44.dp)) { Icon(icon, contentDescription = description) }
+    FilledTonalIconButton(onClick = onClick, modifier = Modifier.size(40.dp)) { Icon(icon, contentDescription = description) }
 }
 
-/** Full-width 56 dp accent button in condensed caps; [outlined] for the "stop" form. */
+/** Full-width 48 dp accent button in condensed caps; [outlined] for the "stop" form. */
 @Composable
 fun AccentButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, outlined: Boolean = false, enabled: Boolean = true) {
-    val shape = RoundedCornerShape(28.dp)
-    val label: @Composable () -> Unit = { Text(text.uppercase(), style = condensed(22.sp, FontWeight.ExtraBold, 1.sp), textAlign = TextAlign.Center) }
+    val shape = RoundedCornerShape(24.dp)
+    val label: @Composable () -> Unit = { Text(text.uppercase(), style = condensed(18.sp, FontWeight.ExtraBold, 1.sp), textAlign = TextAlign.Center) }
     if (outlined) {
-        OutlinedButton(onClick, modifier.fillMaxWidth().height(56.dp), enabled = enabled, shape = shape) { label() }
+        OutlinedButton(onClick, modifier.fillMaxWidth().height(48.dp), enabled = enabled, shape = shape) { label() }
     } else {
-        Button(onClick, modifier.fillMaxWidth().height(56.dp), enabled = enabled, shape = shape) { label() }
+        Button(onClick, modifier.fillMaxWidth().height(48.dp), enabled = enabled, shape = shape) { label() }
     }
 }

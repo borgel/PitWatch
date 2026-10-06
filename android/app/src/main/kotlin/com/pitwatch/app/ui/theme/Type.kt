@@ -48,10 +48,10 @@ val PitWatchTypography: Typography = Typography().let { base ->
 object PitWatchType {
     /** The hero's big countdown; tabular figures so digits don't jitter. */
     val countdownHero = TextStyle(
-        fontFamily = BarlowCondensed, fontWeight = FontWeight.Bold, fontSize = 128.sp,
+        fontFamily = BarlowCondensed, fontWeight = FontWeight.Bold, fontSize = 88.sp,
         lineHeight = 0.95.em, letterSpacing = (-2).sp, fontFeatureSettings = "tnum",
     )
 
     /** "SATURDAY", "LAST": letter-spaced condensed caps. */
-    val sectionLabel = TextStyle(fontFamily = BarlowCondensed, fontWeight = FontWeight.Bold, fontSize = 16.sp, letterSpacing = 2.sp)
+    val sectionLabel = TextStyle(fontFamily = BarlowCondensed, fontWeight = FontWeight.Bold, fontSize = 14.sp, letterSpacing = 1.5.sp)
 }

@@ -1,9 +1,9 @@
 package com.pitwatch.app.ui.pitmap
 
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.onNodeWithText
 import com.pitwatch.app.SNAP
 import com.pitwatch.app.fixture
@@ -99,5 +99,11 @@ class PitMapTest {
         assertEquals(57f, right.first.x, 0.01f)
         assertEquals(143f, right.second.x, 0.01f)
         assertEquals(100f, right.second.y, 0.01f)
+    }
+
+    @Test
+    fun `header names the event and counts the pits`() {
+        compose.setContent { PitMapContent(PitMapState.Loaded(map), teamNumber = "5507", onOpenSettings = {}, eventName = "California Northern") }
+        compose.onNodeWithText("California Northern · ${map.pits.size} pits").assertIsDisplayed()
     }
 }

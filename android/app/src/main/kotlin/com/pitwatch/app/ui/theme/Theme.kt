@@ -37,6 +37,9 @@ object StatusColors {
         Phase.ON_FIELD -> Color(0xFF30D158)
     }
 
+    /** [phase] as a text color: the bright phase colors are too light to read on light surfaces, so darken them there. */
+    fun phaseText(phase: Phase, onLight: Boolean): Color = if (onLight) lerp(phase(phase), Color.Black, 0.45f) else phase(phase)
+
     /** Badge label color, chosen for contrast on [phase]. */
     fun onPhase(phase: Phase): Color = if (phase == Phase.PRE_QUEUE) Color.White else Color(0xFF1C1C1E)
 

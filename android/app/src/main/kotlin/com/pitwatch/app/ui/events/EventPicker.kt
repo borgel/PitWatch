@@ -167,7 +167,7 @@ private fun EventRow(name: String, detail: String?, selected: Boolean, onClick: 
         Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.width(4.dp).fillMaxHeight().background(if (selected) MaterialTheme.colorScheme.primary else Color.Transparent))
             Column(Modifier.weight(1f).padding(horizontal = 14.dp, vertical = 12.dp)) {
-                Text(name, style = condensed(20.sp))
+                Text(name, style = condensed(17.sp))
                 detail?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
             if (selected) Icon(Icons.Filled.Check, contentDescription = "Selected", Modifier.padding(end = 14.dp), tint = MaterialTheme.colorScheme.primary)
