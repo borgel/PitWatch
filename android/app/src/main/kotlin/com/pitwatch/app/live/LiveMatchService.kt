@@ -252,7 +252,8 @@ class LiveMatchService : Service() {
             addAction(Intent.ACTION_SCREEN_ON)
         }
         ContextCompat.registerReceiver(this, unlockReceiver, wake, ContextCompat.RECEIVER_NOT_EXPORTED)
-        ignoreNextAvailable = true
+        // Only an already-connected network gets reported immediately; offline, the first callback is a real reconnect.
+        ignoreNextAvailable = getSystemService(ConnectivityManager::class.java).activeNetwork != null
         getSystemService(ConnectivityManager::class.java).registerDefaultNetworkCallback(networkCallback)
         triggersRegistered = true
     }

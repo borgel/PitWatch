@@ -1,6 +1,7 @@
 package com.pitwatch.app.schedule
 
 import com.pitwatch.app.data.LiveControl
+import com.pitwatch.app.live.StaleMatches
 import com.pitwatch.core.config.TimeSource
 import com.pitwatch.core.config.UserConfig
 import com.pitwatch.core.logic.MatchSchedule
@@ -12,7 +13,7 @@ object AutoStartPlanner {
     fun nextStart(cache: EventCache, config: UserConfig, control: LiveControl, now: Instant): Instant? {
         val teamKey = config.teamKey
         if (!config.isConfigured || teamKey == null) return null
-        val schedule = MatchSchedule(cache.matches, teamKey)
+        val schedule = MatchSchedule(StaleMatches.drop(cache.matches, cache.nexusEvent, now), teamKey)
         val next = schedule.nextMatch ?: return null
         if (next.key == control.suppressedMatchKey) return null
         val nexus = cache.nexusEvent.takeIf { config.effectiveTimeSource == TimeSource.NEXUS }

@@ -80,4 +80,14 @@ class RefreshWorkerTest {
             .filter { !it.state.isFinished }
         assertEquals(listOf(0L), pending.map { it.initialDelayMillis })
     }
+
+    @Test
+    fun `a failing widget update never stalls the refresh chain`() = runBlocking {
+        container.scope.cancel()
+        container = com.pitwatch.app.installTestContainer(tmp.newFolder(), clock = { now }, updateWidgets = { error("widget host gone") })
+        container.stores.config.updateData { UserConfig(teamNumber = 5507, apiKey = "k", nexusApiKey = "n") }
+        assertEquals(ListenableWorker.Result.success(), TestListenableWorkerBuilder<RefreshWorker>(context).build().doWork())
+        val queued = WorkManager.getInstance(context).getWorkInfosForUniqueWork(RefreshWorker.UNIQUE_NAME).get()
+        assertTrue(queued.any { it.state == WorkInfo.State.ENQUEUED || it.state == WorkInfo.State.BLOCKED })
+    }
 }

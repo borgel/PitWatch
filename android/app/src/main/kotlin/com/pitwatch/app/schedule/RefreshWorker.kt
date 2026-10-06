@@ -15,6 +15,8 @@ import com.pitwatch.core.logic.MatchSchedule
 import com.pitwatch.core.store.EventCache
 import java.time.Duration
 import java.time.Instant
+import android.util.Log
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.flow.first
 
 /** Background refresh on the adaptive schedule; re-enqueues itself and re-arms auto-start every run. */
@@ -25,11 +27,22 @@ class RefreshWorker(context: Context, params: WorkerParameters) : CoroutineWorke
         container.repository.refresh(now)
         val cache = container.stores.cache.data.first()
         val config = container.stores.config.data.first()
-        // APPEND: replacing would cancel this very run.
+        // Side jobs must never fail this run: a failed run would fail its queued successor and stall the chain.
+        bestEffort { rearmAutoStart(applicationContext, container) }
+        bestEffort { container.updateWidgets() } // content is clock-driven too, so refresh even when data didn't change
+        // APPEND: replacing would cancel this very run. Last, so nothing above can skip it.
         enqueue(applicationContext, nextDelay(cache, config, now), ExistingWorkPolicy.APPEND_OR_REPLACE)
-        rearmAutoStart(applicationContext, container)
-        container.updateWidgets() // content is clock-driven too, so refresh even when data didn't change
-        return Result.success() // failures are recorded in RefreshState; the next run is already queued
+        return Result.success() // failures are recorded in RefreshState; the next run is queued
+    }
+
+    private suspend fun bestEffort(block: suspend () -> Unit) {
+        try {
+            block()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w("RefreshWorker", "Side job failed", e)
+        }
     }
 
     companion object {

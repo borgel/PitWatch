@@ -83,4 +83,16 @@ class LiveServiceStateTest {
         callback.onAvailable(ShadowNetwork.newInstance(1)) // a real reconnect later does poll
         awaitMain { nexus.requests.size > before }
     }
+
+    @Test
+    fun `tracking started offline still polls on the first real reconnect`() {
+        val cm = context.getSystemService(ConnectivityManager::class.java)
+        shadowOf(cm).setActiveNetworkInfo(null) // no network when the callback is registered
+        startTracking()
+        idle()
+        val callback = shadowOf(cm).networkCallbacks.single()
+        val before = nexus.requests.size
+        callback.onAvailable(ShadowNetwork.newInstance(1))
+        awaitMain { nexus.requests.size > before }
+    }
 }

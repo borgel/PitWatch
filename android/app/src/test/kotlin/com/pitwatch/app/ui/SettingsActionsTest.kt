@@ -42,9 +42,10 @@ class SettingsActionsTest {
     fun tearDown() = container.scope.cancel()
 
     @Test
-    fun `saving with refetch schedules a refresh even when widgets stall`() {
-        SettingsActions.save(context, container, refetch = true) { it.copy(eventKeyOverride = "2026cancmp") }
+    fun `any save schedules a refresh even when widgets stall`() {
+        // A time-source change replans the refresh cadence too, so every save refreshes.
+        SettingsActions.save(context, container) { it.copy(timeSource = com.pitwatch.core.config.TimeSource.TBA) }
         awaitMain { WorkManager.getInstance(context).getWorkInfosForUniqueWork(RefreshWorker.UNIQUE_NAME).get().isNotEmpty() }
-        assertEquals("2026cancmp", runBlocking { container.stores.config.data.first().eventKeyOverride })
+        assertEquals(com.pitwatch.core.config.TimeSource.TBA, runBlocking { container.stores.config.data.first().timeSource })
     }
 }

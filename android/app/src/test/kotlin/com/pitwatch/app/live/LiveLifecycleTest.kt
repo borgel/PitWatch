@@ -52,4 +52,18 @@ class LiveLifecycleTest {
     fun `all-day mode stops when the next match is another day in the event zone`() {
         assertEquals(LiveDecision.Stop, LiveLifecycle.decide(cache(played, tomorrow), allDay, played.key, now.minusSeconds(6 * 60), now))
     }
+
+    private val unscored = testMatch(15, time = now.minusSeconds(2 * 3600).epochSecond) // never scored by TBA
+
+    @Test
+    fun `an unscored match long past its time is given up on`() {
+        assertEquals(LiveDecision.Stop, LiveLifecycle.decide(cache(unscored, laterToday), near, unscored.key, null, now))
+        assertEquals(LiveDecision.Track(laterToday.key), LiveLifecycle.decide(cache(unscored, laterToday), allDay, unscored.key, null, now))
+    }
+
+    @Test
+    fun `a late-running match is not given up on`() {
+        val late = testMatch(15, time = now.minusSeconds(40 * 60).epochSecond) // 40 min behind: within the hour of grace
+        assertEquals(LiveDecision.Track(late.key), LiveLifecycle.decide(cache(late, laterToday), near, late.key, null, now))
+    }
 }

@@ -23,14 +23,18 @@ object LiveLifecycle {
      */
     fun decide(cache: EventCache, config: UserConfig, trackedMatchKey: String?, resultSeenAt: Instant?, now: Instant): LiveDecision {
         val teamKey = config.teamKey ?: return LiveDecision.Stop
-        val schedule = MatchSchedule(cache.matches, teamKey)
+        // Matches TBA never scored don't hold up the schedule (see StaleMatches).
+        val schedule = MatchSchedule(StaleMatches.drop(cache.matches, cache.nexusEvent, now), teamKey)
         val tracked = cache.matches.firstOrNull { it.key == trackedMatchKey }
             ?: return schedule.nextMatch?.let { LiveDecision.Track(it.key) } ?: LiveDecision.Stop
-        if (!tracked.isPlayed) return LiveDecision.Track(tracked.key)
-
         val nearMatch = config.liveActivityMode == LiveActivityMode.NEAR_MATCH
-        val linger = if (nearMatch) NEAR_MATCH_LINGER else ALL_DAY_LINGER
-        if (resultSeenAt == null || now < resultSeenAt.plus(linger)) return LiveDecision.Track(tracked.key)
+        if (!tracked.isPlayed) {
+            if (!StaleMatches.isStale(tracked, cache.nexusEvent, now)) return LiveDecision.Track(tracked.key)
+            // Never scored: treat as finished, with no result to linger on.
+        } else {
+            val linger = if (nearMatch) NEAR_MATCH_LINGER else ALL_DAY_LINGER
+            if (resultSeenAt == null || now < resultSeenAt.plus(linger)) return LiveDecision.Track(tracked.key)
+        }
         if (nearMatch) return LiveDecision.Stop
 
         val next = schedule.nextMatch ?: return LiveDecision.Stop

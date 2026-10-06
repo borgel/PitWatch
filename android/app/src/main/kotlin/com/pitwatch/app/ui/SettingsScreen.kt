@@ -61,9 +61,8 @@ fun SettingsScreen(container: AppContainer, config: UserConfig, onBack: (() -> U
     var apiKey by rememberSaveable { mutableStateOf(config.apiKey.orEmpty()) }
     var nexusKey by rememberSaveable { mutableStateOf(config.nexusApiKey.orEmpty()) }
 
-    /** Saves a config change; [refetch] for changes that alter what to fetch (keys, event). */
-    fun update(refetch: Boolean = false, transform: (UserConfig) -> UserConfig) =
-        SettingsActions.save(context, container, refetch, transform)
+    /** Saves a config change (and refreshes) on the app scope via [SettingsActions]. */
+    fun update(transform: (UserConfig) -> UserConfig) = SettingsActions.save(context, container, transform)
 
     Scaffold(
         topBar = {
@@ -126,7 +125,7 @@ fun SettingsScreen(container: AppContainer, config: UserConfig, onBack: (() -> U
                 )
                 Button(
                     enabled = eventOverride.isEmpty() || EventKeys.isValid(eventOverride),
-                    onClick = { update(refetch = true) { it.copy(eventKeyOverride = eventOverride.ifEmpty { null }) } },
+                    onClick = { update { it.copy(eventKeyOverride = eventOverride.ifEmpty { null }) } },
                 ) { Text("Save event") }
             }
             HorizontalDivider(Modifier.padding(top = 16.dp))
@@ -135,7 +134,7 @@ fun SettingsScreen(container: AppContainer, config: UserConfig, onBack: (() -> U
             Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(apiKey, { apiKey = it }, label = { Text("TBA API key") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(nexusKey, { nexusKey = it }, label = { Text("FRC Nexus API key") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                Button(onClick = { update(refetch = true) { it.copy(apiKey = apiKey.trim(), nexusApiKey = nexusKey.trim().ifEmpty { null }) } }) {
+                Button(onClick = { update { it.copy(apiKey = apiKey.trim(), nexusApiKey = nexusKey.trim().ifEmpty { null }) } }) {
                     Text("Save keys")
                 }
             }

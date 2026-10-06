@@ -11,6 +11,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <!-- Sideloaded: granted at install. Google Play would restrict this permission. -->
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <!-- Exact alarms are cleared on reboot; re-arm auto-start when the phone starts. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:name=".PitWatchApp"
@@ -39,6 +41,14 @@
         <receiver
             android:name=".schedule.AutoStartReceiver"
             android:exported="false" />
+
+        <receiver
+            android:name=".schedule.BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
 
         <receiver
             android:name=".live.LiveWakeReceiver"
