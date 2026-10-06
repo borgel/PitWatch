@@ -80,7 +80,7 @@ fun SettingsScreen(container: AppContainer, config: UserConfig, onBack: (() -> U
     Scaffold(
         topBar = {
             ScreenHeader(
-                "Settings", RefreshStatusText.format(refreshState, container.clock()),
+                "Settings", RefreshStatusText.format(refreshState, container.clock()).lineSequence().first(),
                 navigation = onBack?.let { back -> { IconButton(onClick = back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") } } },
             )
         },
@@ -157,6 +157,8 @@ fun SettingsScreen(container: AppContainer, config: UserConfig, onBack: (() -> U
             }
 
             Section("Status") {
+                // The header fits one line; errors (TBA and Nexus) are spelled out here.
+                Text(RefreshStatusText.format(refreshState, container.clock()), Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
                 OutlinedButton(
                     onClick = {
                         scope.launch {

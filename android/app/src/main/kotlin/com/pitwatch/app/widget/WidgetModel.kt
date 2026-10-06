@@ -71,16 +71,25 @@ sealed interface WidgetLine {
 }
 
 object WidgetLines {
-    /** Height the large layout uses above the upcoming list (header, title, next match with the 56 sp countdown, phase bar, alliances, divider, last result, label). */
-    // Measured on-device at ~327 dp, plus margin: launchers report a little more height than they show.
-    private val FIXED: Dp = 350.dp
+    /** Height the large layout uses above the upcoming list (header, title, next match with the 56 sp countdown, phase bar, alliances, divider, last result). */
+    // Measured on-device (emulator-5580, 4×3 at 360×344 dp, 40 sp countdown): ~293 dp above the list. The 56 sp countdown adds ~16 dp.
+    private val FIXED: Dp = 312.dp
     private val ROW: Dp = 24.dp
 
     /** Glance renders at most 10 children per Column; the list gets its own Column, kept under the limit. */
     const val MAX_LINES = 9
 
-    /** How many upcoming lines fit in a widget of [height]. */
-    fun budget(height: Dp): Int = ((height - FIXED) / ROW).toInt().coerceAtLeast(0)
+    /** The 56 sp countdown only where it leaves room for the list; 40 sp below. */
+    fun largeCountdown(height: Dp): Boolean = height >= 400.dp
+
+    /** How many upcoming lines fit in a widget of [height]; parts the widget doesn't draw give their room back. */
+    fun budget(height: Dp, phaseBar: Boolean = true, last: Boolean = true): Int {
+        var fixed = FIXED
+        if (!largeCountdown(height)) fixed -= 16.dp
+        if (!phaseBar) fixed -= 17.dp
+        if (!last) fixed -= 26.dp
+        return ((height - fixed) / ROW).toInt().coerceAtLeast(0)
+    }
 
     /** Days and their items within [budget] lines; a day header is only shown with at least one item under it. */
     fun fit(days: List<MatchListModel.Day>, budget: Int): List<WidgetLine> {

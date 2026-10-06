@@ -62,7 +62,7 @@ fun WidgetContent(model: WidgetModel, countdown: @Composable (Instant) -> Unit) 
         }
         Row(GlanceModifier.fillMaxWidth().padding(top = 4.dp)) {
             Column(GlanceModifier.defaultWeight()) {
-                NextMatch(next, times, model.countdownDeadline, tall, countdown)
+                NextMatch(next, times, model.countdownDeadline, countdown)
                 next.phase?.let { PhaseBar(it) }
                 if (wide) {
                     AllianceRow(MatchAlliance.RED, next.red)
@@ -77,8 +77,7 @@ fun WidgetContent(model: WidgetModel, countdown: @Composable (Instant) -> Unit) 
             }
             // Last result goes above the list: a long upcoming list may only truncate itself (found on-device).
             model.last?.let { LastLine(it) }
-            val lines = WidgetLines.fit(model.laterDays, WidgetLines.budget(size.height))
-            if (lines.isNotEmpty()) Text("UPCOMING", style = muted, modifier = GlanceModifier.padding(top = 6.dp))
+            val lines = WidgetLines.fit(model.laterDays, WidgetLines.budget(size.height, phaseBar = next.phase != null, last = model.last != null))
             // Own Column: Glance drops children past 10 per Column, and the parent is already busy.
             Column {
                 for (line in lines) {
@@ -114,7 +113,7 @@ fun WidgetContent(model: WidgetModel, countdown: @Composable (Instant) -> Unit) 
 }
 
 @Composable
-private fun NextMatch(row: MatchListModel.MatchRow, times: TimeFormat, deadline: Instant?, tall: Boolean, countdown: @Composable (Instant) -> Unit) {
+private fun NextMatch(row: MatchListModel.MatchRow, times: TimeFormat, deadline: Instant?, countdown: @Composable (Instant) -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(row.shortLabel, style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 30.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED))
         row.phase?.let {
@@ -126,7 +125,7 @@ private fun NextMatch(row: MatchListModel.MatchRow, times: TimeFormat, deadline:
     if (deadline != null) {
         // The platform Chronometer gets its own line: sharing a row with small text clipped it on-device.
         countdown(deadline)
-        if (tall) row.countdown?.let { Text(it.target, style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp), maxLines = 1) }
+        row.countdown?.let { Text(it.target, style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp), maxLines = 1) }
     }
 }
 

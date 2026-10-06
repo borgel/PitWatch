@@ -108,4 +108,12 @@ class WidgetModelTest {
         assertEquals(Triple("", "5507", " · 1678"), TeamSplit.of(line("5507", "1678")))
         assertEquals(Triple("6036 · 9470 · 6814", null, ""), TeamSplit.of(line("6036", "9470", "6814")))
     }
+
+    @Test
+    fun `the budget gives back room for parts the widget doesn't draw`() {
+        val full = WidgetLines.budget(420.dp)
+        kotlin.test.assertTrue(WidgetLines.budget(420.dp, phaseBar = false, last = false) > full)
+        kotlin.test.assertTrue(WidgetLines.largeCountdown(450.dp))
+        kotlin.test.assertTrue(!WidgetLines.largeCountdown(390.dp))
+    }
 }
