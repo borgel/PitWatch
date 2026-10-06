@@ -83,8 +83,8 @@ fun LiveWidget(
 @Composable
 private fun ChronometerCountdown(deadline: Instant, now: Instant) {
     val context = LocalContext.current
-    // 56 sp only where the upcoming list still fits beneath it (see WidgetLines.budget); 40 sp otherwise.
-    val textSp = if (WidgetLines.largeCountdown(LocalSize.current.height)) 56f else 40f
+    // 56 sp only where the upcoming list still fits beneath it (see WidgetPlans); 40 sp otherwise.
+    val textSp = if (WidgetPlans.largeCountdown(LocalSize.current.height)) 56f else 40f
     val remaining = Duration.between(now, deadline).toMillis()
     val views = RemoteViews(context.packageName, R.layout.widget_countdown).apply {
         setChronometer(R.id.countdown, SystemClock.elapsedRealtime() + remaining, null, true)

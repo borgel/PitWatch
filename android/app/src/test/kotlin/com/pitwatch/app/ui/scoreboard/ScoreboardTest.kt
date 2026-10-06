@@ -100,4 +100,11 @@ class ScoreboardTest {
         }
         compose.onNode(hasContentDescription("Choose event")).assertIsDisplayed()
     }
+
+    @Test
+    fun `team separators are not read aloud`() {
+        compose.setContent { PitWatchTheme { AllianceLine(MatchAlliance.RED, line("4698", "5507", "1678")) } }
+        compose.onAllNodes(hasText("·", substring = true), useUnmergedTree = true).assertCountEquals(0)
+        compose.onNodeWithText("1678").assertIsDisplayed()
+    }
 }

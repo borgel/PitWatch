@@ -17,7 +17,7 @@ Give the Android app a bold, sports-scoreboard look across every surface: the Ma
 | Light/dark | Follows the system |
 | Scope | All screens, the widget and the notification |
 | List rows | Upcoming and result rows show both alliances |
-| Fonts | Barlow Condensed (600/700/800) and Barlow (400/500/600) are bundled in `res/font` (OFL license, about 300 KB, no runtime download) |
+| Fonts | Barlow Condensed (600/700/800) and Barlow (400/500/600) are bundled in `res/font` (OFL license, about 650 KB, no runtime download) |
 
 ## 1. Theme (`ui/theme/`)
 

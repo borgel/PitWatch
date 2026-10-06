@@ -96,12 +96,6 @@ class WidgetModelTest {
     }
 
     @Test
-    fun `row budget follows the widget's height`() {
-        kotlin.test.assertTrue(WidgetLines.budget(300.dp) < WidgetLines.budget(450.dp))
-        assertEquals(0, WidgetLines.budget(200.dp))
-    }
-
-    @Test
     fun `team split puts our team in the middle`() {
         fun line(vararg t: String) = com.pitwatch.app.ui.matches.MatchListModel.AllianceLine(t.map { com.pitwatch.app.ui.matches.MatchListModel.TeamChip(it, it == "5507") }, null)
         assertEquals(Triple("4698 · ", "5507", " · 1678"), TeamSplit.of(line("4698", "5507", "1678")))
@@ -109,11 +103,44 @@ class WidgetModelTest {
         assertEquals(Triple("6036 · 9470 · 6814", null, ""), TeamSplit.of(line("6036", "9470", "6814")))
     }
 
+    private fun plan(h: Int, wide: Boolean = true, tall: Boolean = h >= 250) = WidgetPlans.plan(
+        h.dp, wide = wide, tall = tall, hasCountdown = true, hasPhase = true, hasTarget = true, hasLast = true, hasTitle = true,
+    )
+
     @Test
-    fun `the budget gives back room for parts the widget doesn't draw`() {
-        val full = WidgetLines.budget(420.dp)
-        kotlin.test.assertTrue(WidgetLines.budget(420.dp, phaseBar = false, last = false) > full)
-        kotlin.test.assertTrue(WidgetLines.largeCountdown(450.dp))
-        kotlin.test.assertTrue(!WidgetLines.largeCountdown(390.dp))
+    fun `a full 4x3 widget draws every part and two list lines`() {
+        // On-device (emulator-5580): 360×344 dp showed everything plus a day header and one row.
+        val p = plan(344)
+        kotlin.test.assertTrue(p.header && p.phaseBar && p.target && p.alliances && p.time && p.lastLine && p.eventTitle)
+        assertEquals(2, p.listLines)
+        kotlin.test.assertFalse(p.largeCountdown)
+    }
+
+    @Test
+    fun `a short wide widget keeps both alliances and drops the start time`() {
+        // On-device: at 4×2 the blue alliance line was cut off at the bottom.
+        val p = plan(223, tall = false)
+        kotlin.test.assertTrue(p.alliances && p.phaseBar && p.target)
+        kotlin.test.assertFalse(p.time)
+        assertEquals(0, p.listLines)
+    }
+
+    @Test
+    fun `the smallest widget keeps only the match and its countdown`() {
+        val p = plan(110, wide = false, tall = false)
+        kotlin.test.assertFalse(p.header || p.phaseBar || p.target || p.alliances || p.time)
+    }
+
+    @Test
+    fun `without a countdown the start time comes first`() {
+        val p = WidgetPlans.plan(140.dp, wide = false, tall = false, hasCountdown = false, hasPhase = true, hasTarget = false, hasLast = false, hasTitle = false)
+        kotlin.test.assertTrue(p.time)
+    }
+
+    @Test
+    fun `a very tall widget gets the big countdown and a capped list`() {
+        val p = plan(600)
+        kotlin.test.assertTrue(p.largeCountdown)
+        kotlin.test.assertTrue(p.listLines >= WidgetLines.MAX_LINES)
     }
 }

@@ -26,6 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
@@ -78,14 +79,17 @@ fun PitMapScreen(container: AppContainer, config: UserConfig, onOpenSettings: ()
             container.repository.pitMap()?.let { PitMapState.Loaded(it) } ?: PitMapState.Unavailable
         }
     }
-    PitMapContent(state, config.teamNumber?.toString(), onOpenSettings)
+    val eventName by remember { container.stores.cache.data.map { it.event?.shortName ?: it.event?.name }.distinctUntilChanged() }
+        .collectAsStateWithLifecycle(initialValue = null)
+    PitMapContent(state, config.teamNumber?.toString(), onOpenSettings, eventName)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PitMapContent(state: PitMapState, teamNumber: String?, onOpenSettings: () -> Unit) {
+fun PitMapContent(state: PitMapState, teamNumber: String?, onOpenSettings: () -> Unit, eventName: String? = null) {
     val ours = (state as? PitMapState.Loaded)?.let { PitMapGeometry.focus(it.map, teamNumber) }
-    Scaffold(topBar = { ScreenHeader("Pit map", null) }) { padding ->
+    val subtitle = (state as? PitMapState.Loaded)?.let { listOfNotNull(eventName, "${it.map.pits.size} pits").joinToString(" · ") } ?: eventName
+    Scaffold(topBar = { ScreenHeader("Pit map", subtitle) }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             ours?.let { OurPit(it.address, teamNumber) }
             ScoreboardCard(Modifier.fillMaxWidth().weight(1f).padding(bottom = 12.dp)) {
@@ -108,12 +112,12 @@ fun PitMapContent(state: PitMapState, teamNumber: String?, onOpenSettings: () ->
 @Composable
 private fun OurPit(address: String, teamNumber: String?) {
     ScoreboardCard(Modifier.fillMaxWidth()) {
-        Row(Modifier.padding(horizontal = 20.dp, vertical = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 SectionLabel("Our pit")
-                Text(address, style = condensed(64.sp, FontWeight.ExtraBold).copy(lineHeight = 64.sp))
+                Text(address, style = condensed(44.sp, FontWeight.ExtraBold).copy(lineHeight = 44.sp))
             }
-            teamNumber?.let { TeamChip(it, MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.onPrimary, condensed(26.sp, FontWeight.ExtraBold)) }
+            teamNumber?.let { TeamChip(it, MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.onPrimary, condensed(20.sp, FontWeight.ExtraBold)) }
         }
     }
 }
@@ -173,7 +177,7 @@ private fun PitMapCanvas(map: PitMap, ours: PitMap.AssignedPit?) {
             withTransform({ scale(scale, scale, pivot = Offset.Zero) }) {
                 map.areas?.values?.forEach { area ->
                     val r = PitMapGeometry.rect(area.position, area.size)
-                    drawRect(colors.surfaceContainerHigh, r.topLeft, r.size)
+                    drawRoundRect(colors.surfaceContainerHigh, r.topLeft, r.size, cornerRadius = CornerRadius(minOf(r.width, r.height) * 0.15f))
                 }
                 map.walls?.values?.forEach { wall ->
                     val r = PitMapGeometry.rect(wall.position, wall.size)

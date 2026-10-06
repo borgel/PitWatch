@@ -166,16 +166,16 @@ private fun MatchesBody(
         PullToRefreshBox(isRefreshing = refreshing, onRefresh = onRefresh, modifier = Modifier.padding(padding)) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize().testTag("matches"),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 item(key = "hero") { Hero(model, now, tracking, onToggleTracking, onOpenMatch) }
                 model.nowQueuing?.let { queuing ->
                     item(key = "queuing") {
                         Text(
                             "NOW QUEUING · ${queuing.uppercase()}",
-                            Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
-                            style = condensed(20.sp),
+                            Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                            style = condensed(17.sp),
                             color = MaterialTheme.colorScheme.primary,
                         )
                     }
@@ -197,10 +197,10 @@ private fun MatchesBody(
                     else -> Unit
                 }
                 model.days.forEachIndexed { index, day ->
-                    // The hero shows the next match; a day left empty without it gets no header.
+                    // The hero shows the next match; a day left with no match (empty, or only a break) is skipped.
                     val items = day.items.filterNot { it is MatchListModel.Item.Upcoming && it.row.isNext }
-                    if (items.isEmpty()) return@forEachIndexed
-                    item(key = "day:$index") { SectionLabel(day.label, Modifier.padding(start = 4.dp, top = 10.dp)) }
+                    if (items.none { it is MatchListModel.Item.Upcoming }) return@forEachIndexed
+                    item(key = "day:$index") { SectionLabel(day.label, Modifier.padding(start = 4.dp, top = 6.dp)) }
                     items(items, key = { it.id }) { item ->
                         when (item) {
                             is MatchListModel.Item.Upcoming -> MatchRowItem(item.row, onOpenMatch)
@@ -209,7 +209,7 @@ private fun MatchesBody(
                     }
                 }
                 if (model.results.isNotEmpty()) {
-                    item(key = "results") { SectionLabel("Last", Modifier.padding(start = 4.dp, top = 10.dp)) }
+                    item(key = "results") { SectionLabel("Last", Modifier.padding(start = 4.dp, top = 6.dp)) }
                     items(model.results, key = { "result:${it.key}" }) { ResultRow(it, onOpenMatch) }
                 }
             }
@@ -225,29 +225,30 @@ private fun Hero(model: MatchListModel, now: Instant, tracking: Boolean, onToggl
         if (next != null) {
             Column(Modifier.clickable { onOpenMatch(next.url) }) {
                 Row(
-                    Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 6.dp),
+                    Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 2.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(next.label.uppercase(), Modifier.weight(1f), style = condensed(44.sp, FontWeight.ExtraBold), maxLines = 1)
-                    next.phase?.let { PhasePill(it, 18.sp) }
+                    Text(next.label.uppercase(), Modifier.weight(1f), style = condensed(32.sp, FontWeight.ExtraBold), maxLines = 1)
+                    next.phase?.let { PhasePill(it, 15.sp) }
                 }
-                Column(Modifier.padding(horizontal = 20.dp)) {
+                Column(Modifier.padding(horizontal = 16.dp)) {
                     next.countdown?.let { HeroCountdownText(it.deadline, now) }
-                    val start = LocalTimeFormat.current.match(next.time, next.estimated) + " start"
+                    // "~5:52 PM start"; an untimed match just reads "Time TBD".
+                    val start = LocalTimeFormat.current.match(next.time, next.estimated) + if (next.time != null) " start" else ""
                     Text(
                         listOfNotNull(next.countdown?.target, start).joinToString(" · "),
-                        style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp),
+                        style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                PhaseTimeline(next.phase, Modifier.padding(start = 20.dp, end = 20.dp, top = 18.dp))
-                AllianceBands(next.red, next.blue, Modifier.padding(top = 18.dp))
+                PhaseTimeline(next.phase, Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp))
+                AllianceBands(next.red, next.blue, Modifier.padding(top = 12.dp))
             }
         }
         AccentButton(
             if (tracking) "Stop live tracking" else "Start live tracking",
             onToggleTracking,
-            Modifier.padding(20.dp),
+            Modifier.padding(16.dp),
             outlined = tracking,
         )
     }
@@ -263,7 +264,7 @@ private fun ErrorBanner(message: String) {
 @Composable
 private fun EmptyState(title: String, action: String?, onAction: (() -> Unit)?) {
     Column(Modifier.fillMaxWidth().padding(vertical = 32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(title.uppercase(), style = condensed(22.sp))
+        Text(title.uppercase(), style = condensed(18.sp))
         if (action != null && onAction != null) OutlinedButton(onClick = onAction, modifier = Modifier.padding(top = 12.dp)) { Text(action) }
     }
 }
@@ -271,21 +272,21 @@ private fun EmptyState(title: String, action: String?, onAction: (() -> Unit)?) 
 @Composable
 internal fun MatchRowItem(row: MatchListModel.MatchRow, onOpenMatch: (String) -> Unit) {
     ScoreboardCard(Modifier.fillMaxWidth(), radius = 16.dp, onClick = { onOpenMatch(row.url) }) {
-        Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 row.alliance?.let {
-                    Text("●", style = condensed(22.sp), color = StatusColors.alliance(it))
-                    Spacer(Modifier.width(8.dp))
+                    Text("●", style = condensed(16.sp), color = StatusColors.alliance(it))
+                    Spacer(Modifier.width(6.dp))
                 }
-                Text(row.shortLabel, Modifier.weight(1f), style = condensed(28.sp, FontWeight.ExtraBold))
+                Text(row.shortLabel, Modifier.weight(1f), style = condensed(22.sp, FontWeight.ExtraBold))
                 // Only matches already in motion get a pill; color is for urgency, not for "later".
                 row.phase?.takeIf { it != Phase.PRE_QUEUE }?.let {
-                    PhasePill(it, 14.sp)
+                    PhasePill(it, 12.sp)
                     Spacer(Modifier.width(8.dp))
                 }
                 Text(
                     LocalTimeFormat.current.match(row.time, row.estimated),
-                    style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp),
+                    style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -301,7 +302,7 @@ private fun BreakRow(item: MatchListModel.Item.Break) {
     Text(
         "— ${(item.title + range).uppercase()} —",
         Modifier.fillMaxWidth().padding(vertical = 4.dp),
-        style = condensed(17.sp, letterSpacing = 2.sp),
+        style = condensed(14.sp, letterSpacing = 1.5.sp),
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center,
     )
@@ -310,9 +311,9 @@ private fun BreakRow(item: MatchListModel.Item.Break) {
 @Composable
 private fun ResultRow(result: MatchListModel.Result, onOpenMatch: (String) -> Unit) {
     ScoreboardCard(Modifier.fillMaxWidth(), radius = 16.dp, onClick = { onOpenMatch(result.url) }) {
-        Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(result.shortLabel, Modifier.weight(1f), style = condensed(28.sp, FontWeight.ExtraBold))
+                Text(result.shortLabel, Modifier.weight(1f), style = condensed(22.sp, FontWeight.ExtraBold))
                 OutcomePill(result)
             }
             AllianceLine(MatchAlliance.RED, result.red) { Score(result.redScore, winner = result.redScore >= result.blueScore) }
@@ -325,5 +326,5 @@ private fun ResultRow(result: MatchListModel.Result, onOpenMatch: (String) -> Un
 @Composable
 private fun Score(score: Int, winner: Boolean) {
     val color = MaterialTheme.colorScheme.onSurface
-    Text("$score", style = condensed(22.sp, FontWeight.ExtraBold), color = if (winner) color else color.copy(alpha = 0.6f))
+    Text("$score", style = condensed(18.sp, FontWeight.ExtraBold), color = if (winner) color else color.copy(alpha = 0.6f))
 }

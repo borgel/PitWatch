@@ -5,8 +5,8 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
@@ -68,6 +68,8 @@ class MatchesContentTest {
     fun `a day holding only the hero match gets no header`() {
         val lonely = model.copy(days = listOf(MatchListModel.Day(null, "Lonely day", listOf(MatchListModel.Item.Upcoming(model.next!!)))))
         compose.setContent { MatchesContent(lonely, SNAP_NOW, false, false, {}, {}, {}, {}) }
+        // Bring the first list item after the hero on screen, so a header there would be composed.
+        compose.onNodeWithTag("matches").performScrollToNode(hasText("NOW QUEUING", substring = true))
         compose.onAllNodes(hasText("Lonely day", ignoreCase = true)).assertCountEquals(0)
     }
 
@@ -157,5 +159,26 @@ class MatchesContentTest {
         )
         compose.setContent { MatchesContent(tokyo, SNAP_NOW, false, false, {}, {}, {}, {}) }
         compose.onNode(hasText("9:52", substring = true).and(hasText("JST", substring = true))).assertIsDisplayed()
+    }
+
+    @Test
+    fun `an untimed hero match doesn't read Time TBD start`() {
+        val untimed = model.copy(days = model.days.map { day ->
+            day.copy(items = day.items.map { if (it is MatchListModel.Item.Upcoming && it.row.isNext) MatchListModel.Item.Upcoming(it.row.copy(time = null)) else it })
+        })
+        compose.setContent { MatchesContent(untimed, SNAP_NOW, false, false, {}, {}, {}, {}) }
+        compose.onAllNodes(hasText("TBD start", substring = true)).assertCountEquals(0)
+    }
+
+    @Test
+    fun `a day left with only a break after the hero takes its match is hidden`() {
+        val next = model.next!!
+        val breakOnly = model.copy(days = listOf(
+            MatchListModel.Day(null, "Lonely day", listOf(MatchListModel.Item.Upcoming(next), MatchListModel.Item.Break("End of day", SNAP_NOW, null)))
+        ) + model.days.drop(1))
+        compose.setContent { MatchesContent(breakOnly, SNAP_NOW, false, false, {}, {}, {}, {}) }
+        compose.onNodeWithTag("matches").performScrollToNode(hasText("NOW QUEUING", substring = true))
+        compose.onAllNodes(hasText("Lonely day", ignoreCase = true)).assertCountEquals(0)
+        compose.onAllNodes(hasText("— END OF DAY —")).assertCountEquals(0)
     }
 }

@@ -51,4 +51,12 @@ class StatusColorsTest {
             StatusColors.notificationSegments,
         )
     }
+
+    @Test
+    fun `phase text is readable on light surfaces and unchanged on dark ones`() {
+        for (phase in listOf(Phase.QUEUEING, Phase.ON_DECK, Phase.ON_FIELD)) {
+            assertTrue(contrast(StatusColors.phaseText(phase, onLight = true), Color(0xFFF2F0F7)) >= 4.5, "$phase")
+            assertEquals(StatusColors.phase(phase), StatusColors.phaseText(phase, onLight = false))
+        }
+    }
 }
