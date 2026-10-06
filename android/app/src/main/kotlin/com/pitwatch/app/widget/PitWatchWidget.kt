@@ -9,6 +9,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceTheme
 import androidx.glance.LocalContext
@@ -18,6 +19,10 @@ import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.provideContent
+import androidx.glance.text.FontFamily
+import androidx.glance.text.FontWeight
+import androidx.glance.text.Text
+import androidx.glance.text.TextStyle
 import com.pitwatch.app.PitWatchApp
 import com.pitwatch.app.R
 import com.pitwatch.core.config.UserConfig
@@ -44,6 +49,20 @@ class PitWatchWidget : GlanceAppWidget() {
             GlanceTheme {
                 LiveWidget(stores.cache.data, stores.config.data, initialCache, initialConfig, container.clock) { deadline, now ->
                     ChronometerCountdown(deadline, now)
+                }
+            }
+        }
+    }
+
+    /** Generated widget-picker preview (Android 15+): the real layout with sample content and a static countdown. */
+    override suspend fun providePreview(context: Context, widgetCategory: Int) {
+        provideContent {
+            GlanceTheme {
+                WidgetContent(SampleWidgetData.main(Instant.now())) {
+                    Text(
+                        "3:27",
+                        style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 40.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily("sans-serif-condensed")),
+                    )
                 }
             }
         }

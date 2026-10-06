@@ -47,6 +47,11 @@ class ScheduleWidget : GlanceAppWidget() {
         val initialConfig = stores.config.data.first()
         provideContent { GlanceTheme { LiveScheduleWidget(stores.cache.data, stores.config.data, initialCache, initialConfig, container.clock) } }
     }
+
+    /** Generated widget-picker preview (Android 15+): the real layout with sample content. */
+    override suspend fun providePreview(context: Context, widgetCategory: Int) {
+        provideContent { GlanceTheme { ScheduleWidgetContent(SampleWidgetData.schedule(Instant.now())) } }
+    }
 }
 
 class ScheduleWidgetReceiver : GlanceAppWidgetReceiver() {
