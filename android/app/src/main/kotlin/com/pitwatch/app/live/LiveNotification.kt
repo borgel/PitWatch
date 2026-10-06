@@ -3,10 +3,12 @@ package com.pitwatch.app.live
 import android.app.Notification
 import android.app.PendingIntent
 import android.content.Context
+import androidx.compose.ui.graphics.toArgb
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.pitwatch.app.R
+import com.pitwatch.app.ui.theme.StatusColors
 import com.pitwatch.core.model.MatchesAwayDisplay
 import com.pitwatch.core.model.Phase
 import java.time.Duration
@@ -19,7 +21,7 @@ object LiveNotification {
     val STALE_AFTER: Duration = Duration.ofMinutes(5)
 
     /** Queue, on deck, on field (iOS phase colors), then match. */
-    private val SEGMENT_COLORS = listOf(0xFFFF9500, 0xFFFF6B00, 0xFF30D158, 0xFF0A84FF).map { it.toInt() }
+    private val SEGMENT_COLORS = StatusColors.notificationSegments.map { it.toArgb() }
 
     data class Actions(val content: PendingIntent?, val refresh: PendingIntent?, val stop: PendingIntent?)
 
@@ -68,10 +70,10 @@ object LiveNotification {
         listOfNotNull(s.matchLabel, s.alliance?.displayName, if (s.result != null) "FINAL" else s.phase.stateLabel)
             .joinToString(" · ")
 
-    /** "3 AWAY · on field #29", or "W 95–80" once scored. */
+    /** "3 AWAY · ON FIELD #29", or "W 95–80" once scored. */
     fun text(s: LiveSnapshot): String? {
         s.result?.let { return "${it.outcome} ${it.ourScore}–${it.theirScore}" }
-        return listOfNotNull(s.matchesAway?.let(MatchesAwayDisplay::text), s.onFieldNumber?.let { "on field #$it" })
+        return listOfNotNull(s.matchesAway?.let(MatchesAwayDisplay::text), s.onFieldNumber?.let { "ON FIELD #$it" })
             .joinToString(" · ")
             .ifEmpty { null }
     }
