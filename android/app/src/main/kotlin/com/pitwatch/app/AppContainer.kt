@@ -3,6 +3,7 @@ package com.pitwatch.app
 import android.content.Context
 import com.pitwatch.app.data.Repository
 import com.pitwatch.app.data.Stores
+import com.pitwatch.app.notify.ScheduleNotifier
 import com.pitwatch.app.widget.WidgetRefresh
 import com.pitwatch.core.api.NexusClient
 import com.pitwatch.core.api.TbaClient
@@ -21,7 +22,7 @@ class AppContainer(
     val repository: Repository,
     val scope: CoroutineScope,
     val clock: () -> Instant = Instant::now,
-    /** Re-renders home-screen widgets from the persisted cache. */
+    /** Re-renders home-screen widgets and the schedule notification from the persisted cache. */
     val updateWidgets: suspend () -> Unit = {},
 ) {
     companion object {
@@ -37,7 +38,7 @@ class AppContainer(
             val stores = Stores(File(context.filesDir, "pitwatch"), scope)
             val appContext = context.applicationContext
             lateinit var container: AppContainer
-            val updateWidgets: suspend () -> Unit = { WidgetRefresh.run(appContext, container) }
+            val updateWidgets: suspend () -> Unit = { WidgetRefresh.run(appContext, container); ScheduleNotifier.update(appContext, container) }
             val repository = Repository(
                 stores,
                 { TbaClient(it, http, BuildConfig.TBA_BASE_URL) },
