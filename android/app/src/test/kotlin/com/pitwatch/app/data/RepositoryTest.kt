@@ -221,4 +221,16 @@ class RepositoryTest {
         repo.refresh(now)
         assertEquals(before, file.lastModified())
     }
+
+    @Test
+    fun `nexus grace window uses our clock, not the server's`() = runBlocking {
+        // The snapshot's dataAsOfTime is a day old here; a blip right after a successful poll must still keep the data.
+        val later = now.plusSeconds(24 * 3600)
+        configure()
+        repo.refresh(later)
+        nexus.on("/event/2026cancmp", HttpStatusCode.BadGateway) { "<html>" }
+        repo.refresh(later.plusSeconds(60))
+        assertNotNull(cache().nexusEvent)
+        assertEquals(later.toEpochMilli(), stores.refreshState.data.first().nexusLastSuccessEpochMs)
+    }
 }

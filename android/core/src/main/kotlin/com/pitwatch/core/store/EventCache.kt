@@ -26,6 +26,8 @@ data class RefreshState(
     val lastError: String? = null,
     val nexusLastRefreshEpochMs: Long? = null,
     val nexusLastError: String? = null,
+    /** Device time of the last successful Nexus poll (the blip grace window is measured from this). */
+    val nexusLastSuccessEpochMs: Long? = null,
 ) {
     fun lastModified(path: String): String? = lastModifiedHeaders[path]
 

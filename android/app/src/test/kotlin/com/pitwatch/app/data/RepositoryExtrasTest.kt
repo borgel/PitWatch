@@ -13,6 +13,7 @@ import kotlin.test.assertNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.runBlocking
@@ -94,5 +95,35 @@ class RepositoryExtrasTest {
         val outcome = throwing.refresh(SNAP_NOW)
         kotlin.test.assertTrue(outcome.changed)
         assertNull(outcome.error)
+    }
+
+    @Test
+    fun `refresh work runs on the work dispatcher, not the caller's thread`() = runBlocking {
+        val executor = java.util.concurrent.Executors.newSingleThreadExecutor { Thread(it, "pitwatch-work") }
+        try {
+            var factoryThread: String? = null
+            val onWork = Repository(
+                stores,
+                { factoryThread = Thread.currentThread().name; TbaClient(it, tba.client, "https://tba.test/api/v3") },
+                { NexusClient(it, nexus.client, "https://nexus.test/api/v1") },
+                workDispatcher = executor.asCoroutineDispatcher(),
+            )
+            onWork.refresh(SNAP_NOW)
+            kotlin.test.assertTrue(factoryThread.orEmpty().startsWith("pitwatch-work"), factoryThread) // debug builds append " @coroutine#N"
+        } finally {
+            executor.shutdown()
+        }
+    }
+
+    @Test
+    fun `pit map is cached per event for offline use`() = runBlocking {
+        repo.refresh(SNAP_NOW)
+        assertEquals("C1", repo.pitMap()?.pit(forTeam = "5507")?.address)
+        nexus.on("/event/2026cancmp/map", HttpStatusCode.ServiceUnavailable) { "" }
+        assertEquals("C1", repo.pitMap()?.pit(forTeam = "5507")?.address) // offline: cached copy
+        stores.config.updateData { it.copy(eventKeyOverride = "2026other") }
+        tba.on("/event/2026other") { com.pitwatch.app.fixture("${com.pitwatch.app.SNAP}/tba_event.json").replace("2026cancmp", "2026other") }
+        repo.refresh(SNAP_NOW)
+        assertNull(repo.pitMap()) // another event's map is never shown
     }
 }

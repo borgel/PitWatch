@@ -19,10 +19,13 @@ import java.time.Duration
 import java.time.Instant
 import java.time.ZoneOffset
 import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.nullable
@@ -35,6 +38,8 @@ class Repository(
     private val tbaClient: (apiKey: String) -> TbaClient,
     private val nexusClient: (apiKey: String) -> NexusClient,
     private val onChanged: suspend () -> Unit = {},
+    /** Network + JSON decoding run here, never on the caller's (often the main) thread. */
+    private val workDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) {
     private val mutex = Mutex()
 
@@ -59,7 +64,10 @@ class Repository(
         return outcome
     }
 
-    private suspend fun refreshLocked(now: Instant, force: Boolean, includeTba: Boolean): RefreshOutcome = mutex.withLock {
+    private suspend fun refreshLocked(now: Instant, force: Boolean, includeTba: Boolean): RefreshOutcome =
+        withContext(workDispatcher) { refreshSerialized(now, force, includeTba) }
+
+    private suspend fun refreshSerialized(now: Instant, force: Boolean, includeTba: Boolean): RefreshOutcome = mutex.withLock {
         val config = stores.config.data.first()
         val apiKey = config.apiKey
         if (!config.isConfigured || apiKey == null) return@withLock RefreshOutcome(changed = false, error = NOT_CONFIGURED)
@@ -117,10 +125,16 @@ class Repository(
             if (!nexusKey.isNullOrEmpty() && eventKey != null) {
                 val fresh = nexusClient(nexusKey).fetchEventStatus(eventKey)
                 if (fresh == null) nexusError = NEXUS_UNAVAILABLE
-                // A short blip keeps recent data so the live view doesn't flap to TBA times.
-                val kept = fresh ?: cache.nexusEvent?.takeIf { now.toEpochMilli() - it.dataAsOfTime < NEXUS_STALE_AFTER.toMillis() }
+                // A short blip keeps recent data so the live view doesn't flap to TBA times. Timed by our clock:
+                // the server's dataAsOfTime can be skewed or only change when the schedule does.
+                val lastSuccess = state.nexusLastSuccessEpochMs
+                val kept = fresh ?: cache.nexusEvent?.takeIf { lastSuccess != null && now.toEpochMilli() - lastSuccess < NEXUS_STALE_AFTER.toMillis() }
                 cache = cache.copy(nexusEvent = kept)
-                state = state.copy(nexusLastRefreshEpochMs = now.toEpochMilli(), nexusLastError = nexusError)
+                state = state.copy(
+                    nexusLastRefreshEpochMs = now.toEpochMilli(),
+                    nexusLastError = nexusError,
+                    nexusLastSuccessEpochMs = if (fresh != null) now.toEpochMilli() else lastSuccess,
+                )
             } else {
                 cache = cache.copy(nexusEvent = null)
             }
@@ -150,11 +164,19 @@ class Repository(
         return (result as? FetchResult.Data)?.value.orEmpty().sortedBy { it.startDate }
     }
 
-    /** Nexus pit map for the cached event; null without a Nexus key, an event, or a map. */
+    /**
+     * Nexus pit map for the cached event; null without a Nexus key, an event, or a map. The last map fetched for
+     * this event is returned when Nexus is unreachable (venue Wi-Fi).
+     */
     suspend fun pitMap(): PitMap? {
         val nexusKey = stores.config.data.first().nexusApiKey?.takeIf { it.isNotEmpty() } ?: return null
         val eventKey = stores.cache.data.first().event?.key ?: return null
-        return nexusClient(nexusKey).fetchPitMap(eventKey)
+        val fresh = withContext(workDispatcher) { nexusClient(nexusKey).fetchPitMap(eventKey) }
+        if (fresh != null) {
+            stores.pitMap.updateData { PitMapCache(eventKey, fresh) }
+            return fresh
+        }
+        return stores.pitMap.data.first().takeIf { it.eventKey == eventKey }?.map
     }
 
     private data class ResolvedEvent(val key: String, val event: Event?)
