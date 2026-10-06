@@ -30,7 +30,7 @@ class MatchListModelTest {
     )
     private val config = UserConfig(teamNumber = 5507, apiKey = "k", nexusApiKey = "n")
     private fun build(c: EventCache = cache, cfg: UserConfig = config, state: RefreshState = RefreshState()) =
-        MatchListModels.build(c, cfg, state, SNAP_NOW, Locale.US)
+        MatchListModels.build(c, cfg, state, SNAP_NOW, Locale.US, com.pitwatch.app.LA)
 
     private fun MatchListModel.Day.names() = items.map {
         when (it) {
@@ -109,22 +109,29 @@ class MatchListModelTest {
     }
 
     @Test
-    fun `days follow the event zone, not the device zone`() {
-        // Review focus #2
-        val original = TimeZone.getDefault()
-        try {
-            TimeZone.setDefault(TimeZone.getTimeZone("Asia/Tokyo"))
-            assertEquals(listOf("Friday, Apr 10", "Saturday, Apr 11", "Sunday, Apr 12"), build().days.map { it.label })
-        } finally {
-            TimeZone.setDefault(original)
-        }
+    fun `at the event, times are unlabeled`() {
+        val m = build()
+        assertEquals(com.pitwatch.app.LA, m.timeZone)
+        assertNull(m.zoneLabel)
+    }
+
+    @Test
+    fun `away from the event, days and times follow the phone's zone, labeled`() {
+        // User's choice: a parent watching from elsewhere sees their own clock, marked with its zone.
+        val tokyo = java.time.ZoneId.of("Asia/Tokyo")
+        val m = MatchListModels.build(cache, config, RefreshState(), SNAP_NOW, Locale.US, tokyo)
+        assertEquals(tokyo, m.timeZone)
+        assertEquals("JST", m.zoneLabel)
+        assertEquals("Saturday, Apr 11", m.days.first().label) // qm36 is 09:52 Saturday in Tokyo
+        // Break names still come from the event's local schedule.
+        assertTrue(m.days.flatMap { it.items }.any { it is MatchListModel.Item.Break && it.title == "Lunch" })
     }
 
     @Test
     fun `matches without a time are still listed`() {
         // Review focus #3
         val c = EventCache(event = testEvent(), matches = listOf(testMatch(1, time = null), testMatch(2, time = 1_775_900_000)))
-        val m = MatchListModels.build(c, UserConfig(teamNumber = 1234, apiKey = "k"), RefreshState(), SNAP_NOW, Locale.US)
+        val m = MatchListModels.build(c, UserConfig(teamNumber = 1234, apiKey = "k"), RefreshState(), SNAP_NOW, Locale.US, com.pitwatch.app.LA)
         assertEquals(listOf("Q1", "Q2"), m.days.flatMap { it.items }.map { (it as MatchListModel.Item.Upcoming).row.shortLabel })
         assertEquals("Time TBD", m.days.first().label)
     }
@@ -144,7 +151,7 @@ class MatchListModelTest {
             testMatch(1), testMatch(2, time = at("13:00:00").epochSecond), testMatch(3), testMatch(4),
         )
         val c = EventCache(event = testEvent(), matches = matches, nexusEvent = nexus)
-        val m = MatchListModels.build(c, UserConfig(teamNumber = 1234, apiKey = "k", nexusApiKey = "n"), RefreshState(), SNAP_NOW, Locale.US)
+        val m = MatchListModels.build(c, UserConfig(teamNumber = 1234, apiKey = "k", nexusApiKey = "n"), RefreshState(), SNAP_NOW, Locale.US, com.pitwatch.app.LA)
         val ids = m.days.flatMap { it.items }.map { it.id }
         assertEquals(ids.distinct(), ids)
         assertEquals(1, m.days.flatMap { it.items }.count { it is MatchListModel.Item.Break })

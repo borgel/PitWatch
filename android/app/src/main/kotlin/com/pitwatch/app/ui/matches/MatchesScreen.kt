@@ -36,6 +36,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -54,6 +55,8 @@ import com.pitwatch.app.AppContainer
 import com.pitwatch.app.data.LiveControl
 import com.pitwatch.app.live.LiveMatchService
 import com.pitwatch.app.schedule.rearmAutoStart
+import com.pitwatch.app.ui.LocalTimeFormat
+import com.pitwatch.app.ui.TimeFormat
 import com.pitwatch.app.ui.theme.StatusColors
 import com.pitwatch.core.config.UserConfig
 import com.pitwatch.core.model.Phase
@@ -77,10 +80,6 @@ object Countdowns {
     }
 }
 
-private val clockTime: DateTimeFormatter = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withZone(ZoneId.systemDefault())
-
-private fun timeText(time: Instant?, estimated: Boolean): String =
-    time?.let { (if (estimated) "~" else "") + clockTime.format(it) } ?: "Time TBD"
 
 /** Stateful wrapper: collects persisted state and wires actions. */
 @Composable
@@ -131,6 +130,22 @@ fun MatchesScreen(container: AppContainer, config: UserConfig, onPickEvent: () -
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MatchesContent(
+    model: MatchListModel,
+    now: Instant,
+    tracking: Boolean,
+    refreshing: Boolean,
+    onRefresh: () -> Unit,
+    onToggleTracking: () -> Unit,
+    onOpenMatch: (url: String) -> Unit,
+    onPickEvent: () -> Unit,
+) {
+    val timeFormat = remember(model.timeZone, model.zoneLabel) { TimeFormat(model.timeZone, model.zoneLabel) }
+    CompositionLocalProvider(LocalTimeFormat provides timeFormat) { MatchesBody(model, now, tracking, refreshing, onRefresh, onToggleTracking, onOpenMatch, onPickEvent) }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MatchesBody(
     model: MatchListModel,
     now: Instant,
     tracking: Boolean,
@@ -262,7 +277,7 @@ private fun NextMatchCard(row: MatchListModel.MatchRow, now: Instant, onOpenMatc
                 row.phase?.let { PhaseBadge(it) }
             }
             Row {
-                Text(timeText(row.time, row.estimated), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                Text(LocalTimeFormat.current.match(row.time, row.estimated), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
                 row.countdown?.let {
                     Text("${Countdowns.text(it.deadline, now)} ${it.target}", style = MaterialTheme.typography.bodyLarge, fontFamily = FontFamily.Monospace)
                 }
@@ -287,14 +302,14 @@ internal fun MatchRowItem(row: MatchListModel.MatchRow, onOpenMatch: (String) ->
             PhaseBadge(it)
             Spacer(Modifier.width(8.dp))
         }
-        Text(timeText(row.time, row.estimated), style = MaterialTheme.typography.bodyMedium, fontFamily = FontFamily.Monospace)
+        Text(LocalTimeFormat.current.match(row.time, row.estimated), style = MaterialTheme.typography.bodyMedium, fontFamily = FontFamily.Monospace)
     }
     HorizontalDivider()
 }
 
 @Composable
 private fun BreakRow(item: MatchListModel.Item.Break) {
-    val range = item.end?.let { " · ${clockTime.format(item.start)} – ${clockTime.format(it)}" } ?: ""
+    val range = item.end?.let { " · " + LocalTimeFormat.current.range(item.start, it) } ?: ""
     Text(
         item.title + range,
         style = MaterialTheme.typography.bodyMedium,

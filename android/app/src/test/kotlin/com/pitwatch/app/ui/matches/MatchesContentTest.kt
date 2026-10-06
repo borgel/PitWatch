@@ -30,7 +30,7 @@ class MatchesContentTest {
 
     private val model = MatchListModels.build(
         snapshotCache().copy(rankings = PitWatchJson.decodeFromString<EventRankings>(fixture("$SNAP/tba_rankings.json"))),
-        UserConfig(teamNumber = 5507, apiKey = "k", nexusApiKey = "n"), RefreshState(), SNAP_NOW, Locale.US,
+        UserConfig(teamNumber = 5507, apiKey = "k", nexusApiKey = "n"), RefreshState(), SNAP_NOW, Locale.US, com.pitwatch.app.LA,
     )
 
     private fun show(tracking: Boolean = false, onToggle: () -> Unit = {}, onOpen: (String) -> Unit = {}, onPick: () -> Unit = {}) {
@@ -109,5 +109,15 @@ class MatchesContentTest {
     fun `compact rows badge matches that are in motion`() {
         compose.setContent { MatchRowItem(compactRow(com.pitwatch.core.model.Phase.QUEUEING)) {} }
         compose.onNodeWithText("IN QUEUE").assertIsDisplayed()
+    }
+
+    @Test
+    fun `away from the event, times carry the phone's zone`() {
+        val tokyo = MatchListModels.build(
+            snapshotCache(), UserConfig(teamNumber = 5507, apiKey = "k", nexusApiKey = "n"), RefreshState(), SNAP_NOW, Locale.US,
+            java.time.ZoneId.of("Asia/Tokyo"),
+        )
+        compose.setContent { MatchesContent(tokyo, SNAP_NOW, false, false, {}, {}, {}, {}) }
+        compose.onNode(hasText("9:52", substring = true).and(hasText("JST", substring = true))).assertIsDisplayed()
     }
 }

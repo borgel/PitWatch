@@ -13,6 +13,7 @@ import com.pitwatch.core.store.EventCache
 import com.pitwatch.core.store.RefreshState
 import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -26,6 +27,10 @@ data class MatchListModel(
     val days: List<Day>,
     val results: List<Result>,
     val empty: Empty?,
+    /** Zone for days and clock times: the phone's (user's choice). */
+    val timeZone: ZoneId = ZoneId.systemDefault(),
+    /** e.g. "JST" when the phone isn't in the event's zone, so times aren't mistaken for venue time. */
+    val zoneLabel: String? = null,
 ) {
     data class Status(val teamNumber: Int, val rank: Int?, val record: String?) {
         val text: String get() = listOfNotNull("Team $teamNumber", rank?.let { "Rank #$it" }, record).joinToString(" · ")
@@ -76,20 +81,27 @@ data class MatchListModel(
 }
 
 object MatchListModels {
-    fun build(cache: EventCache, config: UserConfig, refreshState: RefreshState, now: Instant, locale: Locale = Locale.getDefault()): MatchListModel {
+    fun build(
+        cache: EventCache,
+        config: UserConfig,
+        refreshState: RefreshState,
+        now: Instant,
+        locale: Locale = Locale.getDefault(),
+        zone: ZoneId = ZoneId.systemDefault(),
+    ): MatchListModel {
         val event = cache.event
         val title = event?.shortName ?: event?.name ?: "PitWatch"
         val error = refreshState.lastError
         val teamKey = config.teamKey
         val teamNumber = config.teamNumber
         if (!config.isConfigured || teamKey == null || teamNumber == null) {
-            return MatchListModel(title, null, null, false, error, emptyList(), emptyList(), MatchListModel.Empty.NOT_CONFIGURED)
+            return MatchListModel(title, null, null, false, error, emptyList(), emptyList(), MatchListModel.Empty.NOT_CONFIGURED, zone)
         }
         val ranking = cache.rankings?.rankings?.firstOrNull { it.teamKey == teamKey }
         val status = MatchListModel.Status(teamNumber, ranking?.rank, ranking?.record?.display)
         val nexusUnavailable = config.isNexusConfigured && event != null && cache.nexusEvent == null
         if (event == null) {
-            return MatchListModel(title, status, null, nexusUnavailable, error, emptyList(), emptyList(), MatchListModel.Empty.NO_EVENT)
+            return MatchListModel(title, status, null, nexusUnavailable, error, emptyList(), emptyList(), MatchListModel.Empty.NO_EVENT, zone)
         }
 
         val nexus = cache.nexusEvent.takeIf { config.effectiveTimeSource == TimeSource.NEXUS }
@@ -130,9 +142,9 @@ object MatchListModels {
             )
         }
 
-        val zone = event.zone
         val dayFormat = DateTimeFormatter.ofPattern("EEEE, MMM d", locale)
-        val entries: List<Pair<Instant?, MatchListModel.Item>> = schedule.upcomingTimeline(nexus, zone).map { item ->
+        // Breaks are found in the event's local day (lunch is venue-local); days and times display in the phone's zone.
+        val entries: List<Pair<Instant?, MatchListModel.Item>> = schedule.upcomingTimeline(nexus, event.zone).map { item ->
             when (item) {
                 is UpcomingScheduleItem.MatchItem -> row(item.match).let { it.time to MatchListModel.Item.Upcoming(it) }
                 is UpcomingScheduleItem.BreakItem -> item.scheduleBreak.let { it.start to MatchListModel.Item.Break(it.title, it.start, it.end) }
@@ -163,6 +175,11 @@ object MatchListModels {
         }
 
         val empty = if (days.isEmpty() && results.isEmpty()) MatchListModel.Empty.NO_MATCHES else null
-        return MatchListModel(title, status, nexus?.nowQueuing, nexusUnavailable, error, days, results, empty)
+        val zoneLabel = if (zone.rules.getOffset(now) != event.zone.rules.getOffset(now)) {
+            DateTimeFormatter.ofPattern("zzz", locale).withZone(zone).format(now)
+        } else {
+            null
+        }
+        return MatchListModel(title, status, nexus?.nowQueuing, nexusUnavailable, error, days, results, empty, zone, zoneLabel)
     }
 }
