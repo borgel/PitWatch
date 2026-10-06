@@ -128,4 +128,25 @@ class MatchListModelTest {
         assertEquals(listOf("Q1", "Q2"), m.days.flatMap { it.items }.map { (it as MatchListModel.Item.Upcoming).row.shortLabel })
         assertEquals("Time TBD", m.days.first().label)
     }
+
+    @Test
+    fun `item ids stay unique when match times go backwards`() {
+        // Review finding m4: overlapping bracket windows used to repeat a break, and duplicate keys crash LazyColumn.
+        val la = com.pitwatch.app.LA
+        fun at(t: String) = com.pitwatch.app.localInstant("2026-04-11T$t", la)
+        val nexus = com.pitwatch.core.model.NexusEvent(0, matches = listOf(
+            com.pitwatch.core.model.NexusMatch("Qualification 1", times = com.pitwatch.core.model.NexusMatchTimes(estimatedStartTime = at("10:00:00").toEpochMilli())),
+            com.pitwatch.core.model.NexusMatch("Qualification 3", times = com.pitwatch.core.model.NexusMatchTimes(estimatedStartTime = at("11:00:00").toEpochMilli())),
+            com.pitwatch.core.model.NexusMatch("Qualification 50", times = com.pitwatch.core.model.NexusMatchTimes(estimatedStartTime = at("12:00:00").toEpochMilli()), breakAfter = "Lunch"),
+            com.pitwatch.core.model.NexusMatch("Qualification 4", times = com.pitwatch.core.model.NexusMatchTimes(estimatedStartTime = at("14:00:00").toEpochMilli())),
+        ))
+        val matches = listOf(
+            testMatch(1), testMatch(2, time = at("13:00:00").epochSecond), testMatch(3), testMatch(4),
+        )
+        val c = EventCache(event = testEvent(), matches = matches, nexusEvent = nexus)
+        val m = MatchListModels.build(c, UserConfig(teamNumber = 1234, apiKey = "k", nexusApiKey = "n"), RefreshState(), SNAP_NOW, Locale.US)
+        val ids = m.days.flatMap { it.items }.map { it.id }
+        assertEquals(ids.distinct(), ids)
+        assertEquals(1, m.days.flatMap { it.items }.count { it is MatchListModel.Item.Break })
+    }
 }

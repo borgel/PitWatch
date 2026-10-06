@@ -66,11 +66,11 @@ fun PitWatchRoot(container: AppContainer) {
         when (tab) {
             Tab.MATCHES -> if (pickingEvent) {
                 BackHandler { pickingEvent = false }
-                EventPickerScreen(container, onDone = { pickingEvent = false })
+                EventPickerScreen(container, current, onDone = { pickingEvent = false })
             } else {
-                MatchesScreen(container, onPickEvent = { pickingEvent = true })
+                MatchesScreen(container, current, onPickEvent = { pickingEvent = true })
             }
-            Tab.PIT_MAP -> PitMapScreen(container, onOpenSettings = { tab = Tab.SETTINGS })
+            Tab.PIT_MAP -> PitMapScreen(container, current, onOpenSettings = { tab = Tab.SETTINGS })
             Tab.SETTINGS -> SettingsScreen(container, current)
         }
     }

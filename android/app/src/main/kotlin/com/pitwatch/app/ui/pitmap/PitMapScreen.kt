@@ -47,10 +47,10 @@ sealed interface PitMapState {
 }
 
 @Composable
-fun PitMapScreen(container: AppContainer, onOpenSettings: () -> Unit) {
-    val config by container.stores.config.data.collectAsStateWithLifecycle(initialValue = UserConfig())
+fun PitMapScreen(container: AppContainer, config: UserConfig, onOpenSettings: () -> Unit) {
     var state by remember { mutableStateOf<PitMapState>(PitMapState.Loading) }
-    LaunchedEffect(config.nexusApiKey) {
+    LaunchedEffect(config.nexusApiKey, config.eventKeyOverride) {
+        state = PitMapState.Loading
         state = if (!config.isNexusConfigured) {
             PitMapState.NoKey
         } else {

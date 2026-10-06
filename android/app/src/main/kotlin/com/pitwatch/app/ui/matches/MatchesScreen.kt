@@ -84,11 +84,10 @@ private fun timeText(time: Instant?, estimated: Boolean): String =
 
 /** Stateful wrapper: collects persisted state and wires actions. */
 @Composable
-fun MatchesScreen(container: AppContainer, onPickEvent: () -> Unit) {
+fun MatchesScreen(container: AppContainer, config: UserConfig, onPickEvent: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val cache by container.stores.cache.data.collectAsStateWithLifecycle(initialValue = EventCache())
-    val config by container.stores.config.data.collectAsStateWithLifecycle(initialValue = UserConfig())
     val refreshState by container.stores.refreshState.data.collectAsStateWithLifecycle(initialValue = RefreshState())
     val tracking by LiveMatchService.tracking.collectAsStateWithLifecycle()
     val now by produceState(container.clock()) {
@@ -164,8 +163,8 @@ fun MatchesContent(
                     MatchListModel.Empty.NO_MATCHES -> item(key = "empty") { EmptyState("No matches scheduled yet", null, null) }
                     else -> Unit
                 }
-                for (day in model.days) {
-                    item(key = "day:${day.label}") { SectionHeader(day.label) }
+                model.days.forEachIndexed { index, day ->
+                    item(key = "day:$index") { SectionHeader(day.label) }
                     items(day.items, key = { it.id }) { item ->
                         when (item) {
                             is MatchListModel.Item.Upcoming ->

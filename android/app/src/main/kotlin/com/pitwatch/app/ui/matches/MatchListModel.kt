@@ -137,7 +137,7 @@ object MatchListModels {
                 is UpcomingScheduleItem.MatchItem -> row(item.match).let { it.time to MatchListModel.Item.Upcoming(it) }
                 is UpcomingScheduleItem.BreakItem -> item.scheduleBreak.let { it.start to MatchListModel.Item.Break(it.title, it.start, it.end) }
             }
-        }
+        }.distinctBy { it.second.id } // overlapping windows (non-monotonic times) could repeat a break
         val days = mutableListOf<MatchListModel.Day>()
         for ((time, item) in entries) {
             // Untimed matches stay with the day before them (or "Time TBD" at the top).

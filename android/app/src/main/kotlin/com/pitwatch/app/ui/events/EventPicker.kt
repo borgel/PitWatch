@@ -56,10 +56,9 @@ sealed interface EventPickerState {
 }
 
 @Composable
-fun EventPickerScreen(container: AppContainer, onDone: () -> Unit) {
+fun EventPickerScreen(container: AppContainer, config: UserConfig, onDone: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val config by container.stores.config.data.collectAsStateWithLifecycle(initialValue = UserConfig())
     var state by remember { mutableStateOf<EventPickerState>(EventPickerState.Loading) }
     LaunchedEffect(Unit) {
         state = try {
