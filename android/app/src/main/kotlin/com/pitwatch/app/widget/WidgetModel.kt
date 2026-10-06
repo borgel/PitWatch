@@ -71,25 +71,8 @@ sealed interface WidgetLine {
 }
 
 object WidgetLines {
-    /** Height the large layout uses above the upcoming list (header, title, next match with the 56 sp countdown, phase bar, alliances, divider, last result). */
-    // Measured on-device (emulator-5580, 4×3 at 360×344 dp, 40 sp countdown): ~293 dp above the list. The 56 sp countdown adds ~16 dp.
-    private val FIXED: Dp = 312.dp
-    private val ROW: Dp = 24.dp
-
     /** Glance renders at most 10 children per Column; the list gets its own Column, kept under the limit. */
     const val MAX_LINES = 9
-
-    /** The 56 sp countdown only where it leaves room for the list; 40 sp below. */
-    fun largeCountdown(height: Dp): Boolean = height >= 400.dp
-
-    /** How many upcoming lines fit in a widget of [height]; parts the widget doesn't draw give their room back. */
-    fun budget(height: Dp, phaseBar: Boolean = true, last: Boolean = true): Int {
-        var fixed = FIXED
-        if (!largeCountdown(height)) fixed -= 16.dp
-        if (!phaseBar) fixed -= 17.dp
-        if (!last) fixed -= 26.dp
-        return ((height - fixed) / ROW).toInt().coerceAtLeast(0)
-    }
 
     /** Days and their items within [budget] lines; a day header is only shown with at least one item under it. */
     fun fit(days: List<MatchListModel.Day>, budget: Int): List<WidgetLine> {
@@ -118,5 +101,68 @@ object TeamSplit {
         val before = numbers.take(i).joinToString(" · ").let { if (it.isEmpty()) it else "$it · " }
         val after = numbers.drop(i + 1).joinToString(" · ").let { if (it.isEmpty()) it else " · $it" }
         return Triple(before, numbers[i], after)
+    }
+}
+
+/** Which parts of the widget fit at a size; the upcoming list gets the height that's left. */
+data class WidgetPlan(
+    val header: Boolean,
+    val phaseBar: Boolean,
+    val target: Boolean,
+    val alliances: Boolean,
+    val time: Boolean,
+    val lastLine: Boolean,
+    val eventTitle: Boolean,
+    val listLines: Int,
+    val largeCountdown: Boolean,
+)
+
+object WidgetPlans {
+    // Part heights measured on-device (emulator-5580): the full 4×3 layout (360×344 dp) sums to ~294 dp.
+    private val PADDING = 28.dp
+    private val LABEL = 40.dp
+    private val COUNTDOWN = 52.dp
+    private val COUNTDOWN_LARGE = 70.dp
+    private val TARGET = 17.dp
+    private val PHASE_BAR = 19.dp
+    private val HEADER = 18.dp
+    private val ALLIANCES = 46.dp
+    private val TIME = 18.dp
+    private val LAST_LINE = 38.dp
+    private val TITLE = 18.dp
+    private val ROW = 24.dp
+
+    /** The 56 sp countdown only where the list still fits beneath it; 40 sp below. */
+    fun largeCountdown(height: Dp): Boolean = height >= 400.dp
+
+    /**
+     * The match label and countdown always show; then, in priority order, each part is drawn only if it fits:
+     * what the countdown counts to, the phase bar, the team header, the alliances (wide only), the start time,
+     * and on tall widgets the last result and event title. Nothing is drawn to be clipped.
+     */
+    fun plan(
+        height: Dp,
+        wide: Boolean,
+        tall: Boolean,
+        hasCountdown: Boolean,
+        hasPhase: Boolean,
+        hasTarget: Boolean,
+        hasLast: Boolean,
+        hasTitle: Boolean,
+    ): WidgetPlan {
+        val large = largeCountdown(height)
+        var left = height - PADDING - LABEL - if (hasCountdown) (if (large) COUNTDOWN_LARGE else COUNTDOWN) else 0.dp
+        fun take(wanted: Boolean, cost: Dp): Boolean = (wanted && left >= cost).also { if (it) left -= cost }
+        // Without a countdown, the start time is the next match's most useful line.
+        val earlyTime = !hasCountdown && take(true, TIME)
+        val target = take(hasCountdown && hasTarget, TARGET)
+        val phaseBar = take(hasPhase, PHASE_BAR)
+        val header = take(true, HEADER)
+        val alliances = take(wide, ALLIANCES)
+        val time = earlyTime || take(true, TIME)
+        val lastLine = take(tall && hasLast, LAST_LINE)
+        val eventTitle = take(tall && hasTitle, TITLE)
+        val lines = if (tall) (left / ROW).toInt().coerceAtLeast(0) else 0
+        return WidgetPlan(header, phaseBar, target, alliances, time, lastLine, eventTitle, lines, large)
     }
 }

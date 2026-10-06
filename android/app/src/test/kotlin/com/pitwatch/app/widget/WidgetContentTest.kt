@@ -26,26 +26,33 @@ class WidgetContentTest {
     )
 
     @Test
-    fun `small - next match, countdown and phase bar`() = runGlanceAppWidgetUnitTest {
+    fun `smallest - just the match and its countdown`() = runGlanceAppWidgetUnitTest {
         setAppWidgetSize(PitWatchWidget.SMALL)
         provideComposable { GlanceTheme { WidgetContent(ready) { Text("COUNTDOWN") } } }
-        onNode(hasText("5507 · #34 · 1-2-0")).assertExists()
         onNode(hasText("Q36")).assertExists()
         onNode(hasText("COUNTDOWN")).assertExists()
-        onAllNodes(hasTestTag("phase-step")).assertCountEquals(4)
-        onNode(hasText("to match end")).assertExists() // what the countdown counts to, at every size
+        onNode(hasText("5507 · #34 · 1-2-0")).assertDoesNotExist() // no room: it would push the countdown out
         onNode(hasText("LAST")).assertDoesNotExist()
     }
 
     @Test
-    fun `medium - adds alliances with our chip and the last result`() = runGlanceAppWidgetUnitTest {
-        setAppWidgetSize(PitWatchWidget.MEDIUM)
+    fun `2x2 - countdown target and phase bar`() = runGlanceAppWidgetUnitTest {
+        setAppWidgetSize(androidx.compose.ui.unit.DpSize(170.dp, 170.dp))
         provideComposable { GlanceTheme { WidgetContent(ready) { Text("COUNTDOWN") } } }
+        onNode(hasText("to match end")).assertExists() // what the countdown counts to
+        onAllNodes(hasTestTag("phase-step")).assertCountEquals(4)
+    }
+
+    @Test
+    fun `4x2 - both alliances fit, with the last result beside them`() = runGlanceAppWidgetUnitTest {
+        // On-device (emulator-5580): at 4×2 the blue alliance line was cut off.
+        setAppWidgetSize(androidx.compose.ui.unit.DpSize(360.dp, 223.dp))
+        provideComposable { GlanceTheme { WidgetContent(ready) { Text("COUNTDOWN") } } }
+        onNode(hasText("4698 · ")).assertExists()
+        onNode(hasText("6036 · 9470 · 6814")).assertExists()
         onNode(hasText("LAST")).assertExists()
         onNode(hasText("403–299")).assertExists()
         onNode(hasText("WIN")).assertExists()
-        onNode(hasText("4698 · ")).assertExists()
-        onNode(hasText(" · 1678")).assertExists()
     }
 
     @Test
@@ -79,9 +86,27 @@ class WidgetContentTest {
     }
 
     @Test
+    fun `2x3 - the last result fits one line on a narrow widget`() = runGlanceAppWidgetUnitTest {
+        // On-device: at 2×3 (172 dp wide) "LAST · Q22" wrapped onto two lines.
+        setAppWidgetSize(androidx.compose.ui.unit.DpSize(172.dp, 380.dp))
+        provideComposable { GlanceTheme { WidgetContent(ready) { Text("COUNTDOWN") } } }
+        onNode(hasText("LAST · Q22")).assertDoesNotExist()
+        onNode(hasText("403–299")).assertExists()
+        onNode(hasText("WIN")).assertExists()
+    }
+
+    @Test
     fun `message states`() = runGlanceAppWidgetUnitTest {
         setAppWidgetSize(PitWatchWidget.SMALL)
         provideComposable { GlanceTheme { WidgetContent(WidgetModels.build(com.pitwatch.core.store.EventCache(), UserConfig(), SNAP_NOW)) { } } }
         onNode(hasText("Set up PitWatch")).assertExists()
+    }
+
+    @Test
+    fun `the widget's outer column stays under Glance's 10-children limit`() = runGlanceAppWidgetUnitTest {
+        setAppWidgetSize(androidx.compose.ui.unit.DpSize(250.dp, 600.dp)) // every optional part drawn
+        provideComposable { GlanceTheme { WidgetContent(ready) { Text("COUNTDOWN") } } }
+        // header, event, next match, divider, last result, list: 6 of the 10 Glance renders. Adding more? Recount.
+        onNode(hasTestTag("widget-root")).onChildren().assertCountEquals(6)
     }
 }

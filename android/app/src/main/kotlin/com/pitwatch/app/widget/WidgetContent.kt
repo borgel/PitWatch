@@ -47,14 +47,20 @@ fun WidgetContent(model: WidgetModel, countdown: @Composable (Instant) -> Unit) 
     val tall = size.height >= PitWatchWidget.LARGE.height
     val muted = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED)
     val times = TimeFormat(model.timeZone, model.zoneLabel)
-    // Glance renders at most 10 children per Column: this one holds at most 7.
+    val next = model.next
+    val plan = WidgetPlans.plan(
+        size.height, wide, tall,
+        hasCountdown = model.countdownDeadline != null, hasPhase = next?.phase != null, hasTarget = next?.countdown != null,
+        hasLast = model.last != null, hasTitle = model.eventTitle != null,
+    )
+    // Glance renders at most 10 children per Column: this one holds at most 6.
     Column(
         GlanceModifier.fillMaxSize().background(GlanceTheme.colors.widgetBackground).cornerRadius(24.dp)
-            .padding(horizontal = 16.dp, vertical = 14.dp).clickable(actionStartActivity<MainActivity>()),
+            .padding(horizontal = 16.dp, vertical = 14.dp).clickable(actionStartActivity<MainActivity>())
+            .semantics { testTag = "widget-root" },
     ) {
-        Text(model.header, style = muted, maxLines = 1)
-        if (tall) model.eventTitle?.let { Text(it.uppercase(), style = muted, maxLines = 1) }
-        val next = model.next
+        if (plan.header || next == null) Text(model.header, style = muted, maxLines = 1)
+        if (plan.eventTitle) model.eventTitle?.let { Text(it.uppercase(), style = muted, maxLines = 1) }
         if (model.state != WidgetModel.State.READY || next == null) {
             Text(model.message.orEmpty(), style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 16.sp), modifier = GlanceModifier.padding(top = 8.dp))
             model.last?.let { if (wide) LastResult(it) }
@@ -62,22 +68,22 @@ fun WidgetContent(model: WidgetModel, countdown: @Composable (Instant) -> Unit) 
         }
         Row(GlanceModifier.fillMaxWidth().padding(top = 4.dp)) {
             Column(GlanceModifier.defaultWeight()) {
-                NextMatch(next, times, model.countdownDeadline, countdown)
-                next.phase?.let { PhaseBar(it) }
-                if (wide) {
+                NextMatch(next, times, model.countdownDeadline, plan, countdown)
+                if (plan.phaseBar) next.phase?.let { PhaseBar(it) }
+                if (plan.alliances) {
                     AllianceRow(MatchAlliance.RED, next.red)
                     AllianceRow(MatchAlliance.BLUE, next.blue)
                 }
             }
             if (wide && !tall) model.last?.let { LastResult(it) }
         }
-        if (tall) {
+        val lines = WidgetLines.fit(model.laterDays, plan.listLines)
+        if (tall && (plan.lastLine || lines.isNotEmpty())) {
             Box(GlanceModifier.fillMaxWidth().padding(vertical = 4.dp)) {
                 Box(GlanceModifier.fillMaxWidth().height(1.dp).background(GlanceTheme.colors.outline)) {}
             }
             // Last result goes above the list: a long upcoming list may only truncate itself (found on-device).
-            model.last?.let { LastLine(it) }
-            val lines = WidgetLines.fit(model.laterDays, WidgetLines.budget(size.height, phaseBar = next.phase != null, last = model.last != null))
+            if (plan.lastLine) model.last?.let { LastLine(it, compact = !wide) }
             // Own Column: Glance drops children past 10 per Column, and the parent is already busy.
             Column {
                 for (line in lines) {
@@ -113,7 +119,7 @@ fun WidgetContent(model: WidgetModel, countdown: @Composable (Instant) -> Unit) 
 }
 
 @Composable
-private fun NextMatch(row: MatchListModel.MatchRow, times: TimeFormat, deadline: Instant?, countdown: @Composable (Instant) -> Unit) {
+private fun NextMatch(row: MatchListModel.MatchRow, times: TimeFormat, deadline: Instant?, plan: WidgetPlan, countdown: @Composable (Instant) -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(row.shortLabel, style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 30.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED))
         row.phase?.let {
@@ -121,11 +127,11 @@ private fun NextMatch(row: MatchListModel.MatchRow, times: TimeFormat, deadline:
             Pill(it.stateLabel, ColorProvider(StatusColors.phase(it)), ColorProvider(StatusColors.onPhase(it)))
         }
     }
-    Text(times.match(row.time, row.estimated), style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 13.sp))
+    if (plan.time) Text(times.match(row.time, row.estimated), style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 13.sp))
     if (deadline != null) {
         // The platform Chronometer gets its own line: sharing a row with small text clipped it on-device.
         countdown(deadline)
-        row.countdown?.let { Text(it.target, style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp), maxLines = 1) }
+        if (plan.target) row.countdown?.let { Text(it.target, style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp), maxLines = 1) }
     }
 }
 
@@ -182,13 +188,14 @@ private fun OutcomePill(result: MatchListModel.Result) {
     )
 }
 
-/** Tall widgets: one line above the list. */
+/** Tall widgets: one line above the list; [compact] (narrow widgets) drops "LAST ·" — the outcome pill says it. */
 @Composable
-private fun LastLine(result: MatchListModel.Result) {
+private fun LastLine(result: MatchListModel.Result, compact: Boolean) {
     Row(GlanceModifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(
-            "LAST · ${result.shortLabel}",
+            if (compact) result.shortLabel else "LAST · ${result.shortLabel}",
             style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 13.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED),
+            maxLines = 1,
             modifier = GlanceModifier.defaultWeight(),
         )
         Text("${result.ourScore}–${result.theirScore}", style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 14.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED))
