@@ -47,6 +47,7 @@ class WidgetContentTest {
         setAppWidgetSize(PitWatchWidget.LARGE)
         provideComposable { GlanceTheme { WidgetContent(ready) { Text("COUNTDOWN") } } }
         onNode(hasText("UPCOMING")).assertExists()
+        onNode(hasText("LAST  Q22  W 403–299")).assertExists()
         onNode(hasText("End of day")).assertExists()
         onNode(hasText("Q43")).assertExists()
     }

@@ -45,6 +45,10 @@
             android:exported="false" />
 
         <receiver
+            android:name=".widget.WidgetRefreshReceiver"
+            android:exported="false" />
+
+        <receiver
             android:name=".widget.PitWatchWidgetReceiver"
             android:exported="true">
             <intent-filter>

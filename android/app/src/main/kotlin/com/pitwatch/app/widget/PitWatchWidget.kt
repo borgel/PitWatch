@@ -4,6 +4,8 @@ import android.content.Context
 import android.os.SystemClock
 import android.widget.RemoteViews
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceId
@@ -16,8 +18,11 @@ import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.provideContent
 import com.pitwatch.app.PitWatchApp
 import com.pitwatch.app.R
+import com.pitwatch.core.config.UserConfig
+import com.pitwatch.core.store.EventCache
 import java.time.Duration
 import java.time.Instant
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 
 /** One responsive widget; renders only from the persisted cache (never network). */
@@ -26,10 +31,17 @@ class PitWatchWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val container = (context.applicationContext as PitWatchApp).container
-        val now = container.clock()
-        val model = WidgetModels.build(container.stores.cache.data.first(), container.stores.config.data.first(), now)
+        val stores = container.stores
+        // Read once so the first frame isn't empty; after that the content follows the stores, because a running
+        // Glance session only recomposes on update() — it doesn't call provideGlance again.
+        val initialCache = stores.cache.data.first()
+        val initialConfig = stores.config.data.first()
         provideContent {
-            GlanceTheme { WidgetContent(model) { deadline -> ChronometerCountdown(deadline, now) } }
+            GlanceTheme {
+                LiveWidget(stores.cache.data, stores.config.data, initialCache, initialConfig, container.clock) { deadline, now ->
+                    ChronometerCountdown(deadline, now)
+                }
+            }
         }
     }
 
@@ -42,6 +54,25 @@ class PitWatchWidget : GlanceAppWidget() {
 
 class PitWatchWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = PitWatchWidget()
+}
+
+/**
+ * The widget's content, recomputed from the stores on every composition — and [clock] is read during
+ * composition, so each re-render (data change or deadline alarm) shows the current phase and countdown.
+ */
+@Composable
+fun LiveWidget(
+    cacheFlow: Flow<EventCache>,
+    configFlow: Flow<UserConfig>,
+    initialCache: EventCache,
+    initialConfig: UserConfig,
+    clock: () -> Instant,
+    countdown: @Composable (deadline: Instant, now: Instant) -> Unit,
+) {
+    val cache by cacheFlow.collectAsState(initialCache)
+    val config by configFlow.collectAsState(initialConfig)
+    val now = clock()
+    WidgetContent(WidgetModels.build(cache, config, now)) { deadline -> countdown(deadline, now) }
 }
 
 /** A platform Chronometer: ticks on the home screen with no app updates. */

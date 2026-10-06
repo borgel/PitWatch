@@ -28,6 +28,7 @@ class RefreshWorker(context: Context, params: WorkerParameters) : CoroutineWorke
         // APPEND: replacing would cancel this very run.
         enqueue(applicationContext, nextDelay(cache, config, now), ExistingWorkPolicy.APPEND_OR_REPLACE)
         rearmAutoStart(applicationContext, container)
+        container.updateWidgets() // content is clock-driven too, so refresh even when data didn't change
         return Result.success() // failures are recorded in RefreshState; the next run is already queued
     }
 

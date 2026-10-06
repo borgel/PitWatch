@@ -129,6 +129,7 @@ fun installTestContainer(
     tba: FakeApi = snapshotTba(),
     nexus: FakeApi = snapshotNexus(),
     clock: () -> Instant = { SNAP_NOW },
+    updateWidgets: suspend () -> Unit = {},
 ): AppContainer {
     val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO)
     val stores = com.pitwatch.app.data.Stores(dir, scope)
@@ -137,7 +138,7 @@ fun installTestContainer(
         { com.pitwatch.core.api.TbaClient(it, tba.client, "https://tba.test/api/v3") },
         { com.pitwatch.core.api.NexusClient(it, nexus.client, "https://nexus.test/api/v1") },
     )
-    val container = AppContainer(stores, repository, scope, clock)
+    val container = AppContainer(stores, repository, scope, clock, updateWidgets)
     androidx.test.core.app.ApplicationProvider.getApplicationContext<PitWatchApp>().container = container
     return container
 }

@@ -68,6 +68,15 @@ fun WidgetContent(model: WidgetModel, countdown: @Composable (Instant) -> Unit) 
             if (wide && !tall) model.last?.let { LastResult(it) }
         }
         if (tall) {
+            // Last result goes above the list: a long upcoming list may only truncate itself (found on-device).
+            model.last?.let {
+                Spacer(GlanceModifier.height(6.dp))
+                Text(
+                    "LAST  ${it.shortLabel}  ${it.outcome} ${it.ourScore}–${it.theirScore}",
+                    style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 13.sp, fontWeight = FontWeight.Bold),
+                    maxLines = 1,
+                )
+            }
             Spacer(GlanceModifier.height(8.dp))
             Text("UPCOMING", style = muted)
             model.later.take(6).forEach { item ->
@@ -79,7 +88,6 @@ fun WidgetContent(model: WidgetModel, countdown: @Composable (Instant) -> Unit) 
                     is MatchListModel.Item.Break -> Text(item.title, style = muted, modifier = GlanceModifier.padding(vertical = 2.dp))
                 }
             }
-            model.last?.let { LastResult(it) }
         }
     }
 }
@@ -95,10 +103,9 @@ private fun NextMatch(row: MatchListModel.MatchRow, deadline: Instant?, countdow
     }
     Text(time(row), style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 13.sp))
     if (deadline != null) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            countdown(deadline)
-            row.countdown?.let { Text(" ${it.target}", style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp)) }
-        }
+        // The platform Chronometer gets its own line: sharing a row with small text clipped it on-device.
+        countdown(deadline)
+        row.countdown?.let { Text(it.target, style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp), maxLines = 1) }
     }
 }
 
