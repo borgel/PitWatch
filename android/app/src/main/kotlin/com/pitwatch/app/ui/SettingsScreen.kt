@@ -150,8 +150,10 @@ fun SettingsScreen(container: AppContainer, config: UserConfig, onBack: (() -> U
 
             Section("API keys") {
                 Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(apiKey, { apiKey = it }, label = { Text("TBA API key") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                    OutlinedTextField(nexusKey, { nexusKey = it }, label = { Text("FRC Nexus API key") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(apiKey, { apiKey = it }, label = { Text("TBA API key") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+                        supportingText = { Text(ApiKeyHelp.TBA) })
+                    OutlinedTextField(nexusKey, { nexusKey = it }, label = { Text("FRC Nexus API key") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+                        supportingText = { Text(ApiKeyHelp.NEXUS) })
                     AccentButton("Save keys", onClick = { update { it.copy(apiKey = apiKey.trim(), nexusApiKey = nexusKey.trim().ifEmpty { null }) } })
                 }
             }

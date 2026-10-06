@@ -49,4 +49,11 @@ class SettingsScreenTest {
         compose.onNodeWithText("Last refresh: never").assertIsDisplayed()
         compose.onNode(hasText("Nexus: HTTP 403", substring = true)).performScrollTo().assertIsDisplayed()
     }
+
+    @Test
+    fun `API key fields carry the same help text`() {
+        compose.setContent { SettingsScreen(container, config) }
+        compose.onNode(hasText(ApiKeyHelp.TBA)).performScrollTo().assertIsDisplayed()
+        compose.onNode(hasText(ApiKeyHelp.NEXUS)).performScrollTo().assertIsDisplayed()
+    }
 }

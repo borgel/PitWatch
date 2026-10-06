@@ -29,6 +29,8 @@ class Stores(dir: File, scope: CoroutineScope) {
     val refreshState: DataStore<RefreshState> = create(dir, "last_refresh.json", RefreshState.serializer(), RefreshState(), scope)
     val liveControl: DataStore<LiveControl> = create(dir, "live_control.json", LiveControl.serializer(), LiveControl(), scope)
     val pitMap: DataStore<PitMapCache> = create(dir, "pit_map.json", PitMapCache.serializer(), PitMapCache(), scope)
+    val notificationPrefs: DataStore<NotificationPrefs> =
+        create(dir, "notification_prefs.json", NotificationPrefs.serializer(), NotificationPrefs(), scope)
 
     private companion object {
         fun <T> create(dir: File, name: String, serializer: KSerializer<T>, default: T, scope: CoroutineScope): DataStore<T> =

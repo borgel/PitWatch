@@ -53,4 +53,10 @@ class StoresTest {
         withStores { it.config.updateData { UserConfig(teamNumber = 5507) } }
         assertTrue("\"teamNumber\":5507" in File(tmp.root, "team_config.json").readText())
     }
+
+    @Test
+    fun `notification prefs default to off`() = withStores { stores ->
+        assertEquals(NotificationPrefs(), stores.notificationPrefs.data.first())
+        assertEquals(false, stores.notificationPrefs.data.first().scheduleEnabled)
+    }
 }
