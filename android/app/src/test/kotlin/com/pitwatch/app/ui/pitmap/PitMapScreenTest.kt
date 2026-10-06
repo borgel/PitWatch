@@ -1,8 +1,10 @@
 package com.pitwatch.app.ui.pitmap
 
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithText
 import com.pitwatch.app.AppContainer
 import com.pitwatch.app.SNAP_NOW
 import com.pitwatch.app.installTestContainer
@@ -45,6 +47,7 @@ class PitMapScreenTest {
     fun `configured key is never reported missing`() {
         compose.setContent { PitMapScreen(container, config, onOpenSettings = {}) }
         compose.onAllNodes(hasText("Add a FRC Nexus API key", substring = true)).assertCountEquals(0)
-        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Pit C1")).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText("OUR PIT")).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("C1").assertIsDisplayed()
     }
 }

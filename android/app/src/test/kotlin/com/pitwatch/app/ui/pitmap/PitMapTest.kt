@@ -3,6 +3,7 @@ package com.pitwatch.app.ui.pitmap
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.onNodeWithText
 import com.pitwatch.app.SNAP
 import com.pitwatch.app.fixture
@@ -55,13 +56,15 @@ class PitMapTest {
     @Test
     fun `loaded map shows our pit address`() {
         compose.setContent { PitMapContent(PitMapState.Loaded(map), teamNumber = "5507", onOpenSettings = {}) }
-        compose.onNodeWithText("Pit C1").assertIsDisplayed()
+        compose.onNodeWithText("OUR PIT").assertIsDisplayed()
+        compose.onNodeWithText("C1").assertIsDisplayed()
     }
 
     @Test
     fun `team without a pit still renders the map`() {
         compose.setContent { PitMapContent(PitMapState.Loaded(map), teamNumber = "9999", onOpenSettings = {}) }
-        compose.onNodeWithText("Pit map").assertIsDisplayed()
+        compose.onNodeWithText("PIT MAP").assertIsDisplayed()
+        compose.onAllNodes(androidx.compose.ui.test.hasText("OUR PIT")).assertCountEquals(0)
     }
 
     @Test
