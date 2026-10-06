@@ -5,4 +5,6 @@
     android:layout_height="wrap_content"
     android:fontFeatureSettings="tnum"
     android:textColor="@color/widget_countdown"
-    android:textSize="22sp" />
+    android:fontFamily="sans-serif-condensed"
+    android:textStyle="bold"
+    android:textSize="56sp" />
