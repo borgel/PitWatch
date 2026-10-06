@@ -14,6 +14,22 @@ scripts/    Fixture capture + fake-api.py (local TBA/Nexus replay server)
 docs/       Design specs and implementation plans
 ```
 
+## Build and install (Android)
+
+`make` lists the targets. The common ones:
+
+```bash
+make devices                          # what's attached
+make install DEVICE=<serial>          # build the debug APK, install it on that device, launch it
+make test                             # JVM unit tests
+make fake-api                         # serve a captured event, shifted to now (leave running)…
+make fake-install DEVICE=emulator-…   # …and install a build pointed at it (emulators only)
+```
+
+`DEVICE` can be left out when only one device is attached; with several, install refuses to guess.
+Installs go to that one device only (`adb install`, not Gradle's `installDebug`, which hits every
+attached device).
+
 Curated test fixtures live in `ios/TBAKit/Tests/TBAKitTests/Fixtures/` (SwiftPM requires
 resources inside the package). Other platforms should reference that directory directly
 rather than copying it, so both test suites assert against the same data.
