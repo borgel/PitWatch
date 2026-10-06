@@ -20,6 +20,8 @@ class AppContainer(
     val repository: Repository,
     val scope: CoroutineScope,
     val clock: () -> Instant = Instant::now,
+    /** Re-renders home-screen widgets from the persisted cache. */
+    val updateWidgets: suspend () -> Unit = {},
 ) {
     companion object {
         fun create(context: Context): AppContainer {

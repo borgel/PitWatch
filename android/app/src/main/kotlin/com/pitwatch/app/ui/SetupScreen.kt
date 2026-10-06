@@ -58,17 +58,24 @@ fun SetupScreen(container: AppContainer, config: UserConfig) {
                 busy = true
                 scope.launch {
                     val http = HttpClient(OkHttp)
-                    val outcome = SetupValidator.validate(apiKey, team, nexusKey) { TbaClient(it, http, BuildConfig.TBA_BASE_URL) }
-                    http.close()
+                    val outcome = try {
+                        SetupValidator.validate(apiKey, team, nexusKey) { TbaClient(it, http, BuildConfig.TBA_BASE_URL) }
+                    } finally {
+                        http.close()
+                    }
                     busy = false
                     when (outcome) {
                         is SetupValidator.Outcome.Invalid -> message = outcome.message
                         is SetupValidator.Outcome.Valid -> {
-                            container.stores.config.updateData {
-                                it.copy(teamNumber = outcome.teamNumber, apiKey = outcome.apiKey, nexusApiKey = outcome.nexusApiKey)
-                            }
                             notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-                            RefreshWorker.refreshNow(context)
+                            // The write swaps this screen out (cancelling its scope), so finish on the app scope.
+                            val appContext = context.applicationContext
+                            container.scope.launch {
+                                container.stores.config.updateData {
+                                    it.copy(teamNumber = outcome.teamNumber, apiKey = outcome.apiKey, nexusApiKey = outcome.nexusApiKey)
+                                }
+                                RefreshWorker.refreshNow(appContext)
+                            }
                         }
                     }
                 }
