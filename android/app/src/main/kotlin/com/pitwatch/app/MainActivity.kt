@@ -3,15 +3,12 @@ package com.pitwatch.app
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import com.pitwatch.app.live.LiveMatchService
 import com.pitwatch.app.schedule.AutoStartPlanner
 import com.pitwatch.app.schedule.RefreshWorker
 import com.pitwatch.app.ui.PitWatchRoot
+import com.pitwatch.app.ui.theme.PitWatchTheme
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -30,7 +27,7 @@ class MainActivity : ComponentActivity() {
             if (start != null && start <= now) LiveMatchService.start(this@MainActivity)
         }
         setContent {
-            MaterialTheme(colorScheme = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()) {
+            PitWatchTheme {
                 Surface { PitWatchRoot(container) }
             }
         }
