@@ -1,5 +1,6 @@
 package com.pitwatch.app.ui.pitmap
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import com.pitwatch.core.model.PitMap
 
@@ -31,5 +32,18 @@ object PitMapGeometry {
     fun labelFontPx(box: Rect, text: String): Float {
         val byWidth = box.width * 0.9f / (CHAR_WIDTH_EM * text.length.coerceAtLeast(1))
         return minOf(box.height * 0.4f, byWidth)
+    }
+
+    /**
+     * An arrow as a line through its box: pointing up (tail at the bottom, head at the top) at angle 0, rotated
+     * clockwise by [PitMap.Arrow.angle] degrees, as long as the box is tall.
+     */
+    fun arrowLine(arrow: PitMap.Arrow): Pair<Offset, Offset> {
+        val center = rect(arrow.position, arrow.size).center
+        val radians = Math.toRadians(arrow.angle ?: 0.0)
+        val half = (arrow.size.y / 2).toFloat()
+        // "Up" is (0, -1) in screen coordinates; rotating clockwise by θ gives (sin θ, -cos θ).
+        val direction = Offset(kotlin.math.sin(radians).toFloat(), -kotlin.math.cos(radians).toFloat())
+        return (center - direction * half) to (center + direction * half)
     }
 }

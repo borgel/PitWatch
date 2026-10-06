@@ -23,8 +23,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.distinctUntilChanged
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.drawscope.withTransform
@@ -49,7 +57,10 @@ sealed interface PitMapState {
 @Composable
 fun PitMapScreen(container: AppContainer, config: UserConfig, onOpenSettings: () -> Unit) {
     var state by remember { mutableStateOf<PitMapState>(PitMapState.Loading) }
-    LaunchedEffect(config.nexusApiKey, config.eventKeyOverride) {
+    // Refetch when the event changes (auto-detected or picked), not just when the key does.
+    val eventKey by remember { container.stores.cache.data.map { it.event?.key }.distinctUntilChanged() }
+        .collectAsStateWithLifecycle(initialValue = null)
+    LaunchedEffect(config.nexusApiKey, eventKey) {
         state = PitMapState.Loading
         state = if (!config.isNexusConfigured) {
             PitMapState.NoKey
@@ -79,11 +90,14 @@ fun PitMapContent(state: PitMapState, teamNumber: String?, onOpenSettings: () ->
     }
 }
 
+/** A label laid out once per map (not per frame), centered in its box. */
+private class MapLabel(val box: Rect, val layout: TextLayoutResult)
+
 @Composable
 private fun PitMapCanvas(map: PitMap, ours: PitMap.AssignedPit?) {
-    var zoom by remember { mutableFloatStateOf(1f) }
-    var pan by remember { mutableStateOf(Offset.Zero) }
-    var centered by remember { mutableStateOf(false) }
+    var zoom by remember(map) { mutableFloatStateOf(1f) }
+    var pan by remember(map) { mutableStateOf(Offset.Zero) }
+    var fit by remember(map) { mutableFloatStateOf(1f) }
     val transform = rememberTransformableState { centroid: Offset, zoomChange: Float, panChange: Offset, _: Float ->
         // Zoom around the pinch point, then apply the drag.
         val newZoom = (zoom * zoomChange).coerceIn(0.5f, 8f)
@@ -92,53 +106,68 @@ private fun PitMapCanvas(map: PitMap, ours: PitMap.AssignedPit?) {
         zoom = newZoom
     }
     val measurer = rememberTextMeasurer()
+    val density = LocalDensity.current
     val colors = MaterialTheme.colorScheme
-    Canvas(Modifier.fillMaxSize().transformable(transform)) {
-        /** Draws [text] sized in map units to fit [box], centered, one line. */
-        fun DrawScope.label(text: String, box: androidx.compose.ui.geometry.Rect, color: androidx.compose.ui.graphics.Color) {
-            var px = PitMapGeometry.labelFontPx(box, text)
-            // The estimate assumes digit widths; shrink to the measured width for wider (letter) labels.
-            val measured = measurer.measure(text, TextStyle(fontSize = px.toSp()), maxLines = 1).size.width
-            if (measured > box.width * 0.9f) px *= box.width * 0.9f / measured
-            val style = TextStyle(color = color, fontSize = px.toSp())
-            val layout = measurer.measure(text, style, maxLines = 1, overflow = TextOverflow.Clip,
-                constraints = Constraints(maxWidth = box.width.toInt().coerceAtLeast(1)))
-            drawText(layout, topLeft = box.center - Offset(layout.size.width / 2f, layout.size.height / 2f))
-        }
-        val fit = PitMapGeometry.fitScale(map, size.width, size.height)
-        if (!centered && ours != null) {
-            // Open zoomed in on our pit.
-            zoom = 2.5f
-            val pit = PitMapGeometry.rect(ours.pit.position, ours.pit.size).center
-            pan = Offset(size.width / 2 - pit.x * fit * zoom, size.height / 2 - pit.y * fit * zoom)
-            centered = true
-        }
+
+    fun layout(text: String, box: Rect, color: Color): MapLabel {
+        var px = PitMapGeometry.labelFontPx(box, text)
+        // The estimate assumes digit widths; shrink to the measured width for wider (letter) labels.
+        val measured = measurer.measure(text, TextStyle(fontSize = with(density) { px.toSp() }), maxLines = 1).size.width
+        if (measured > box.width * 0.9f) px *= box.width * 0.9f / measured
+        val style = TextStyle(color = color, fontSize = with(density) { px.toSp() })
+        return MapLabel(box, measurer.measure(text, style, maxLines = 1, overflow = TextOverflow.Clip, constraints = Constraints(maxWidth = box.width.toInt().coerceAtLeast(1))))
+    }
+
+    val labels = remember(map, ours, colors, density) {
+        map.areas.orEmpty().values.map { layout(it.label, PitMapGeometry.rect(it.position, it.size), colors.onSurfaceVariant) } +
+            map.labels.orEmpty().values.map { layout(it.label, PitMapGeometry.rect(it.position, it.size), colors.onSurface) } +
+            map.pits.mapNotNull { (address, pit) ->
+                val color = if (address == ours?.address) colors.onPrimary else colors.onSecondaryContainer
+                pit.team?.let { layout(it, PitMapGeometry.rect(pit.position, pit.size), color) }
+            }
+    }
+
+    Canvas(
+        Modifier.fillMaxSize().clipToBounds()
+            .onSizeChanged { size ->
+                // Fit the whole map, then open zoomed in on our pit (once per map, outside the draw pass).
+                fit = PitMapGeometry.fitScale(map, size.width.toFloat(), size.height.toFloat())
+                if (ours != null && zoom == 1f && pan == Offset.Zero) {
+                    zoom = 2.5f
+                    val pit = PitMapGeometry.rect(ours.pit.position, ours.pit.size).center
+                    pan = Offset(size.width / 2f - pit.x * fit * zoom, size.height / 2f - pit.y * fit * zoom)
+                }
+            }
+            .transformable(transform),
+    ) {
         val scale = fit * zoom
         translate(pan.x, pan.y) {
             withTransform({ scale(scale, scale, pivot = Offset.Zero) }) {
                 map.areas?.values?.forEach { area ->
                     val r = PitMapGeometry.rect(area.position, area.size)
                     drawRect(colors.surfaceVariant, r.topLeft, r.size)
-                    label(area.label, r, colors.onSurfaceVariant)
                 }
                 map.walls?.values?.forEach { wall ->
                     val r = PitMapGeometry.rect(wall.position, wall.size)
                     drawRect(colors.outline, r.topLeft, r.size)
                 }
                 map.arrows?.values?.forEach { arrow ->
-                    val r = PitMapGeometry.rect(arrow.position, arrow.size)
-                    drawRect(colors.outlineVariant, r.topLeft, r.size, style = Stroke(width = 2f))
-                }
-                map.labels?.values?.forEach { label ->
-                    val r = PitMapGeometry.rect(label.position, label.size)
-                    label(label.label, r, colors.onSurface)
+                    val (tail, head) = PitMapGeometry.arrowLine(arrow)
+                    val width = (arrow.size.x / 6).toFloat().coerceAtLeast(2f)
+                    drawLine(colors.outline, tail, head, strokeWidth = width, cap = StrokeCap.Round)
+                    // A small head: two strokes back from the tip.
+                    val back = (tail - head) / (tail - head).getDistance().coerceAtLeast(1f) * (width * 3)
+                    val side = Offset(-back.y, back.x) * 0.6f
+                    drawLine(colors.outline, head, head + back + side, strokeWidth = width, cap = StrokeCap.Round)
+                    drawLine(colors.outline, head, head + back - side, strokeWidth = width, cap = StrokeCap.Round)
                 }
                 map.pits.forEach { (address, pit) ->
                     val r = PitMapGeometry.rect(pit.position, pit.size)
-                    val isOurs = address == ours?.address
-                    drawRect(if (isOurs) colors.primary else colors.secondaryContainer, r.topLeft, r.size)
+                    drawRect(if (address == ours?.address) colors.primary else colors.secondaryContainer, r.topLeft, r.size)
                     drawRect(colors.outline, r.topLeft, r.size, style = Stroke(width = 1f))
-                    pit.team?.let { label(it, r, if (isOurs) colors.onPrimary else colors.onSecondaryContainer) }
+                }
+                labels.forEach { label ->
+                    drawText(label.layout, topLeft = label.box.center - Offset(label.layout.size.width / 2f, label.layout.size.height / 2f))
                 }
             }
         }

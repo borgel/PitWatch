@@ -87,4 +87,14 @@ class PitMapTest {
             assertTrue(px > 0f, text)
         }
     }
+
+    @Test
+    fun `arrows are lines along the box, rotated clockwise by angle`() {
+        val up = PitMapGeometry.arrowLine(PitMap.Arrow(PitMap.Position(100.0, 100.0), PitMap.MapSize(46.0, 86.0), "single", 0.0))
+        assertEquals(androidx.compose.ui.geometry.Offset(100f, 143f) to androidx.compose.ui.geometry.Offset(100f, 57f), up)
+        val right = PitMapGeometry.arrowLine(PitMap.Arrow(PitMap.Position(100.0, 100.0), PitMap.MapSize(46.0, 86.0), "single", 90.0))
+        assertEquals(57f, right.first.x, 0.01f)
+        assertEquals(143f, right.second.x, 0.01f)
+        assertEquals(100f, right.second.y, 0.01f)
+    }
 }
