@@ -14,6 +14,7 @@ import android.content.pm.ServiceInfo
 import android.net.ConnectivityManager
 import android.net.Network
 import android.os.IBinder
+import android.os.PowerManager
 import android.util.Log
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
@@ -45,7 +46,15 @@ import kotlinx.coroutines.withTimeoutOrNull
 class LiveMatchService : Service() {
     private val container get() = (application as PitWatchApp).container
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-    private val pokes = Channel<Unit>(Channel.CONFLATED)
+    /** POKE forces a poll now (refresh, unlock, network); WAKE only re-checks the schedule (screen-off alarm). */
+    private enum class Signal { POKE, WAKE }
+    private val signals = Channel<Signal>(Channel.CONFLATED)
+    /** Held only while a poll/render runs, so the phone can't fall back asleep mid-request after a wake. */
+    private val wakeLock by lazy {
+        getSystemService(PowerManager::class.java)
+            .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "PitWatch:livePoll")
+            .apply { setReferenceCounted(false) }
+    }
     private var loop: Job? = null
     private var tracked: String? = null
     private var resultSeenAt: Instant? = null
@@ -62,12 +71,12 @@ class LiveMatchService : Service() {
 
     private val unlockReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            pokes.trySend(Unit)
+            signals.trySend(Signal.POKE)
         }
     }
     private val networkCallback = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
-            pokes.trySend(Unit)
+            signals.trySend(Signal.POKE)
         }
     }
 
@@ -81,7 +90,16 @@ class LiveMatchService : Service() {
                 return START_NOT_STICKY
             }
             // Already tracking: a repeat start (alarm, app open, button) or Refresh just polls now.
-            ACTION_REFRESH, ACTION_START -> if (loop != null) pokes.trySend(Unit)
+            ACTION_REFRESH, ACTION_START -> if (loop != null) signals.trySend(Signal.POKE)
+            ACTION_WAKE -> {
+                if (loop == null) { // not tracking (e.g. a stale alarm): don't resurrect anything
+                    stopSelf(startId)
+                    return START_NOT_STICKY
+                }
+                wakeLock.acquire(WAKE_LOCK_TIMEOUT.toMillis()) // bridge until the loop takes over
+                signals.trySend(Signal.WAKE)
+                return START_STICKY
+            }
         }
         val notification = lastNotification ?: LiveNotification.build(this, null, lastSuccess, container.clock(), actions())
         try {
@@ -121,7 +139,7 @@ class LiveMatchService : Service() {
                 Log.w(TAG, "Live loop iteration failed", e)
                 failures++
                 nextPollAt = Instant.MIN
-                withTimeoutOrNull(PollCadence.backoff(failures).toMillis()) { pokes.receive() }
+                withTimeoutOrNull(PollCadence.backoff(failures).toMillis()) { signals.receive() }
             }
         }
     }
@@ -130,36 +148,42 @@ class LiveMatchService : Service() {
     private suspend fun iterate(pollAt: Instant): Instant? {
         var nextPollAt = pollAt
         val now = container.clock()
-        if (now >= nextPollAt) {
-            val includeTba = PollCadence.isTbaDue(lastTbaPoll, now)
-            // A Nexus failure only counts when we had Nexus data (a blip), not for events Nexus doesn't cover.
-            val hadNexus = container.repository.cache.first().nexusEvent != null
-            val outcome = container.repository.refresh(now, includeTba = includeTba)
-            if (outcome.error == null && (outcome.nexusError == null || !hadNexus)) {
-                failures = 0
-                lastSuccess = now
-                if (includeTba) lastTbaPoll = now
-            } else {
-                failures++
-            }
-            val cache = container.repository.cache.first()
-            val config = container.stores.config.data.first()
-            when (val decision = LiveLifecycle.decide(cache, config, tracked, resultSeenAt, now)) {
-                LiveDecision.Stop -> {
-                    stopTracking(suppress = false)
-                    return null
+        wakeLock.acquire(WAKE_LOCK_TIMEOUT.toMillis())
+        try {
+            if (now >= nextPollAt) {
+                val includeTba = PollCadence.isTbaDue(lastTbaPoll, now)
+                // A Nexus failure only counts when we had Nexus data (a blip), not for events Nexus doesn't cover.
+                val hadNexus = container.repository.cache.first().nexusEvent != null
+                val outcome = container.repository.refresh(now, includeTba = includeTba)
+                if (outcome.error == null && (outcome.nexusError == null || !hadNexus)) {
+                    failures = 0
+                    lastSuccess = now
+                    if (includeTba) lastTbaPoll = now
+                } else {
+                    failures++
                 }
-                is LiveDecision.Track -> if (decision.matchKey != tracked) {
-                    tracked = decision.matchKey
-                    resultSeenAt = null
+                val cache = container.repository.cache.first()
+                val config = container.stores.config.data.first()
+                when (val decision = LiveLifecycle.decide(cache, config, tracked, resultSeenAt, now)) {
+                    LiveDecision.Stop -> {
+                        stopTracking(suppress = false)
+                        return null
+                    }
+                    is LiveDecision.Track -> if (decision.matchKey != tracked) {
+                        tracked = decision.matchKey
+                        resultSeenAt = null
+                    }
                 }
+                nextPollAt = now.plus(PollCadence.nextDelay(cache, config, tracked, now, failures))
             }
-            nextPollAt = now.plus(PollCadence.nextDelay(cache, config, tracked, now, failures))
+            render(now)
+        } finally {
+            if (wakeLock.isHeld) wakeLock.release()
         }
-        render(now)
+        LiveWakeAlarm.arm(this, nextPollAt, container.clock())
         val untilPoll = Duration.between(container.clock(), nextPollAt)
         val wait = minOf(untilPoll, RENDER_TICK).coerceAtLeast(Duration.ZERO)
-        if (withTimeoutOrNull(wait.toMillis()) { pokes.receive() } != null) nextPollAt = Instant.MIN
+        if (withTimeoutOrNull(wait.toMillis()) { signals.receive() } == Signal.POKE) nextPollAt = Instant.MIN
         return nextPollAt
     }
 
@@ -201,6 +225,8 @@ class LiveMatchService : Service() {
             rearmAutoStart(appContext, container)
         }
         lastNotification = null
+        LiveWakeAlarm.cancel(this)
+        if (wakeLock.isHeld) wakeLock.release()
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
         // stopSelf(startId): if a newer start is already queued, the service stays and that start re-runs tracking.
         stopSelf(lastStartId)
@@ -236,6 +262,8 @@ class LiveMatchService : Service() {
         const val ACTION_START = "com.pitwatch.app.live.START"
         const val ACTION_REFRESH = "com.pitwatch.app.live.REFRESH"
         const val ACTION_STOP = "com.pitwatch.app.live.STOP"
+        const val ACTION_WAKE = "com.pitwatch.app.live.WAKE"
+        private val WAKE_LOCK_TIMEOUT: Duration = Duration.ofSeconds(60)
         private const val TAG = "LiveMatchService"
         private val RENDER_TICK: Duration = Duration.ofSeconds(60)
 

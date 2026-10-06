@@ -3528,6 +3528,6 @@ Deferred minors — pick up when touching the code nearby:
 - Dismissing a FINAL card suppresses the played match, so the following match may auto-start immediately — confirm UX.
 - No BOOT_COMPLETED receiver: the exact alarm is lost on reboot until the worker re-arms (≤ 1 h on event days).
 - Near-match mode tracks an unscored match indefinitely if TBA never posts the score; consider a time-based roll-forward.
-- Loop timers pause in deep sleep (only screen-on/unlock pokes); consider an exact alarm while the FAST cadence applies.
+- Screen-off polling now uses `LiveWakeAlarm` (exact alarm, ≥ 1 min apart) + a poll-scoped wake lock. Deep Doze still throttles allow-while-idle alarms to ~1 per 9 min; only `setAlarmClock` (shows an alarm icon) beats that.
 
 On-device notes: API 36.0 emulators lack Live Update promotion (needs 36.1+); emulator clocks can drift — sync before judging countdowns.

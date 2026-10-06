@@ -5,6 +5,8 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
+    <!-- Held only while a live poll runs after a screen-off wake alarm. -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <!-- Sideloaded: granted at install. Google Play would restrict this permission. -->
@@ -34,6 +36,10 @@
 
         <receiver
             android:name=".schedule.AutoStartReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".live.LiveWakeReceiver"
             android:exported="false" />
     </application>
 </manifest>
