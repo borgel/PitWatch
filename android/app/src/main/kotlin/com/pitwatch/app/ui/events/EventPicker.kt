@@ -1,7 +1,9 @@
 package com.pitwatch.app.ui.events
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,12 +18,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -35,17 +39,34 @@ import com.pitwatch.app.AppContainer
 import com.pitwatch.app.schedule.RefreshWorker
 import com.pitwatch.core.config.UserConfig
 import com.pitwatch.core.model.Event
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.launch
 
 data class EventOption(val key: String, val name: String, val dates: String, val location: String?) {
     companion object {
-        fun from(event: Event) = EventOption(
+        fun from(event: Event, locale: Locale = Locale.getDefault()) = EventOption(
             key = event.key,
             name = event.name,
-            dates = "${event.startDate} – ${event.endDate}",
+            dates = dates(event, locale),
             location = listOfNotNull(event.city, event.stateProv).joinToString(", ").ifEmpty { null },
         )
+
+        /** "Apr 9 – 12, 2026", "Mar 30 – Apr 2, 2026", "Dec 30, 2025 – Jan 2, 2026"; raw strings if unparseable. */
+        fun dates(event: Event, locale: Locale): String {
+            val start = runCatching { LocalDate.parse(event.startDate) }.getOrNull()
+            val end = runCatching { LocalDate.parse(event.endDate) }.getOrNull()
+            if (start == null || end == null) return "${event.startDate} – ${event.endDate}"
+            fun f(pattern: String, date: LocalDate) = DateTimeFormatter.ofPattern(pattern, locale).format(date)
+            return when {
+                start == end -> f("MMM d, yyyy", start)
+                start.year != end.year -> "${f("MMM d, yyyy", start)} – ${f("MMM d, yyyy", end)}"
+                start.month != end.month -> "${f("MMM d", start)} – ${f("MMM d, yyyy", end)}"
+                else -> "${f("MMM d", start)} – ${f("d, yyyy", end)}"
+            }
+        }
     }
 }
 
@@ -60,9 +81,11 @@ fun EventPickerScreen(container: AppContainer, config: UserConfig, onDone: () ->
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var state by remember { mutableStateOf<EventPickerState>(EventPickerState.Loading) }
-    LaunchedEffect(Unit) {
+    var attempt by remember { mutableIntStateOf(0) }
+    LaunchedEffect(attempt) {
+        state = EventPickerState.Loading
         state = try {
-            EventPickerState.Loaded(container.repository.seasonEvents(container.clock()).map(EventOption::from))
+            EventPickerState.Loaded(container.repository.seasonEvents(container.clock()).map { EventOption.from(it) })
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -80,12 +103,19 @@ fun EventPickerScreen(container: AppContainer, config: UserConfig, onDone: () ->
             onDone()
         },
         onBack = onDone,
+        onRetry = { attempt++ },
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EventPickerContent(state: EventPickerState, selectedKey: String?, onSelect: (String?) -> Unit, onBack: () -> Unit) {
+fun EventPickerContent(
+    state: EventPickerState,
+    selectedKey: String?,
+    onSelect: (String?) -> Unit,
+    onBack: () -> Unit,
+    onRetry: () -> Unit,
+) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -99,8 +129,13 @@ fun EventPickerContent(state: EventPickerState, selectedKey: String?, onSelect: 
                 CircularProgressIndicator()
                 Text("Loading events…", Modifier.padding(top = 72.dp))
             }
-            is EventPickerState.Error -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+            is EventPickerState.Error -> Column(
+                Modifier.fillMaxSize().padding(padding).padding(24.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
                 Text("Couldn't load events: ${state.message}", color = MaterialTheme.colorScheme.error)
+                OutlinedButton(onClick = onRetry, modifier = Modifier.padding(top = 12.dp)) { Text("Retry") }
             }
             is EventPickerState.Loaded -> LazyColumn(Modifier.fillMaxSize().padding(padding)) {
                 item {
