@@ -34,6 +34,8 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -62,6 +64,7 @@ class LiveMatchService : Service() {
     private var lastTbaPoll: Instant? = null
     private var failures = 0
     private var triggersRegistered = false
+    @Volatile private var ignoreNextAvailable = false
     /** Newest start command; stopping with it can't race a startForegroundService still in flight. */
     private var lastStartId = 0
     /** Last rendered notification, re-used on redundant starts so the live card never blanks. */
@@ -76,6 +79,11 @@ class LiveMatchService : Service() {
     }
     private val networkCallback = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
+            // registerDefaultNetworkCallback reports the current network immediately; that's not a reconnect.
+            if (ignoreNextAvailable) {
+                ignoreNextAvailable = false
+                return
+            }
             signals.trySend(Signal.POKE)
         }
     }
@@ -113,11 +121,13 @@ class LiveMatchService : Service() {
             restarted = intent == null // START_STICKY redelivers a null intent after process death
             registerTriggers()
             loop = scope.launch { runLoop() }
+            trackingState.value = true
         }
         return START_STICKY
     }
 
     override fun onDestroy() {
+        trackingState.value = false
         scope.cancel()
         unregisterTriggers()
         super.onDestroy()
@@ -212,6 +222,7 @@ class LiveMatchService : Service() {
         val key = tracked
         loop?.cancel()
         loop = null
+        trackingState.value = false
         val container = container
         val appContext = applicationContext
         container.scope.launch {
@@ -241,6 +252,7 @@ class LiveMatchService : Service() {
             addAction(Intent.ACTION_SCREEN_ON)
         }
         ContextCompat.registerReceiver(this, unlockReceiver, wake, ContextCompat.RECEIVER_NOT_EXPORTED)
+        ignoreNextAvailable = true
         getSystemService(ConnectivityManager::class.java).registerDefaultNetworkCallback(networkCallback)
         triggersRegistered = true
     }
@@ -259,6 +271,10 @@ class LiveMatchService : Service() {
     )
 
     companion object {
+        private val trackingState = MutableStateFlow(false)
+        /** Whether the service is tracking a match right now (drives the Start/Stop button). */
+        val tracking: StateFlow<Boolean> = trackingState
+
         const val ACTION_START = "com.pitwatch.app.live.START"
         const val ACTION_REFRESH = "com.pitwatch.app.live.REFRESH"
         const val ACTION_STOP = "com.pitwatch.app.live.STOP"

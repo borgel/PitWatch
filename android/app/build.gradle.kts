@@ -55,6 +55,13 @@ dependencies {
     implementation(libs.androidx.datastore)
     implementation(libs.ktor.client.okhttp)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.compose.material.icons.core)
+    implementation(libs.glance.appwidget)
+    implementation(libs.glance.material3)
+    testImplementation(platform(libs.compose.bom))
+    testImplementation(libs.compose.ui.test.junit4)
+    testImplementation(libs.glance.appwidget.testing)
+    debugImplementation(libs.compose.ui.test.manifest)
 
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.junit4)
