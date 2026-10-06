@@ -84,36 +84,7 @@ fun WidgetContent(model: WidgetModel, countdown: @Composable (Instant) -> Unit) 
             }
             // Last result goes above the list: a long upcoming list may only truncate itself (found on-device).
             if (plan.lastLine) model.last?.let { LastLine(it, compact = !wide) }
-            // Own Column: Glance drops children past 10 per Column, and the parent is already busy.
-            Column {
-                for (line in lines) {
-                    when (line) {
-                        is WidgetLine.Header -> Text(
-                            line.label,
-                            style = TextStyle(color = GlanceTheme.colors.primary, fontSize = 11.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED),
-                            modifier = GlanceModifier.padding(top = 4.dp),
-                        )
-                        is WidgetLine.Entry -> when (val item = line.item) {
-                            is MatchListModel.Item.Upcoming -> Row(
-                                GlanceModifier.fillMaxWidth().padding(vertical = 2.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                item.row.alliance?.let { Text("● ", style = TextStyle(color = ColorProvider(StatusColors.alliance(it)), fontSize = 13.sp)) }
-                                Text(
-                                    item.row.shortLabel,
-                                    style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 15.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED),
-                                    modifier = GlanceModifier.defaultWeight(),
-                                )
-                                Text(
-                                    times.match(item.row.time, item.row.estimated),
-                                    style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 14.sp, fontFamily = CONDENSED),
-                                )
-                            }
-                            is MatchListModel.Item.Break -> Text(item.title, style = muted, modifier = GlanceModifier.padding(vertical = 2.dp))
-                        }
-                    }
-                }
-            }
+            UpcomingList(lines, times)
         }
     }
 }
@@ -190,7 +161,7 @@ private fun OutcomePill(result: MatchListModel.Result) {
 
 /** Tall widgets: one line above the list; [compact] (narrow widgets) drops "LAST ·" — the outcome pill says it. */
 @Composable
-private fun LastLine(result: MatchListModel.Result, compact: Boolean) {
+internal fun LastLine(result: MatchListModel.Result, compact: Boolean) {
     Row(GlanceModifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(
             if (compact) result.shortLabel else "LAST · ${result.shortLabel}",
@@ -212,5 +183,45 @@ private fun LastResult(result: MatchListModel.Result) {
         Text(result.shortLabel, style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 15.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED))
         Text("${result.ourScore}–${result.theirScore}", style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 14.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED))
         OutcomePill(result)
+    }
+}
+
+/** The upcoming schedule, one line per entry. Its own Column: Glance drops children past 10 per Column. */
+@Composable
+internal fun UpcomingList(lines: List<WidgetLine>, times: TimeFormat) {
+    val muted = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED)
+    Column {
+        for (line in lines) {
+            when (line) {
+                is WidgetLine.Header -> Text(
+                    line.label,
+                    style = TextStyle(color = GlanceTheme.colors.primary, fontSize = 11.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED),
+                    modifier = GlanceModifier.padding(top = 4.dp),
+                )
+                is WidgetLine.Entry -> when (val item = line.item) {
+                    is MatchListModel.Item.Upcoming -> Row(
+                        GlanceModifier.fillMaxWidth().padding(vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        item.row.alliance?.let { Text("● ", style = TextStyle(color = ColorProvider(StatusColors.alliance(it)), fontSize = 13.sp)) }
+                        Text(
+                            item.row.shortLabel,
+                            style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 15.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED),
+                            modifier = GlanceModifier.defaultWeight(),
+                        )
+                        // Only matches already in motion get a pill.
+                        item.row.phase?.takeIf { it != Phase.PRE_QUEUE }?.let {
+                            Pill(it.stateLabel, ColorProvider(StatusColors.phase(it)), ColorProvider(StatusColors.onPhase(it)))
+                            Spacer(GlanceModifier.width(6.dp))
+                        }
+                        Text(
+                            times.match(item.row.time, item.row.estimated),
+                            style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 14.sp, fontFamily = CONDENSED),
+                        )
+                    }
+                    is MatchListModel.Item.Break -> Text(item.title, style = muted, modifier = GlanceModifier.padding(vertical = 2.dp))
+                }
+            }
+        }
     }
 }

@@ -19,7 +19,7 @@ import kotlinx.coroutines.launch
 object WidgetRefresh {
     private const val REQUEST_CODE = 44
 
-    suspend fun run(context: Context, container: AppContainer, render: suspend () -> Unit = { PitWatchWidget().updateAll(context) }) {
+    suspend fun run(context: Context, container: AppContainer, render: suspend () -> Unit = { PitWatchWidget().updateAll(context); ScheduleWidget().updateAll(context) }) {
         render()
         val model = WidgetModels.build(container.stores.cache.data.first(), container.stores.config.data.first(), container.clock())
         arm(context, model.countdownDeadline?.plusSeconds(1))
