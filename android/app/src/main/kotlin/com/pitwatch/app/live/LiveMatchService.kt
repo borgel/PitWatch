@@ -99,6 +99,24 @@ class LiveMatchService : Service() {
             }
             // Already tracking: a repeat start (alarm, app open, button) or Refresh just polls now.
             ACTION_REFRESH, ACTION_START -> if (loop != null) signals.trySend(Signal.POKE)
+            ACTION_DISMISSED -> {
+                if (loop == null) { // not tracking (a stale intent): never resurrect anything
+                    stopSelf(startId)
+                    return START_NOT_STICKY
+                }
+                scope.launch {
+                    if (container.stores.notificationPrefs.data.first().pinned) {
+                        // Pinned: a swipe only hides it for a moment; Stop is the way out.
+                        val notification = lastNotification ?: LiveNotification.build(this@LiveMatchService, null, lastSuccess, container.clock(), actions())
+                        if (ContextCompat.checkSelfPermission(this@LiveMatchService, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
+                            NotificationManagerCompat.from(this@LiveMatchService).notify(LiveNotification.NOTIFICATION_ID, notification)
+                        }
+                    } else {
+                        stopTracking(suppress = true)
+                    }
+                }
+                return START_STICKY
+            }
             ACTION_WAKE -> {
                 if (loop == null) { // not tracking (e.g. a stale alarm): don't resurrect anything
                     stopSelf(startId)
@@ -269,6 +287,7 @@ class LiveMatchService : Service() {
         content = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE),
         refresh = PendingIntent.getService(this, 1, intent(this, ACTION_REFRESH), PendingIntent.FLAG_IMMUTABLE),
         stop = PendingIntent.getService(this, 2, intent(this, ACTION_STOP), PendingIntent.FLAG_IMMUTABLE),
+        dismissed = PendingIntent.getService(this, 3, intent(this, ACTION_DISMISSED), PendingIntent.FLAG_IMMUTABLE),
     )
 
     companion object {
@@ -280,6 +299,8 @@ class LiveMatchService : Service() {
         const val ACTION_REFRESH = "com.pitwatch.app.live.REFRESH"
         const val ACTION_STOP = "com.pitwatch.app.live.STOP"
         const val ACTION_WAKE = "com.pitwatch.app.live.WAKE"
+        /** The notification was swiped away. */
+        const val ACTION_DISMISSED = "com.pitwatch.app.live.DISMISSED"
         private val WAKE_LOCK_TIMEOUT: Duration = Duration.ofSeconds(60)
         private const val TAG = "LiveMatchService"
         private val RENDER_TICK: Duration = Duration.ofSeconds(60)
