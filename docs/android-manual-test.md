@@ -15,3 +15,7 @@
    notification should change phase (Refresh in the notification forces it immediately).
 6. Tap **Stop** (or swipe the notification away). Reopening the app must not restart tracking for the
    same match.
+7. Check the screens: Matches (status card, next-match card with phase badge, break rows, results),
+   the event picker (calendar icon), Pit map (zoomed on your pit), Settings — in light and dark mode
+   (`adb shell cmd uimode night yes|no`).
+8. Add the PitWatch widget to the home screen; resize it through small, medium and large.

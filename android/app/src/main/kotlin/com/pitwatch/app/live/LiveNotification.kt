@@ -40,6 +40,7 @@ object LiveNotification {
             .setOnlyAlertOnce(true)
             .setRequestPromotedOngoing(true)
             .setCategory(NotificationCompat.CATEGORY_PROGRESS)
+            .setColor(context.getColor(android.R.color.system_accent1_600)) // Material You accent for the icon
             .setContentIntent(actions.content)
             .setDeleteIntent(actions.stop) // swiping it away stops tracking
         actions.refresh?.let { builder.addAction(0, "Refresh", it) }

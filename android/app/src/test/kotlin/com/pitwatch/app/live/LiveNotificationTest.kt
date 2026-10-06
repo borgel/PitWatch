@@ -99,4 +99,9 @@ class LiveNotificationTest {
         assertEquals("Waiting for match data", n.extras.getCharSequence(Notification.EXTRA_TEXT).toString())
         assertEquals("Waiting for data", n.extras.getCharSequence(Notification.EXTRA_SUB_TEXT).toString())
     }
+
+    @Test
+    fun `accent follows the Material You system palette`() {
+        assertEquals(context.getColor(android.R.color.system_accent1_600), build(snapshot()).color)
+    }
 }

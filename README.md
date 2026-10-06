@@ -7,8 +7,9 @@ Glanceable FRC match info (next match, queue status, rankings) from The Blue All
 ```
 ios/        iOS + watchOS app — PAUSED, see ios/STATUS.md (XcodeGen: `cd ios && xcodegen generate`)
   TBAKit/   Shared Swift logic + tests (`cd ios/TBAKit && swift test`)
-android/    Android app (Gradle). :core = Kotlin port of TBAKit; :app = data layer + live notification
-            (`cd android && ./gradlew :core:test :app:testDebugUnitTest`; manual test: docs/android-manual-test.md)
+android/    Android app (Gradle). :core = Kotlin port of TBAKit; :app = Matches/Pit map/Settings,
+            live notification, home-screen widget (`cd android && ./gradlew :core:test :app:testDebugUnitTest`;
+            manual test: docs/android-manual-test.md)
 scripts/    Fixture capture + fake-api.py (local TBA/Nexus replay server)
 docs/       Design specs and implementation plans
 ```
