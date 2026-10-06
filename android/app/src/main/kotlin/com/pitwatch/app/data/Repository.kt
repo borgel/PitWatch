@@ -12,6 +12,7 @@ import com.pitwatch.core.model.Event
 import com.pitwatch.core.model.EventOPRs
 import com.pitwatch.core.model.EventRankings
 import com.pitwatch.core.model.Match
+import com.pitwatch.core.model.PitMap
 import com.pitwatch.core.store.EventCache
 import com.pitwatch.core.store.RefreshState
 import java.time.Duration
@@ -33,6 +34,7 @@ class Repository(
     private val stores: Stores,
     private val tbaClient: (apiKey: String) -> TbaClient,
     private val nexusClient: (apiKey: String) -> NexusClient,
+    private val onChanged: suspend () -> Unit = {},
 ) {
     private val mutex = Mutex()
 
@@ -41,8 +43,15 @@ class Repository(
     /**
      * TBA endpoints use If-Modified-Since unless [force]. With [includeTba] false only Nexus is polled
      * (the live notification's fast path). Serialized: the worker and the live service may overlap.
+     * [onChanged] (widgets) runs after any refresh that changed what we show.
      */
-    suspend fun refresh(now: Instant, force: Boolean = false, includeTba: Boolean = true): RefreshOutcome = mutex.withLock {
+    suspend fun refresh(now: Instant, force: Boolean = false, includeTba: Boolean = true): RefreshOutcome {
+        val outcome = refreshLocked(now, force, includeTba)
+        if (outcome.changed) onChanged()
+        return outcome
+    }
+
+    private suspend fun refreshLocked(now: Instant, force: Boolean, includeTba: Boolean): RefreshOutcome = mutex.withLock {
         val config = stores.config.data.first()
         val apiKey = config.apiKey
         if (!config.isConfigured || apiKey == null) return@withLock RefreshOutcome(changed = false, error = NOT_CONFIGURED)
@@ -122,6 +131,22 @@ class Repository(
             stores.refreshState.updateData { it.copy(lastError = message) }
             RefreshOutcome(changed = false, error = message)
         }
+    }
+
+    /** The team's events this season, for the event picker. Throws on TBA failure. */
+    suspend fun seasonEvents(now: Instant): List<Event> {
+        val config = stores.config.data.first()
+        val apiKey = config.apiKey ?: return emptyList()
+        val team = config.teamNumber ?: return emptyList()
+        val result = tbaClient(apiKey).fetch<List<Event>>(Endpoints.teamEvents(team, now.atZone(ZoneOffset.UTC).year))
+        return (result as? FetchResult.Data)?.value.orEmpty().sortedBy { it.startDate }
+    }
+
+    /** Nexus pit map for the cached event; null without a Nexus key, an event, or a map. */
+    suspend fun pitMap(): PitMap? {
+        val nexusKey = stores.config.data.first().nexusApiKey?.takeIf { it.isNotEmpty() } ?: return null
+        val eventKey = stores.cache.data.first().event?.key ?: return null
+        return nexusClient(nexusKey).fetchPitMap(eventKey)
     }
 
     private data class ResolvedEvent(val key: String, val event: Event?)

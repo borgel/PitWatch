@@ -120,6 +120,7 @@ fun snapshotTba() = FakeApi().apply {
 
 fun snapshotNexus() = FakeApi().apply {
     on("/event/2026cancmp") { fixture("$SNAP/nexus_event.json") }
+    on("/event/2026cancmp/map") { fixture("$SNAP/nexus_map.json") }
 }
 
 /** Replaces the Robolectric app's container with one backed by temp files and fake HTTP. */
