@@ -10,6 +10,7 @@ import com.pitwatch.core.PitWatchJson
 import com.pitwatch.core.model.PitMap
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -23,8 +24,18 @@ class PitMapTest {
     private val map = PitWatchJson.decodeFromString<PitMap>(fixture("$SNAP/nexus_map.json"))
 
     @Test
-    fun `positions are top-left corners, like iOS`() {
-        assertEquals(Rect(513.5f, 195f, 613.5f, 295f), PitMapGeometry.rect(PitMap.Position(513.5, 195.0), PitMap.MapSize(100.0, 100.0)))
+    fun `positions are box centers`() {
+        assertEquals(Rect(463.5f, 145f, 563.5f, 245f), PitMapGeometry.rect(PitMap.Position(513.5, 195.0), PitMap.MapSize(100.0, 100.0)))
+    }
+
+    @Test
+    fun `real map areas tile without overlapping`() {
+        // Found on-device: read as top-left corners (as iOS did), "Pit admin" overlapped "EMT"; as centers they tile.
+        val boxes = map.areas!!.values.map { PitMapGeometry.rect(it.position, it.size) }
+        for ((i, a) in boxes.withIndex()) for (b in boxes.drop(i + 1)) {
+            val overlap = a.intersect(b)
+            assertTrue(overlap.width <= 1f || overlap.height <= 1f, "$a overlaps $b")
+        }
     }
 
     @Test
@@ -63,5 +74,17 @@ class PitMapTest {
     fun `explains an event without a map`() {
         compose.setContent { PitMapContent(PitMapState.Unavailable, "5507", {}) }
         compose.onNodeWithText("This event has no pit map on Nexus.").assertIsDisplayed()
+    }
+
+    @Test
+    fun `labels are sized to fit inside their box`() {
+        // Found on-device: labels sized in sp were magnified with the map and overflowed into neighbors.
+        val pit = Rect(0f, 0f, 100f, 100f)
+        for (text in listOf("8", "1678", "10339", "Pit admin EMT Radio")) {
+            val px = PitMapGeometry.labelFontPx(pit, text)
+            assertTrue(px * PitMapGeometry.CHAR_WIDTH_EM * text.length <= pit.width * 0.9f + 0.01f, text)
+            assertTrue(px <= pit.height * 0.4f + 0.01f, text)
+            assertTrue(px > 0f, text)
+        }
     }
 }

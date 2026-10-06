@@ -24,14 +24,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pitwatch.app.AppContainer
 import com.pitwatch.core.config.UserConfig
@@ -92,6 +94,17 @@ private fun PitMapCanvas(map: PitMap, ours: PitMap.AssignedPit?) {
     val measurer = rememberTextMeasurer()
     val colors = MaterialTheme.colorScheme
     Canvas(Modifier.fillMaxSize().transformable(transform)) {
+        /** Draws [text] sized in map units to fit [box], centered, one line. */
+        fun DrawScope.label(text: String, box: androidx.compose.ui.geometry.Rect, color: androidx.compose.ui.graphics.Color) {
+            var px = PitMapGeometry.labelFontPx(box, text)
+            // The estimate assumes digit widths; shrink to the measured width for wider (letter) labels.
+            val measured = measurer.measure(text, TextStyle(fontSize = px.toSp()), maxLines = 1).size.width
+            if (measured > box.width * 0.9f) px *= box.width * 0.9f / measured
+            val style = TextStyle(color = color, fontSize = px.toSp())
+            val layout = measurer.measure(text, style, maxLines = 1, overflow = TextOverflow.Clip,
+                constraints = Constraints(maxWidth = box.width.toInt().coerceAtLeast(1)))
+            drawText(layout, topLeft = box.center - Offset(layout.size.width / 2f, layout.size.height / 2f))
+        }
         val fit = PitMapGeometry.fitScale(map, size.width, size.height)
         if (!centered && ours != null) {
             // Open zoomed in on our pit.
@@ -106,7 +119,7 @@ private fun PitMapCanvas(map: PitMap, ours: PitMap.AssignedPit?) {
                 map.areas?.values?.forEach { area ->
                     val r = PitMapGeometry.rect(area.position, area.size)
                     drawRect(colors.surfaceVariant, r.topLeft, r.size)
-                    drawText(measurer, area.label, r.topLeft + Offset(4f, 4f), TextStyle(color = colors.onSurfaceVariant, fontSize = 14.sp))
+                    label(area.label, r, colors.onSurfaceVariant)
                 }
                 map.walls?.values?.forEach { wall ->
                     val r = PitMapGeometry.rect(wall.position, wall.size)
@@ -118,17 +131,14 @@ private fun PitMapCanvas(map: PitMap, ours: PitMap.AssignedPit?) {
                 }
                 map.labels?.values?.forEach { label ->
                     val r = PitMapGeometry.rect(label.position, label.size)
-                    drawText(measurer, label.label, r.topLeft, TextStyle(color = colors.onSurface, fontSize = 14.sp))
+                    label(label.label, r, colors.onSurface)
                 }
                 map.pits.forEach { (address, pit) ->
                     val r = PitMapGeometry.rect(pit.position, pit.size)
                     val isOurs = address == ours?.address
                     drawRect(if (isOurs) colors.primary else colors.secondaryContainer, r.topLeft, r.size)
                     drawRect(colors.outline, r.topLeft, r.size, style = Stroke(width = 1f))
-                    pit.team?.let {
-                        drawText(measurer, it, r.topLeft + Offset(6f, 6f),
-                            TextStyle(color = if (isOurs) colors.onPrimary else colors.onSecondaryContainer, fontSize = 18.sp))
-                    }
+                    pit.team?.let { label(it, r, if (isOurs) colors.onPrimary else colors.onSecondaryContainer) }
                 }
             }
         }
