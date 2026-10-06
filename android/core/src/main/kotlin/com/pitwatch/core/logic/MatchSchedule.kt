@@ -145,7 +145,7 @@ class MatchSchedule(matches: List<Match>, teamKey: String) {
         val NEXUS_GRACE: Duration = Duration.ofMinutes(15)
 
         /** Fractional seconds, matching Swift's TimeInterval comparisons at the thresholds. */
-        fun secondsBetween(from: Instant, to: Instant): Double = Duration.between(from, to).toMillis() / 1000.0
+        fun secondsBetween(from: Instant, to: Instant): Double = Duration.between(from, to).toNanos() / 1e9
     }
 }
 

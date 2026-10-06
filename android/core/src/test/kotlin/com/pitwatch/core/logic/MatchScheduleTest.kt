@@ -185,4 +185,12 @@ class MatchScheduleTest {
         val schedule = MatchSchedule(listOf(testMatch(32, time = now.plusSeconds(12 * 3600).epochSecond)), "frc1234")
         assertFalse(schedule.shouldStartLiveActivity(now, LiveActivityMode.ALL_DAY, true, false, tomorrowQueue))
     }
+
+    @Test
+    fun `sub-millisecond lead still counts as upcoming`() {
+        // Thresholds compare fractional seconds; flooring to milliseconds turned 0.4 ms ahead into "now".
+        val schedule = MatchSchedule(listOf(testMatch(32, time = 1_800_000_000)), "frc1234")
+        val justBefore = Instant.ofEpochSecond(1_800_000_000).minusNanos(400_000)
+        assertTrue(schedule.shouldStartLiveActivity(justBefore, LiveActivityMode.NEAR_MATCH, true, false))
+    }
 }
