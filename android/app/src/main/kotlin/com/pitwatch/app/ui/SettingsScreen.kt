@@ -40,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -104,8 +105,8 @@ fun SettingsScreen(container: AppContainer, config: UserConfig, onBack: (() -> U
                     supportingContent = { Text("${config.queueOffsetMinutes} min before the match (TBA times)") },
                     trailingContent = {
                         Row {
-                            TextButton(onClick = { update { it.copy(queueOffsetMinutes = (it.queueOffsetMinutes - 5).coerceAtLeast(0)) } }) { Text("−") }
-                            TextButton(onClick = { update { it.copy(queueOffsetMinutes = (it.queueOffsetMinutes + 5).coerceAtMost(60)) } }) { Text("+") }
+                            TextButton(onClick = { update { it.copy(queueOffsetMinutes = (it.queueOffsetMinutes - 5).coerceAtLeast(0)) } }) { Text("−", style = MaterialTheme.typography.bodyLarge.copy(fontSize = 24.sp)) }
+                            TextButton(onClick = { update { it.copy(queueOffsetMinutes = (it.queueOffsetMinutes + 5).coerceAtMost(60)) } }) { Text("+", style = MaterialTheme.typography.bodyLarge.copy(fontSize = 24.sp)) }
                         }
                     },
                     colors = clearRow(),

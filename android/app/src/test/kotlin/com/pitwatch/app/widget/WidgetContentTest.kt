@@ -61,6 +61,16 @@ class WidgetContentTest {
     }
 
     @Test
+    fun `a tall widget with no room for a header and a row shows no list`() = runGlanceAppWidgetUnitTest {
+        // On-device (emulator-5580): ~327 dp of content above the list; at this size the launcher clipped the only row
+        // under a lone day header.
+        setAppWidgetSize(androidx.compose.ui.unit.DpSize(250.dp, 380.dp))
+        provideComposable { GlanceTheme { WidgetContent(ready) { Text("COUNTDOWN") } } }
+        onNode(hasText("UPCOMING")).assertDoesNotExist()
+        onNode(hasText("LAST · Q22")).assertExists()
+    }
+
+    @Test
     fun `message states`() = runGlanceAppWidgetUnitTest {
         setAppWidgetSize(PitWatchWidget.SMALL)
         provideComposable { GlanceTheme { WidgetContent(WidgetModels.build(com.pitwatch.core.store.EventCache(), UserConfig(), SNAP_NOW)) { } } }

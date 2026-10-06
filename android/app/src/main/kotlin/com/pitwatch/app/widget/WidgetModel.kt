@@ -72,8 +72,9 @@ sealed interface WidgetLine {
 
 object WidgetLines {
     /** Height the large layout uses above the upcoming list (header, title, next match with the 56 sp countdown, phase bar, alliances, divider, last result, label). */
-    private val FIXED: Dp = 308.dp
-    private val ROW: Dp = 22.dp
+    // Measured on-device at ~327 dp, plus margin: launchers report a little more height than they show.
+    private val FIXED: Dp = 350.dp
+    private val ROW: Dp = 24.dp
 
     /** Glance renders at most 10 children per Column; the list gets its own Column, kept under the limit. */
     const val MAX_LINES = 9
