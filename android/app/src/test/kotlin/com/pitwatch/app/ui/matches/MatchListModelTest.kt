@@ -19,6 +19,7 @@ import java.util.Locale
 import java.util.TimeZone
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.junit.Test
@@ -155,5 +156,40 @@ class MatchListModelTest {
         val ids = m.days.flatMap { it.items }.map { it.id }
         assertEquals(ids.distinct(), ids)
         assertEquals(1, m.days.flatMap { it.items }.count { it is MatchListModel.Item.Break })
+    }
+
+    @Test
+    fun `results carry both alliances and their scores`() {
+        val r = build().results[0] // qm22: we were blue, 403–299
+        assertEquals(listOf("9400", "6418", "5104"), r.red.teams.map { it.number })
+        assertEquals(listOf("5507", "2813", "8033"), r.blue.teams.map { it.number })
+        assertEquals(listOf(true, false, false), r.blue.teams.map { it.isUs })
+        assertEquals(299 to 403, r.redScore to r.blueScore)
+        assertEquals(403 to 299, r.ourScore to r.theirScore)
+        assertNull(r.red.summedOpr) // results show scores, not OPR, even when OPRs are known
+        assertEquals("WIN", r.outcomeLabel)
+    }
+
+    @Test
+    fun `outcome labels`() {
+        val empty = MatchListModel.AllianceLine(emptyList(), null)
+        fun result(code: String) = MatchListModel.Result("k", "Qual 9", "Q9", 1, 1, code, empty, empty, 1, 1)
+        assertEquals(listOf("WIN", "LOSS", "TIE"), listOf("W", "L", "T").map { result(it).outcomeLabel })
+    }
+
+    @Test
+    fun `a result with a short alliance still builds`() {
+        val short = cache.copy(matches = cache.matches.map { m ->
+            if (m.key != "2026cancmp_qm22") m
+            else m.copy(alliances = m.alliances.mapValues { (color, a) -> if (color == "red") a.copy(teamKeys = a.teamKeys.take(2)) else a })
+        })
+        assertEquals(listOf("9400", "6418"), build(short).results[0].red.teams.map { it.number })
+    }
+
+    @Test
+    fun `next is the hero match`() {
+        val next = assertNotNull(build().next)
+        assertEquals("Qual 36", next.label)
+        assertTrue(next.isNext)
     }
 }
