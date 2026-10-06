@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -64,5 +65,12 @@ class EventPickerTest {
         compose.setContent { EventPickerContent(EventPickerState.Error("timeout"), null, {}, {}, onRetry = { retries++ }) }
         compose.onNodeWithText("Retry").performClick()
         assertEquals(1, retries)
+    }
+
+    @Test
+    fun `picker has a scoreboard header and marks the current event`() {
+        compose.setContent { EventPickerContent(EventPickerState.Loaded(options), "2026casf", {}, {}, {}) }
+        compose.onNodeWithText("CHOOSE EVENT").assertIsDisplayed()
+        compose.onNode(hasContentDescription("Selected")).assertIsDisplayed()
     }
 }
