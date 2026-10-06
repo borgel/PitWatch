@@ -3514,3 +3514,20 @@ git commit -m "test(android): fake API replay server and manual on-device guide"
 
 - **Plan 3:** match list (with schedule breaks), event picker, pit map, Glance widgets, and the visual design pass on the notification and screens.
 - **Open decision:** Nexus `breakAfter` markers vs the inferred `ScheduleBreakDetector`.
+
+## Carry into Plan 3 (from the final review of this plan)
+
+Deferred minors — pick up when touching the code nearby:
+- Nexus blip window compares server `dataAsOfTime` with the device clock; stamp the last successful Nexus fetch with device time instead.
+- The live service decodes TBA JSON on `Dispatchers.Main` (`Repository.refresh` should `withContext(Dispatchers.Default)` for decode).
+- `registerDefaultNetworkCallback` fires `onAvailable` immediately → a redundant second poll at start.
+- `MainActivity` isn't `singleTop`; repeated notification taps can stack instances.
+- `SetupScreen`: do the permission request / `refreshNow` before the config write (the write recomposes away the screen's scope); close the setup `HttpClient` in `finally`.
+- Settings' "Live Updates are off" hint shows on API 36.0, where promotion doesn't exist (needs 36.1+).
+- `RefreshWorker`: if `rearmAutoStart` throws after the APPEND enqueue the chain stalls; changing time source / `useScheduledTime` doesn't replan cadence.
+- Dismissing a FINAL card suppresses the played match, so the following match may auto-start immediately — confirm UX.
+- No BOOT_COMPLETED receiver: the exact alarm is lost on reboot until the worker re-arms (≤ 1 h on event days).
+- Near-match mode tracks an unscored match indefinitely if TBA never posts the score; consider a time-based roll-forward.
+- Loop timers pause in deep sleep (only screen-on/unlock pokes); consider an exact alarm while the FAST cadence applies.
+
+On-device notes: API 36.0 emulators lack Live Update promotion (needs 36.1+); emulator clocks can drift — sync before judging countdowns.
