@@ -181,4 +181,13 @@ class MatchesContentTest {
         compose.onAllNodes(hasText("Lonely day", ignoreCase = true)).assertCountEquals(0)
         compose.onAllNodes(hasText("— END OF DAY —")).assertCountEquals(0)
     }
+
+    @Test
+    fun `the list offers the schedule notification when it's off`() {
+        var asked = 0
+        compose.setContent { MatchesContent(model, SNAP_NOW, false, false, {}, {}, {}, {}, showScheduleOffer = true, onShowSchedule = { asked++ }) }
+        compose.onNodeWithTag("matches").performScrollToNode(hasText("Show schedule in notifications"))
+        compose.onNodeWithText("Show schedule in notifications").performClick()
+        assertEquals(1, asked)
+    }
 }
