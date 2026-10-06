@@ -47,7 +47,15 @@ class Repository(
      */
     suspend fun refresh(now: Instant, force: Boolean = false, includeTba: Boolean = true): RefreshOutcome {
         val outcome = refreshLocked(now, force, includeTba)
-        if (outcome.changed) onChanged()
+        if (outcome.changed) {
+            try {
+                onChanged()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // Widgets failing to update must not turn a good refresh into an error.
+            }
+        }
         return outcome
     }
 

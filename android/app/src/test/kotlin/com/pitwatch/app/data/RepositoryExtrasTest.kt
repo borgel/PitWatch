@@ -81,4 +81,18 @@ class RepositoryExtrasTest {
         repo.refresh(SNAP_NOW)
         assertNull(repo.pitMap())
     }
+
+    @Test
+    fun `a failing change hook never breaks the refresh`() = runBlocking {
+        // Review finding m2: refresh() must not start throwing because widgets failed to update.
+        val throwing = Repository(
+            stores,
+            { TbaClient(it, tba.client, "https://tba.test/api/v3") },
+            { NexusClient(it, nexus.client, "https://nexus.test/api/v1") },
+            onChanged = { error("widget host gone") },
+        )
+        val outcome = throwing.refresh(SNAP_NOW)
+        kotlin.test.assertTrue(outcome.changed)
+        assertNull(outcome.error)
+    }
 }

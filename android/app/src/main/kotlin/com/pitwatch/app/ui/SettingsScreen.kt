@@ -62,12 +62,8 @@ fun SettingsScreen(container: AppContainer, config: UserConfig, onBack: (() -> U
     var nexusKey by rememberSaveable { mutableStateOf(config.nexusApiKey.orEmpty()) }
 
     /** Saves a config change; [refetch] for changes that alter what to fetch (keys, event). */
-    fun update(refetch: Boolean = false, transform: (UserConfig) -> UserConfig) = scope.launch {
-        container.stores.config.updateData { transform(it) }
-        rearmAutoStart(context, container)
-        container.updateWidgets()
-        if (refetch) RefreshWorker.refreshNow(context)
-    }
+    fun update(refetch: Boolean = false, transform: (UserConfig) -> UserConfig) =
+        SettingsActions.save(context, container, refetch, transform)
 
     Scaffold(
         topBar = {
