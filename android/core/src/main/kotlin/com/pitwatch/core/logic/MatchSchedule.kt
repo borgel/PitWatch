@@ -111,13 +111,13 @@ class MatchSchedule(matches: List<Match>, teamKey: String) {
     }
 
     /**
-     * Upcoming matches with inferred schedule breaks inserted between consecutive matches. Brackets use
+     * Upcoming matches with schedule breaks (Nexus markers, else inferred) inserted between consecutive matches. Brackets use
      * Nexus-correlated start times, falling back to TBA times; pairs with an unknown time get no breaks.
      */
     fun upcomingTimeline(nexusEvent: NexusEvent?, zone: ZoneId): List<UpcomingScheduleItem> {
         if (nexusEvent == null) return upcomingMatches.map { UpcomingScheduleItem.MatchItem(it) }
 
-        val allBreaks = ScheduleBreakDetector.detectBreaks(nexusEvent.matches, zone)
+        val allBreaks = ScheduleBreaks.forEvent(nexusEvent, zone)
         fun effectiveTime(match: Match): Instant? =
             NexusMatchMerge.nexusInfo(match, nexusEvent)?.times?.startDate ?: match.matchDate(useScheduled = true)
 

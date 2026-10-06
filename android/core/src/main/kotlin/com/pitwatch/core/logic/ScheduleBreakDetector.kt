@@ -5,13 +5,16 @@ import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
 
-/** A non-match interval inferred from gaps in Nexus estimated start times. */
+/** A non-match interval: from Nexus's own markers, or inferred from gaps in estimated start times. */
 data class ScheduleBreak(
     val kind: Kind,
     val startsAfter: String,
-    val endsBefore: String,
+    /** Null for a marker after the last scheduled match (e.g. alliance selection). */
+    val endsBefore: String?,
     val start: Instant,
-    val end: Instant,
+    val end: Instant?,
+    /** Nexus's name for the break ("Lunch", "Alliance selection"); null when inferred. */
+    val label: String? = null,
 ) {
     enum class Kind {
         /** Same local day, overlapping 11:30–13:00. */
@@ -22,7 +25,15 @@ data class ScheduleBreak(
         OVERNIGHT,
     }
 
-    val duration: Duration get() = Duration.between(start, end)
+    val duration: Duration? get() = end?.let { Duration.between(start, it) }
+
+    /** What to call it in the UI. */
+    val title: String
+        get() = label ?: when (kind) {
+            Kind.LUNCH -> "Lunch"
+            Kind.OVERNIGHT -> "End of day"
+            Kind.SESSION_BREAK -> "Break"
+        }
 }
 
 object ScheduleBreakDetector {
