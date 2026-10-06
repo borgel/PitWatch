@@ -2,7 +2,9 @@ package com.pitwatch.app.live
 
 import android.app.Notification
 import android.content.Context
+import androidx.compose.ui.graphics.toArgb
 import androidx.test.core.app.ApplicationProvider
+import com.pitwatch.app.ui.theme.StatusColors
 import com.pitwatch.core.model.MatchAlliance
 import com.pitwatch.core.model.Phase
 import java.time.Instant
@@ -38,7 +40,7 @@ class LiveNotificationTest {
         val n = build(snapshot())
         assertTrue(n.extras.getBoolean(Notification.EXTRA_REQUEST_PROMOTED_ONGOING))
         assertEquals("Q32 · RED · IN QUEUE", n.extras.getCharSequence(Notification.EXTRA_TITLE).toString())
-        assertEquals("3 AWAY · on field #29", n.extras.getCharSequence(Notification.EXTRA_TEXT).toString())
+        assertEquals("3 AWAY · ON FIELD #29", n.extras.getCharSequence(Notification.EXTRA_TEXT).toString())
         assertEquals("Q32 10m", n.shortCriticalText)
         assertTrue(n.flags and Notification.FLAG_ONGOING_EVENT != 0)
     }
@@ -103,5 +105,11 @@ class LiveNotificationTest {
     @Test
     fun `accent follows the Material You system palette`() {
         assertEquals(context.getColor(android.R.color.system_accent1_600), build(snapshot()).color)
+    }
+
+    @Test
+    fun `segment colors come from the app's status colors`() {
+        val s = style(build(snapshot()))
+        assertEquals(StatusColors.notificationSegments.map { it.toArgb() }, s.progressSegments.map { it.color })
     }
 }

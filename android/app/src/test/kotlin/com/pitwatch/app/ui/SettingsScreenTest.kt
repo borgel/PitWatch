@@ -1,14 +1,14 @@
-package com.pitwatch.app.ui.pitmap
+package com.pitwatch.app.ui
 
-import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performScrollTo
 import com.pitwatch.app.AppContainer
-import com.pitwatch.app.SNAP_NOW
 import com.pitwatch.app.installTestContainer
 import com.pitwatch.core.config.UserConfig
+import com.pitwatch.core.store.RefreshState
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -19,9 +19,9 @@ import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
-/** Review finding I3: with a key configured, the screen must never say the key is missing (even while loading). */
+/** Final review: errors must stay visible in Settings — the header subtitle only fits one line. */
 @RunWith(RobolectricTestRunner::class)
-class PitMapScreenTest {
+class SettingsScreenTest {
     @get:Rule
     val compose = createComposeRule()
 
@@ -36,7 +36,7 @@ class PitMapScreenTest {
         container = installTestContainer(tmp.root)
         runBlocking {
             container.stores.config.updateData { config }
-            container.repository.refresh(SNAP_NOW)
+            container.stores.refreshState.updateData { RefreshState(nexusLastError = "HTTP 403") }
         }
     }
 
@@ -44,10 +44,9 @@ class PitMapScreenTest {
     fun tearDown() = container.scope.cancel()
 
     @Test
-    fun `configured key is never reported missing`() {
-        compose.setContent { PitMapScreen(container, config, onOpenSettings = {}) }
-        compose.onAllNodes(hasText("Add a FRC Nexus API key", substring = true)).assertCountEquals(0)
-        compose.waitUntil(5_000) { compose.onAllNodes(hasText("OUR PIT")).fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("C1").assertIsDisplayed()
+    fun `header shows the last refresh, the status card shows the errors`() {
+        compose.setContent { SettingsScreen(container, config) }
+        compose.onNodeWithText("Last refresh: never").assertIsDisplayed()
+        compose.onNode(hasText("Nexus: HTTP 403", substring = true)).performScrollTo().assertIsDisplayed()
     }
 }

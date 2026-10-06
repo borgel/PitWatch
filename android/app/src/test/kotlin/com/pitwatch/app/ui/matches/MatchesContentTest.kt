@@ -2,9 +2,11 @@ package com.pitwatch.app.ui.matches
 
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
@@ -40,31 +42,67 @@ class MatchesContentTest {
     }
 
     @Test
-    fun `status card, queue line and next match`() {
+    fun `hero - header, queue line and next match`() {
         show()
-        compose.onNodeWithText("California Northern").assertIsDisplayed()
+        compose.onNodeWithText("CALIFORNIA NORTHERN").assertIsDisplayed()
         compose.onNodeWithText("Team 5507 · Rank #34 · 1-2-0").assertIsDisplayed()
-        compose.onNodeWithText("Now queuing: Qualification 38").assertIsDisplayed()
-        compose.onNodeWithText("Start live tracking").assertIsDisplayed()
-        compose.onNodeWithText("Qual 36").assertIsDisplayed()
+        compose.onNodeWithText("QUAL 36").assertIsDisplayed()
         compose.onNodeWithText("ON FIELD").assertIsDisplayed()
+        compose.onNode(hasContentDescription("On field, step 3 of 4")).assertIsDisplayed()
+        compose.onAllNodes(hasContentDescription("Your team, 5507")).onFirst().assertIsDisplayed()
+        // The hero is taller than the test screen: the button sits below the fold.
+        compose.onNodeWithTag("matches").performScrollToNode(hasText("START LIVE TRACKING"))
+        compose.onNodeWithText("START LIVE TRACKING").assertIsDisplayed()
+        compose.onNodeWithTag("matches").performScrollToNode(hasText("NOW QUEUING · QUALIFICATION 38"))
+    }
+
+    @Test
+    fun `the hero match is not repeated in the list`() {
+        show()
+        compose.onNodeWithTag("matches").performScrollToNode(hasText("Q43"))
+        compose.onNodeWithText("Q43").assertIsDisplayed() // later rows use the short label…
+        compose.onAllNodes(hasText("Q36")).assertCountEquals(0) // …and the hero's match isn't one of them
+    }
+
+    @Test
+    fun `a day holding only the hero match gets no header`() {
+        val lonely = model.copy(days = listOf(MatchListModel.Day(null, "Lonely day", listOf(MatchListModel.Item.Upcoming(model.next!!)))))
+        compose.setContent { MatchesContent(lonely, SNAP_NOW, false, false, {}, {}, {}, {}) }
+        compose.onAllNodes(hasText("Lonely day", ignoreCase = true)).assertCountEquals(0)
     }
 
     @Test
     fun `days, breaks and results are listed`() {
         show()
         val list = compose.onNodeWithTag("matches")
-        for (text in listOf("Saturday, Apr 11", "Lunch", "End of day", "Results", "Qual 22")) {
+        for (text in listOf("SATURDAY, APR 11", "LUNCH", "END OF DAY", "LAST", "Q22")) {
             list.performScrollToNode(hasText(text, substring = true))
-            compose.onNodeWithText(text, substring = true).assertIsDisplayed()
+            compose.onAllNodes(hasText(text, substring = true)).onFirst().assertIsDisplayed()
         }
+    }
+
+    @Test
+    fun `result rows show both scores and the outcome`() {
+        show()
+        compose.onNodeWithTag("matches").performScrollToNode(hasText("403"))
+        compose.onNodeWithText("403").assertIsDisplayed()
+        compose.onNodeWithText("299").assertIsDisplayed()
+        compose.onAllNodes(hasText("WIN")).onFirst().assertIsDisplayed()
+    }
+
+    @Test
+    fun `TBA-only events show the timeline with nothing current`() {
+        val tbaOnly = MatchListModels.build(snapshotCache(), UserConfig(teamNumber = 5507, apiKey = "k"), RefreshState(), SNAP_NOW, Locale.US, com.pitwatch.app.LA)
+        compose.setContent { MatchesContent(tbaOnly, SNAP_NOW, false, false, {}, {}, {}, {}) }
+        compose.onNode(hasContentDescription("Not queued yet")).assertIsDisplayed()
     }
 
     @Test
     fun `tracking button reflects and toggles state`() {
         var toggles = 0
         show(tracking = true, onToggle = { toggles++ })
-        compose.onNodeWithText("Stop live tracking").performClick()
+        compose.onNodeWithTag("matches").performScrollToNode(hasText("STOP LIVE TRACKING"))
+        compose.onNodeWithText("STOP LIVE TRACKING").performClick()
         assertEquals(1, toggles)
     }
 
@@ -72,8 +110,8 @@ class MatchesContentTest {
     fun `tapping a result opens it on TBA`() {
         var opened: String? = null
         show(onOpen = { opened = it })
-        compose.onNodeWithTag("matches").performScrollToNode(hasText("Qual 22"))
-        compose.onNodeWithText("Qual 22").performClick()
+        compose.onNodeWithTag("matches").performScrollToNode(hasText("Q22"))
+        compose.onNodeWithText("Q22").performClick()
         assertEquals("https://www.thebluealliance.com/match/2026cancmp_qm22", opened)
     }
 

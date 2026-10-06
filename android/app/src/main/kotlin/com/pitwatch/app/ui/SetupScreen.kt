@@ -6,11 +6,11 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -22,10 +22,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.pitwatch.app.AppContainer
 import com.pitwatch.app.BuildConfig
 import com.pitwatch.app.schedule.RefreshWorker
+import com.pitwatch.app.ui.scoreboard.AccentButton
+import com.pitwatch.app.ui.scoreboard.condensed
 import com.pitwatch.core.api.TbaClient
 import com.pitwatch.core.config.UserConfig
 import io.ktor.client.HttpClient
@@ -48,13 +52,14 @@ fun SetupScreen(container: AppContainer, config: UserConfig) {
         Modifier.fillMaxSize().safeDrawingPadding().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("Set up PitWatch", style = MaterialTheme.typography.headlineSmall)
+        Text("SET UP PITWATCH", style = condensed(30.sp, FontWeight.ExtraBold))
         Text("Get a read API key from your account page on thebluealliance.com.")
-        OutlinedTextField(apiKey, { apiKey = it }, label = { Text("TBA API key") }, singleLine = true)
-        OutlinedTextField(team, { team = it }, label = { Text("Team number") }, singleLine = true)
-        OutlinedTextField(nexusKey, { nexusKey = it }, label = { Text("FRC Nexus API key (optional)") }, singleLine = true)
+        OutlinedTextField(apiKey, { apiKey = it }, label = { Text("TBA API key") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(team, { team = it }, label = { Text("Team number") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(nexusKey, { nexusKey = it }, label = { Text("FRC Nexus API key (optional)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
         message?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        Button(
+        AccentButton(
+            if (busy) "Checking…" else "Continue",
             enabled = !busy,
             onClick = {
                 busy = true
@@ -82,6 +87,6 @@ fun SetupScreen(container: AppContainer, config: UserConfig) {
                     }
                 }
             },
-        ) { Text(if (busy) "Checking…" else "Continue") }
+        )
     }
 }

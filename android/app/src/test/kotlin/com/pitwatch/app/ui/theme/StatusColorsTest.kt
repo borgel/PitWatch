@@ -1,9 +1,13 @@
 package com.pitwatch.app.ui.theme
 
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
+import com.pitwatch.core.model.MatchAlliance
 import com.pitwatch.core.model.Phase
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.junit.Test
 
@@ -22,5 +26,29 @@ class StatusColorsTest {
     @Test
     fun `badge text is readable on every phase color`() {
         for (phase in Phase.entries) assertTrue(contrast(StatusColors.phase(phase), StatusColors.onPhase(phase)) >= 4.5, "$phase")
+    }
+
+    @Test
+    fun `alliance bands are the deep scoreboard colors, readable with white text`() {
+        assertEquals(0xFFC62828.toInt(), StatusColors.alliance(MatchAlliance.RED).toArgb())
+        assertEquals(0xFF1E5BD6.toInt(), StatusColors.alliance(MatchAlliance.BLUE).toArgb())
+        for (a in MatchAlliance.entries) assertTrue(contrast(StatusColors.alliance(a), Color.White) >= 4.5, "$a")
+    }
+
+    @Test
+    fun `outcome pills are readable and a tie has none`() {
+        for (code in listOf("W", "L")) {
+            val pill = assertNotNull(StatusColors.outcome(code))
+            assertTrue(contrast(pill.container, pill.content) >= 4.5, code)
+        }
+        assertNull(StatusColors.outcome("T"))
+    }
+
+    @Test
+    fun `notification segments are queue, on deck, on field, then the match`() {
+        assertEquals(
+            listOf(Phase.QUEUEING, Phase.ON_DECK, Phase.ON_FIELD).map { StatusColors.phase(it) } + Color(0xFF0A84FF),
+            StatusColors.notificationSegments,
+        )
     }
 }

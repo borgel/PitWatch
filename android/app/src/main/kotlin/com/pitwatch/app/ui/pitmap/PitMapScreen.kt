@@ -3,9 +3,12 @@ package com.pitwatch.app.ui.pitmap
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -13,7 +16,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -23,29 +25,37 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.distinctUntilChanged
-import androidx.compose.ui.text.TextLayoutResult
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pitwatch.app.AppContainer
+import com.pitwatch.app.ui.scoreboard.ScoreboardCard
+import com.pitwatch.app.ui.scoreboard.ScreenHeader
+import com.pitwatch.app.ui.scoreboard.SectionLabel
+import com.pitwatch.app.ui.scoreboard.TeamChip
+import com.pitwatch.app.ui.scoreboard.condensed
+import com.pitwatch.app.ui.theme.BarlowCondensed
 import com.pitwatch.core.config.UserConfig
 import com.pitwatch.core.model.PitMap
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 
 sealed interface PitMapState {
     data object Loading : PitMapState
@@ -75,17 +85,35 @@ fun PitMapScreen(container: AppContainer, config: UserConfig, onOpenSettings: ()
 @Composable
 fun PitMapContent(state: PitMapState, teamNumber: String?, onOpenSettings: () -> Unit) {
     val ours = (state as? PitMapState.Loaded)?.let { PitMapGeometry.focus(it.map, teamNumber) }
-    Scaffold(topBar = { TopAppBar(title = { Text(ours?.let { "Pit ${it.address}" } ?: "Pit map") }) }) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-            when (state) {
-                PitMapState.Loading -> CircularProgressIndicator()
-                PitMapState.NoKey -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Add a FRC Nexus API key in Settings to see the pit map.", Modifier.padding(24.dp))
-                    OutlinedButton(onClick = onOpenSettings) { Text("Open Settings") }
+    Scaffold(topBar = { ScreenHeader("Pit map", null) }) { padding ->
+        Column(Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            ours?.let { OurPit(it.address, teamNumber) }
+            ScoreboardCard(Modifier.fillMaxWidth().weight(1f).padding(bottom = 12.dp)) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    when (state) {
+                        PitMapState.Loading -> CircularProgressIndicator()
+                        PitMapState.NoKey -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("Add a FRC Nexus API key in Settings to see the pit map.", Modifier.padding(24.dp))
+                            OutlinedButton(onClick = onOpenSettings) { Text("Open Settings") }
+                        }
+                        PitMapState.Unavailable -> Text("This event has no pit map on Nexus.", Modifier.padding(24.dp))
+                        is PitMapState.Loaded -> PitMapCanvas(state.map, ours)
+                    }
                 }
-                PitMapState.Unavailable -> Text("This event has no pit map on Nexus.", Modifier.padding(24.dp))
-                is PitMapState.Loaded -> PitMapCanvas(state.map, ours)
             }
+        }
+    }
+}
+
+@Composable
+private fun OurPit(address: String, teamNumber: String?) {
+    ScoreboardCard(Modifier.fillMaxWidth()) {
+        Row(Modifier.padding(horizontal = 20.dp, vertical = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                SectionLabel("Our pit")
+                Text(address, style = condensed(64.sp, FontWeight.ExtraBold).copy(lineHeight = 64.sp))
+            }
+            teamNumber?.let { TeamChip(it, MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.onPrimary, condensed(26.sp, FontWeight.ExtraBold)) }
         }
     }
 }
@@ -112,9 +140,9 @@ private fun PitMapCanvas(map: PitMap, ours: PitMap.AssignedPit?) {
     fun layout(text: String, box: Rect, color: Color): MapLabel {
         var px = PitMapGeometry.labelFontPx(box, text)
         // The estimate assumes digit widths; shrink to the measured width for wider (letter) labels.
-        val measured = measurer.measure(text, TextStyle(fontSize = with(density) { px.toSp() }), maxLines = 1).size.width
+        val measured = measurer.measure(text, TextStyle(fontFamily = BarlowCondensed, fontWeight = FontWeight.Bold, fontSize = with(density) { px.toSp() }), maxLines = 1).size.width
         if (measured > box.width * 0.9f) px *= box.width * 0.9f / measured
-        val style = TextStyle(color = color, fontSize = with(density) { px.toSp() })
+        val style = TextStyle(color = color, fontFamily = BarlowCondensed, fontWeight = FontWeight.Bold, fontSize = with(density) { px.toSp() })
         return MapLabel(box, measurer.measure(text, style, maxLines = 1, overflow = TextOverflow.Clip, constraints = Constraints(maxWidth = box.width.toInt().coerceAtLeast(1))))
     }
 
@@ -122,7 +150,7 @@ private fun PitMapCanvas(map: PitMap, ours: PitMap.AssignedPit?) {
         map.areas.orEmpty().values.map { layout(it.label, PitMapGeometry.rect(it.position, it.size), colors.onSurfaceVariant) } +
             map.labels.orEmpty().values.map { layout(it.label, PitMapGeometry.rect(it.position, it.size), colors.onSurface) } +
             map.pits.mapNotNull { (address, pit) ->
-                val color = if (address == ours?.address) colors.onPrimary else colors.onSecondaryContainer
+                val color = if (address == ours?.address) colors.onPrimary else colors.onSurface
                 pit.team?.let { layout(it, PitMapGeometry.rect(pit.position, pit.size), color) }
             }
     }
@@ -145,7 +173,7 @@ private fun PitMapCanvas(map: PitMap, ours: PitMap.AssignedPit?) {
             withTransform({ scale(scale, scale, pivot = Offset.Zero) }) {
                 map.areas?.values?.forEach { area ->
                     val r = PitMapGeometry.rect(area.position, area.size)
-                    drawRect(colors.surfaceVariant, r.topLeft, r.size)
+                    drawRect(colors.surfaceContainerHigh, r.topLeft, r.size)
                 }
                 map.walls?.values?.forEach { wall ->
                     val r = PitMapGeometry.rect(wall.position, wall.size)
@@ -163,8 +191,8 @@ private fun PitMapCanvas(map: PitMap, ours: PitMap.AssignedPit?) {
                 }
                 map.pits.forEach { (address, pit) ->
                     val r = PitMapGeometry.rect(pit.position, pit.size)
-                    drawRect(if (address == ours?.address) colors.primary else colors.secondaryContainer, r.topLeft, r.size)
-                    drawRect(colors.outline, r.topLeft, r.size, style = Stroke(width = 1f))
+                    drawRect(if (address == ours?.address) colors.primary else colors.surfaceContainer, r.topLeft, r.size)
+                    drawRect(colors.outline, r.topLeft, r.size, style = Stroke(width = 1.5f))
                 }
                 labels.forEach { label ->
                     drawText(label.layout, topLeft = label.box.center - Offset(label.layout.size.width / 2f, label.layout.size.height / 2f))

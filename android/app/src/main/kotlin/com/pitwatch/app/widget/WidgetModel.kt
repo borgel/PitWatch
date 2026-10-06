@@ -71,15 +71,25 @@ sealed interface WidgetLine {
 }
 
 object WidgetLines {
-    /** Height the large layout uses above the upcoming list (header, next match, alliances, last result, label). */
-    private val FIXED: Dp = 236.dp
-    private val ROW: Dp = 19.dp
+    /** Height the large layout uses above the upcoming list (header, title, next match with the 56 sp countdown, phase bar, alliances, divider, last result). */
+    // Measured on-device (emulator-5580, 4×3 at 360×344 dp, 40 sp countdown): ~293 dp above the list. The 56 sp countdown adds ~16 dp.
+    private val FIXED: Dp = 312.dp
+    private val ROW: Dp = 24.dp
 
     /** Glance renders at most 10 children per Column; the list gets its own Column, kept under the limit. */
     const val MAX_LINES = 9
 
-    /** How many upcoming lines fit in a widget of [height]. */
-    fun budget(height: Dp): Int = ((height - FIXED) / ROW).toInt().coerceAtLeast(0)
+    /** The 56 sp countdown only where it leaves room for the list; 40 sp below. */
+    fun largeCountdown(height: Dp): Boolean = height >= 400.dp
+
+    /** How many upcoming lines fit in a widget of [height]; parts the widget doesn't draw give their room back. */
+    fun budget(height: Dp, phaseBar: Boolean = true, last: Boolean = true): Int {
+        var fixed = FIXED
+        if (!largeCountdown(height)) fixed -= 16.dp
+        if (!phaseBar) fixed -= 17.dp
+        if (!last) fixed -= 26.dp
+        return ((height - fixed) / ROW).toInt().coerceAtLeast(0)
+    }
 
     /** Days and their items within [budget] lines; a day header is only shown with at least one item under it. */
     fun fit(days: List<MatchListModel.Day>, budget: Int): List<WidgetLine> {
@@ -99,3 +109,14 @@ object WidgetLines {
     }
 }
 
+/** "4698 · ", "5507", " · 1678": the text either side of our team, so it can sit in its own chip. */
+object TeamSplit {
+    fun of(line: MatchListModel.AllianceLine): Triple<String, String?, String> {
+        val numbers = line.teams.map { it.number }
+        val i = line.teams.indexOfFirst { it.isUs }
+        if (i < 0) return Triple(numbers.joinToString(" · "), null, "")
+        val before = numbers.take(i).joinToString(" · ").let { if (it.isEmpty()) it else "$it · " }
+        val after = numbers.drop(i + 1).joinToString(" · ").let { if (it.isEmpty()) it else " · $it" }
+        return Triple(before, numbers[i], after)
+    }
+}

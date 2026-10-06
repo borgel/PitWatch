@@ -32,6 +32,9 @@ data class MatchListModel(
     /** e.g. "JST" when the phone isn't in the event's zone, so times aren't mistaken for venue time. */
     val zoneLabel: String? = null,
 ) {
+    /** The match the hero card shows; the list leaves it out. */
+    val next: MatchRow? get() = days.asSequence().flatMap { it.items }.filterIsInstance<Item.Upcoming>().firstOrNull { it.row.isNext }?.row
+
     data class Status(val teamNumber: Int, val rank: Int?, val record: String?) {
         val text: String get() = listOfNotNull("Team $teamNumber", rank?.let { "Rank #$it" }, record).joinToString(" · ")
     }
@@ -73,8 +76,25 @@ data class MatchListModel(
     /** "12m to on deck": counts down to [deadline]. */
     data class Countdown(val deadline: Instant, val target: String)
 
-    data class Result(val key: String, val label: String, val shortLabel: String, val ourScore: Int, val theirScore: Int, val outcome: String) {
+    data class Result(
+        val key: String,
+        val label: String,
+        val shortLabel: String,
+        val ourScore: Int,
+        val theirScore: Int,
+        /** "W", "L" or "T", from our side. */
+        val outcome: String,
+        val red: AllianceLine,
+        val blue: AllianceLine,
+        val redScore: Int,
+        val blueScore: Int,
+    ) {
         val url: String get() = "https://www.thebluealliance.com/match/$key"
+        val outcomeLabel: String get() = when (outcome) {
+            "W" -> "WIN"
+            "L" -> "LOSS"
+            else -> "TIE"
+        }
     }
 
     enum class Empty { NOT_CONFIGURED, NO_EVENT, NO_MATCHES }
@@ -163,15 +183,18 @@ object MatchListModels {
 
         val results = schedule.pastMatches.mapNotNull { match ->
             val ours = match.allianceColor(teamKey) ?: return@mapNotNull null
-            val theirs = if (ours == "red") "blue" else "red"
-            val our = match.alliances[ours]?.score ?: return@mapNotNull null
-            val their = match.alliances[theirs]?.score ?: return@mapNotNull null
+            val redScore = match.alliances["red"]?.score ?: return@mapNotNull null
+            val blueScore = match.alliances["blue"]?.score ?: return@mapNotNull null
+            val (our, their) = if (ours == "red") redScore to blueScore else blueScore to redScore
             val outcome = when {
                 our > their -> "W"
                 our < their -> "L"
                 else -> "T"
             }
-            MatchListModel.Result(match.key, match.label, match.shortLabel, our, their, outcome)
+            MatchListModel.Result(
+                match.key, match.label, match.shortLabel, our, their, outcome,
+                line(match, "red").copy(summedOpr = null), line(match, "blue").copy(summedOpr = null), redScore, blueScore,
+            )
         }
 
         val empty = if (days.isEmpty() && results.isEmpty()) MatchListModel.Empty.NO_MATCHES else null

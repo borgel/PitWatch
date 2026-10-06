@@ -1,11 +1,18 @@
 package com.pitwatch.app.ui.events
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -13,15 +20,12 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -32,11 +36,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pitwatch.app.AppContainer
 import com.pitwatch.app.schedule.RefreshWorker
+import com.pitwatch.app.ui.scoreboard.ScoreboardCard
+import com.pitwatch.app.ui.scoreboard.ScreenHeader
+import com.pitwatch.app.ui.scoreboard.condensed
 import com.pitwatch.core.config.UserConfig
 import com.pitwatch.core.model.Event
 import java.time.LocalDate
@@ -118,9 +127,9 @@ fun EventPickerContent(
 ) {
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Event") },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") } },
+            ScreenHeader(
+                "Choose event", null,
+                navigation = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") } },
             )
         },
     ) { padding ->
@@ -137,24 +146,31 @@ fun EventPickerContent(
                 Text("Couldn't load events: ${state.message}", color = MaterialTheme.colorScheme.error)
                 OutlinedButton(onClick = onRetry, modifier = Modifier.padding(top = 12.dp)) { Text("Retry") }
             }
-            is EventPickerState.Loaded -> LazyColumn(Modifier.fillMaxSize().padding(padding)) {
-                item {
-                    ListItem(
-                        headlineContent = { Text("Auto (current or next event)") },
-                        trailingContent = { if (selectedKey == null) Icon(Icons.Filled.Check, contentDescription = "Selected") },
-                        modifier = Modifier.clickable { onSelect(null) },
-                    )
-                    HorizontalDivider()
-                }
+            is EventPickerState.Loaded -> LazyColumn(
+                Modifier.fillMaxSize().padding(padding),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                item { EventRow("Auto (current or next event)", null, selectedKey == null) { onSelect(null) } }
                 items(state.options, key = { it.key }) { option ->
-                    ListItem(
-                        headlineContent = { Text(option.name) },
-                        supportingContent = { Text(listOfNotNull(option.dates, option.location).joinToString(" · ")) },
-                        trailingContent = { if (option.key == selectedKey) Icon(Icons.Filled.Check, contentDescription = "Selected") },
-                        modifier = Modifier.clickable { onSelect(option.key) },
-                    )
+                    EventRow(option.name, listOfNotNull(option.dates, option.location).joinToString(" · "), option.key == selectedKey) { onSelect(option.key) }
                 }
             }
+        }
+    }
+}
+
+/** A picker row: the current event gets an accent bar on its left edge and a check. */
+@Composable
+private fun EventRow(name: String, detail: String?, selected: Boolean, onClick: () -> Unit) {
+    ScoreboardCard(Modifier.fillMaxWidth(), radius = 16.dp, onClick = onClick) {
+        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.width(4.dp).fillMaxHeight().background(if (selected) MaterialTheme.colorScheme.primary else Color.Transparent))
+            Column(Modifier.weight(1f).padding(horizontal = 14.dp, vertical = 12.dp)) {
+                Text(name, style = condensed(20.sp))
+                detail?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            }
+            if (selected) Icon(Icons.Filled.Check, contentDescription = "Selected", Modifier.padding(end = 14.dp), tint = MaterialTheme.colorScheme.primary)
         }
     }
 }
