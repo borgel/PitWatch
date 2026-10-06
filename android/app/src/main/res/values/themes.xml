@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Compose draws every bar; the platform action bar would add a second "PitWatch" bar. -->
+    <style name="Theme.PitWatch" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>

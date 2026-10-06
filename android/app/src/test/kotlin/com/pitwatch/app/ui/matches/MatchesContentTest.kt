@@ -1,5 +1,6 @@
 package com.pitwatch.app.ui.matches
 
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -92,5 +93,21 @@ class MatchesContentTest {
         assertEquals("now", Countdowns.text(SNAP_NOW, SNAP_NOW))
         assertEquals("12m", Countdowns.text(SNAP_NOW.plusSeconds(12 * 60 - 30), SNAP_NOW))
         assertEquals("1h 5m", Countdowns.text(SNAP_NOW.plusSeconds(65 * 60), SNAP_NOW))
+    }
+
+    private fun compactRow(phase: com.pitwatch.core.model.Phase?) = model.days[1].items
+        .filterIsInstance<MatchListModel.Item.Upcoming>().first().row.copy(phase = phase)
+
+    @Test
+    fun `compact rows hide the pre-queue badge`() {
+        // Found on-device: every future row wore a gray UPCOMING badge.
+        compose.setContent { MatchRowItem(compactRow(com.pitwatch.core.model.Phase.PRE_QUEUE)) {} }
+        compose.onAllNodes(hasText("UPCOMING")).assertCountEquals(0)
+    }
+
+    @Test
+    fun `compact rows badge matches that are in motion`() {
+        compose.setContent { MatchRowItem(compactRow(com.pitwatch.core.model.Phase.QUEUEING)) {} }
+        compose.onNodeWithText("IN QUEUE").assertIsDisplayed()
     }
 }

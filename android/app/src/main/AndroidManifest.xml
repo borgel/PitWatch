@@ -15,7 +15,8 @@
     <application
         android:name=".PitWatchApp"
         android:icon="@drawable/ic_stat_pitwatch"
-        android:label="PitWatch">
+        android:label="PitWatch"
+        android:theme="@style/Theme.PitWatch">
         <activity
             android:name=".MainActivity"
             android:exported="true"

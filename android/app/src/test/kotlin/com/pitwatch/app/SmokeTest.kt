@@ -29,4 +29,10 @@ class SmokeTest {
     fun `main activity launches`() {
         Robolectric.buildActivity(MainActivity::class.java).setup().get()
     }
+
+    @Test
+    fun `no platform action bar above the Compose top bars`() {
+        // Found on-device: the default activity theme added a second "PitWatch" bar.
+        kotlin.test.assertNull(Robolectric.buildActivity(MainActivity::class.java).setup().get().actionBar)
+    }
 }

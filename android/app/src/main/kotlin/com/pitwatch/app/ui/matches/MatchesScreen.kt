@@ -275,7 +275,7 @@ private fun NextMatchCard(row: MatchListModel.MatchRow, now: Instant, onOpenMatc
 }
 
 @Composable
-private fun MatchRowItem(row: MatchListModel.MatchRow, onOpenMatch: (String) -> Unit) {
+internal fun MatchRowItem(row: MatchListModel.MatchRow, onOpenMatch: (String) -> Unit) {
     Row(
         Modifier.fillMaxWidth().clickable { onOpenMatch(row.url) }.padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -283,7 +283,8 @@ private fun MatchRowItem(row: MatchListModel.MatchRow, onOpenMatch: (String) -> 
         row.alliance?.let { Box(Modifier.size(8.dp).background(StatusColors.alliance(it), CircleShape)) }
         Spacer(Modifier.width(8.dp))
         Text(row.label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-        row.phase?.let {
+        // Only matches already in motion get a badge; color is for urgency, not for "later".
+        row.phase?.takeIf { it != Phase.PRE_QUEUE }?.let {
             PhaseBadge(it)
             Spacer(Modifier.width(8.dp))
         }
