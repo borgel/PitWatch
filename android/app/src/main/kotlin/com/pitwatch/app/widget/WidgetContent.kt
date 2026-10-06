@@ -25,6 +25,7 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.pitwatch.app.MainActivity
+import com.pitwatch.app.ui.TimeFormat
 import com.pitwatch.app.ui.matches.MatchListModel
 import com.pitwatch.app.ui.theme.StatusColors
 import com.pitwatch.core.model.Phase
@@ -33,10 +34,6 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
-private val clockTime: DateTimeFormatter = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withZone(ZoneId.systemDefault())
-
-private fun time(row: MatchListModel.MatchRow): String =
-    row.time?.let { (if (row.estimated) "~" else "") + clockTime.format(it) } ?: "Time TBD"
 
 /** The widget at whatever size it's placed; [countdown] renders the live chronometer (swappable in tests). */
 @Composable
@@ -45,11 +42,13 @@ fun WidgetContent(model: WidgetModel, countdown: @Composable (Instant) -> Unit) 
     val wide = size.width >= PitWatchWidget.MEDIUM.width
     val tall = size.height >= PitWatchWidget.LARGE.height
     val muted = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp)
+    val times = TimeFormat(model.timeZone, model.zoneLabel)
     Column(
         GlanceModifier.fillMaxSize().background(GlanceTheme.colors.widgetBackground).cornerRadius(16.dp).padding(12.dp)
             .clickable(actionStartActivity<MainActivity>()),
     ) {
         Text(model.header, style = muted, maxLines = 1)
+        if (tall) model.eventTitle?.let { Text(it, style = muted, maxLines = 1) }
         val next = model.next
         if (model.state != WidgetModel.State.READY || next == null) {
             Spacer(GlanceModifier.height(8.dp))
@@ -59,7 +58,7 @@ fun WidgetContent(model: WidgetModel, countdown: @Composable (Instant) -> Unit) 
         }
         Row(GlanceModifier.fillMaxWidth()) {
             Column(GlanceModifier.defaultWeight()) {
-                NextMatch(next, model.countdownDeadline, countdown)
+                NextMatch(next, times, model.countdownDeadline, countdown)
                 if (wide) {
                     AllianceText(next.red, "red")
                     AllianceText(next.blue, "blue")
@@ -77,23 +76,36 @@ fun WidgetContent(model: WidgetModel, countdown: @Composable (Instant) -> Unit) 
                     maxLines = 1,
                 )
             }
-            Spacer(GlanceModifier.height(8.dp))
-            Text("UPCOMING", style = muted)
-            model.later.take(6).forEach { item ->
-                when (item) {
-                    is MatchListModel.Item.Upcoming -> Row(GlanceModifier.fillMaxWidth().padding(vertical = 2.dp)) {
-                        Text(item.row.shortLabel, style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 14.sp), modifier = GlanceModifier.defaultWeight())
-                        Text(time(item.row), style = muted)
+            val lines = WidgetLines.fit(model.laterDays, WidgetLines.budget(size.height))
+            if (lines.isNotEmpty()) {
+                Spacer(GlanceModifier.height(8.dp))
+                Text("UPCOMING", style = muted)
+            }
+            // Own Column: Glance drops children past 10 per Column, and the parent is already busy.
+            Column {
+            for (line in lines) {
+                when (line) {
+                    is WidgetLine.Header -> Text(
+                        line.label,
+                        style = TextStyle(color = GlanceTheme.colors.primary, fontSize = 11.sp, fontWeight = FontWeight.Medium),
+                        modifier = GlanceModifier.padding(top = 4.dp),
+                    )
+                    is WidgetLine.Entry -> when (val item = line.item) {
+                        is MatchListModel.Item.Upcoming -> Row(GlanceModifier.fillMaxWidth().padding(vertical = 2.dp)) {
+                            Text(item.row.shortLabel, style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 14.sp), modifier = GlanceModifier.defaultWeight())
+                            Text(times.match(item.row.time, item.row.estimated), style = muted)
+                        }
+                        is MatchListModel.Item.Break -> Text(item.title, style = muted, modifier = GlanceModifier.padding(vertical = 2.dp))
                     }
-                    is MatchListModel.Item.Break -> Text(item.title, style = muted, modifier = GlanceModifier.padding(vertical = 2.dp))
                 }
+            }
             }
         }
     }
 }
 
 @Composable
-private fun NextMatch(row: MatchListModel.MatchRow, deadline: Instant?, countdown: @Composable (Instant) -> Unit) {
+private fun NextMatch(row: MatchListModel.MatchRow, times: TimeFormat, deadline: Instant?, countdown: @Composable (Instant) -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(row.shortLabel, style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 28.sp, fontWeight = FontWeight.Bold))
         row.phase?.let {
@@ -101,7 +113,7 @@ private fun NextMatch(row: MatchListModel.MatchRow, deadline: Instant?, countdow
             PhaseBadge(it)
         }
     }
-    Text(time(row), style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 13.sp))
+    Text(times.match(row.time, row.estimated), style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 13.sp))
     if (deadline != null) {
         // The platform Chronometer gets its own line: sharing a row with small text clipped it on-device.
         countdown(deadline)

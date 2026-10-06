@@ -1,5 +1,6 @@
 package com.pitwatch.app.widget
 
+import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceTheme
 import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
 import androidx.glance.testing.unit.hasText
@@ -20,7 +21,7 @@ import org.robolectric.RobolectricTestRunner
 class WidgetContentTest {
     private val ready = WidgetModels.build(
         snapshotCache().copy(rankings = PitWatchJson.decodeFromString<EventRankings>(fixture("$SNAP/tba_rankings.json"))),
-        UserConfig(teamNumber = 5507, apiKey = "k", nexusApiKey = "n"), SNAP_NOW, Locale.US,
+        UserConfig(teamNumber = 5507, apiKey = "k", nexusApiKey = "n"), SNAP_NOW, Locale.US, com.pitwatch.app.LA,
     )
 
     @Test
@@ -44,11 +45,14 @@ class WidgetContentTest {
 
     @Test
     fun `large - upcoming list with breaks`() = runGlanceAppWidgetUnitTest {
-        setAppWidgetSize(PitWatchWidget.LARGE)
+        setAppWidgetSize(androidx.compose.ui.unit.DpSize(250.dp, 450.dp)) // tall enough for the list
         provideComposable { GlanceTheme { WidgetContent(ready) { Text("COUNTDOWN") } } }
         onNode(hasText("UPCOMING")).assertExists()
+        onNode(hasText("California Northern")).assertExists()
+        onNode(hasText("Saturday, Apr 11")).assertExists()
         onNode(hasText("LAST  Q22  W 403–299")).assertExists()
-        onNode(hasText("End of day")).assertExists()
+        onAllNodes(hasText("End of day")).assertCountEquals(1) // the 9-line cap ends the list before Saturday's
+        onNode(hasText("Lunch")).assertExists()
         onNode(hasText("Q43")).assertExists()
     }
 

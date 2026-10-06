@@ -2,10 +2,13 @@ package com.pitwatch.app.widget
 
 import com.pitwatch.app.ui.matches.MatchListModel
 import com.pitwatch.app.ui.matches.MatchListModels
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import com.pitwatch.core.config.UserConfig
 import com.pitwatch.core.store.EventCache
 import com.pitwatch.core.store.RefreshState
 import java.time.Instant
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -15,39 +18,84 @@ data class WidgetModel(
     val header: String,
     val eventTitle: String?,
     val next: MatchListModel.MatchRow?,
-    /** Everything after [next], in order: matches and breaks. */
-    val later: List<MatchListModel.Item>,
+    /** What follows [next], grouped by day; the next match's own day keeps only what comes after it. */
+    val laterDays: List<MatchListModel.Day>,
     val last: MatchListModel.Result?,
     /** Shown instead of match content outside [State.READY]. */
     val message: String?,
     /** Live chronometer target; null once passed so the widget never counts negative. */
     val countdownDeadline: Instant?,
+    val timeZone: ZoneId = ZoneId.systemDefault(),
+    val zoneLabel: String? = null,
 ) {
     enum class State { NOT_CONFIGURED, NO_EVENT, NO_UPCOMING, READY }
 }
 
 object WidgetModels {
-    fun build(cache: EventCache, config: UserConfig, now: Instant, locale: Locale = Locale.getDefault()): WidgetModel {
-        val list = MatchListModels.build(cache, config, RefreshState(), now, locale)
+    fun build(
+        cache: EventCache,
+        config: UserConfig,
+        now: Instant,
+        locale: Locale = Locale.getDefault(),
+        zone: ZoneId = ZoneId.systemDefault(),
+    ): WidgetModel {
+        val list = MatchListModels.build(cache, config, RefreshState(), now, locale, zone)
         if (list.empty == MatchListModel.Empty.NOT_CONFIGURED) {
-            return WidgetModel(WidgetModel.State.NOT_CONFIGURED, "PitWatch", null, null, emptyList(), null, "Set up PitWatch", null)
+            return WidgetModel(WidgetModel.State.NOT_CONFIGURED, "PitWatch", null, null, emptyList(), null, "Set up PitWatch", null, zone)
         }
         val header = listOfNotNull(config.teamNumber?.toString(), list.status?.rank?.let { "#$it" }, list.status?.record).joinToString(" · ")
         val event = cache.event
-            ?: return WidgetModel(WidgetModel.State.NO_EVENT, header, null, null, emptyList(), null, "No event yet", null)
+            ?: return WidgetModel(WidgetModel.State.NO_EVENT, header, null, null, emptyList(), null, "No event yet", null, zone)
 
-        val items = list.days.flatMap { it.items }
-        val next = items.filterIsInstance<MatchListModel.Item.Upcoming>().firstOrNull()?.row
+        val next = list.days.flatMap { it.items }.filterIsInstance<MatchListModel.Item.Upcoming>().firstOrNull()?.row
         val last = list.results.firstOrNull()
         if (next == null) {
             val start = event.startInstant?.takeIf { it > now }
             val message = start?.let {
                 "Next event: ${list.title} · " + DateTimeFormatter.ofPattern("MMM d", locale).withZone(event.zone).format(it)
             } ?: "No upcoming matches"
-            return WidgetModel(WidgetModel.State.NO_UPCOMING, header, list.title, null, emptyList(), last, message, null)
+            return WidgetModel(WidgetModel.State.NO_UPCOMING, header, list.title, null, emptyList(), last, message, null, zone, list.zoneLabel)
         }
-        val later = items.dropWhile { !(it is MatchListModel.Item.Upcoming && it.row.key == next.key) }.drop(1)
+        val nextDay = list.days.indexOfFirst { day -> day.items.any { it is MatchListModel.Item.Upcoming && it.row.key == next.key } }
+        val sameDayRest = list.days[nextDay].items.dropWhile { !(it is MatchListModel.Item.Upcoming && it.row.key == next.key) }.drop(1)
+        val laterDays = listOfNotNull(list.days[nextDay].copy(items = sameDayRest).takeIf { sameDayRest.isNotEmpty() }) + list.days.drop(nextDay + 1)
         val deadline = next.countdown?.deadline?.takeIf { it > now }
-        return WidgetModel(WidgetModel.State.READY, header, list.title, next, later, last, null, deadline)
+        return WidgetModel(WidgetModel.State.READY, header, list.title, next, laterDays, last, null, deadline, zone, list.zoneLabel)
     }
 }
+
+/** One line of the large widget's upcoming list. */
+sealed interface WidgetLine {
+    data class Header(val label: String) : WidgetLine
+    data class Entry(val item: MatchListModel.Item) : WidgetLine
+}
+
+object WidgetLines {
+    /** Height the large layout uses above the upcoming list (header, next match, alliances, last result, label). */
+    private val FIXED: Dp = 236.dp
+    private val ROW: Dp = 19.dp
+
+    /** Glance renders at most 10 children per Column; the list gets its own Column, kept under the limit. */
+    const val MAX_LINES = 9
+
+    /** How many upcoming lines fit in a widget of [height]. */
+    fun budget(height: Dp): Int = ((height - FIXED) / ROW).toInt().coerceAtLeast(0)
+
+    /** Days and their items within [budget] lines; a day header is only shown with at least one item under it. */
+    fun fit(days: List<MatchListModel.Day>, budget: Int): List<WidgetLine> {
+        val lines = mutableListOf<WidgetLine>()
+        var left = minOf(budget, MAX_LINES)
+        for (day in days) {
+            if (left < 2) break
+            lines += WidgetLine.Header(day.label)
+            left--
+            for (item in day.items) {
+                if (left == 0) break
+                lines += WidgetLine.Entry(item)
+                left--
+            }
+        }
+        return lines
+    }
+}
+

@@ -27,7 +27,9 @@ import kotlinx.coroutines.flow.first
 
 /** One responsive widget; renders only from the persisted cache (never network). */
 class PitWatchWidget : GlanceAppWidget() {
-    override val sizeMode = SizeMode.Responsive(setOf(SMALL, MEDIUM, LARGE))
+    // Exact: the layout sees the widget's real size (Responsive reports the bucket, so a tall widget looked
+    // only 250 dp high and the upcoming list was budgeted away — found on-device).
+    override val sizeMode = SizeMode.Exact
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val container = (context.applicationContext as PitWatchApp).container
