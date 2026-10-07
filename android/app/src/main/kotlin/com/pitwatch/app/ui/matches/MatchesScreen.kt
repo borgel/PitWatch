@@ -1,7 +1,11 @@
 package com.pitwatch.app.ui.matches
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -23,6 +27,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -40,10 +45,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pitwatch.app.AppContainer
 import com.pitwatch.app.data.LiveControl
+import com.pitwatch.app.data.NotificationPrefs
 import com.pitwatch.app.live.LiveMatchService
+import com.pitwatch.app.notify.ScheduleNotifier
 import com.pitwatch.app.schedule.rearmAutoStart
 import com.pitwatch.app.ui.LocalTimeFormat
 import com.pitwatch.app.ui.TimeFormat
@@ -92,6 +100,13 @@ fun MatchesScreen(container: AppContainer, config: UserConfig, onPickEvent: () -
     val cache by container.stores.cache.data.collectAsStateWithLifecycle(initialValue = EventCache())
     val refreshState by container.stores.refreshState.data.collectAsStateWithLifecycle(initialValue = RefreshState())
     val tracking by LiveMatchService.tracking.collectAsStateWithLifecycle()
+    val notificationPrefs by container.stores.notificationPrefs.data.collectAsStateWithLifecycle(initialValue = NotificationPrefs(scheduleEnabled = true))
+    fun enableSchedule() {
+        container.scope.launch { ScheduleNotifier.setEnabled(context.applicationContext, container, true) }
+    }
+    val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) enableSchedule()
+    }
     val now by produceState(container.clock()) {
         while (true) {
             delay(30_000)
@@ -127,6 +142,12 @@ fun MatchesScreen(container: AppContainer, config: UserConfig, onPickEvent: () -
         },
         onOpenMatch = { url -> context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) },
         onPickEvent = onPickEvent,
+        showScheduleOffer = !notificationPrefs.scheduleEnabled,
+        onShowSchedule = {
+            // Only turn it on once notifications can actually show; otherwise ask first.
+            val allowed = ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+            if (allowed) enableSchedule() else notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        },
     )
 }
 
@@ -141,9 +162,12 @@ fun MatchesContent(
     onToggleTracking: () -> Unit,
     onOpenMatch: (url: String) -> Unit,
     onPickEvent: () -> Unit,
+    /** Offer the schedule notification under the list (shown while it's off). */
+    showScheduleOffer: Boolean = false,
+    onShowSchedule: () -> Unit = {},
 ) {
     val timeFormat = remember(model.timeZone, model.zoneLabel) { TimeFormat(model.timeZone, model.zoneLabel) }
-    CompositionLocalProvider(LocalTimeFormat provides timeFormat) { MatchesBody(model, now, tracking, refreshing, onRefresh, onToggleTracking, onOpenMatch, onPickEvent) }
+    CompositionLocalProvider(LocalTimeFormat provides timeFormat) { MatchesBody(model, now, tracking, refreshing, onRefresh, onToggleTracking, onOpenMatch, onPickEvent, showScheduleOffer, onShowSchedule) }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -157,6 +181,8 @@ private fun MatchesBody(
     onToggleTracking: () -> Unit,
     onOpenMatch: (url: String) -> Unit,
     onPickEvent: () -> Unit,
+    showScheduleOffer: Boolean,
+    onShowSchedule: () -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -211,6 +237,11 @@ private fun MatchesBody(
                 if (model.results.isNotEmpty()) {
                     item(key = "results") { SectionLabel("Last", Modifier.padding(start = 4.dp, top = 6.dp)) }
                     items(model.results, key = { "result:${it.key}" }) { ResultRow(it, onOpenMatch) }
+                }
+                if (showScheduleOffer && model.empty == null) {
+                    item(key = "schedule-offer") {
+                        TextButton(onClick = onShowSchedule, modifier = Modifier.fillMaxWidth()) { Text("Show schedule in notifications") }
+                    }
                 }
             }
         }

@@ -1,6 +1,8 @@
 package com.pitwatch.app.ui
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.Settings
 import androidx.compose.foundation.layout.Arrangement
@@ -12,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -39,12 +42,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pitwatch.app.AppContainer
+import com.pitwatch.app.data.NotificationPrefs
+import com.pitwatch.app.notify.ScheduleNotifier
 import com.pitwatch.app.schedule.RefreshWorker
 import com.pitwatch.app.schedule.rearmAutoStart
 import com.pitwatch.app.ui.scoreboard.AccentButton
@@ -69,10 +76,16 @@ fun SettingsScreen(container: AppContainer, config: UserConfig, onBack: (() -> U
     var nexusKey by rememberSaveable { mutableStateOf(config.nexusApiKey.orEmpty()) }
     // Re-checked on every resume: the user may have just flipped it in system notification settings.
     var canPromote by remember { mutableStateOf(NotificationManagerCompat.from(context).canPostPromotedNotifications()) }
+    fun notificationsAllowed() = ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+    var canNotify by remember { mutableStateOf(notificationsAllowed()) }
     LifecycleResumeEffect(Unit) {
         canPromote = NotificationManagerCompat.from(context).canPostPromotedNotifications()
+        canNotify = notificationsAllowed()
+        // Coming back from system settings with notifications newly allowed: show the schedule now, not on the next refresh.
+        if (canNotify) container.scope.launch { ScheduleNotifier.update(context.applicationContext, container) }
         onPauseOrDispose { }
     }
+    val prefs by container.stores.notificationPrefs.data.collectAsStateWithLifecycle(initialValue = NotificationPrefs())
 
     /** Saves a config change (and refreshes) on the app scope via [SettingsActions]. */
     fun update(transform: (UserConfig) -> UserConfig) = SettingsActions.save(context, container, transform)
@@ -132,6 +145,40 @@ fun SettingsScreen(container: AppContainer, config: UserConfig, onBack: (() -> U
                 }
             }
 
+            Section("Notifications") {
+                // The whole row toggles (one switch target for touch and TalkBack).
+                ListItem(
+                    headlineContent = { Text("Schedule in notifications") },
+                    supportingContent = { Text("Your upcoming matches and the last result, kept up to date") },
+                    trailingContent = { Switch(prefs.scheduleEnabled, onCheckedChange = null) },
+                    colors = clearRow(),
+                    modifier = Modifier.toggleable(prefs.scheduleEnabled, role = Role.Switch) { on ->
+                        container.scope.launch { ScheduleNotifier.setEnabled(context.applicationContext, container, on) }
+                    },
+                )
+                if (prefs.scheduleEnabled && !canNotify) {
+                    ListItem(
+                        headlineContent = { Text("Notifications are off for PitWatch") },
+                        supportingContent = { Text("Allow notifications to see the schedule.") },
+                        trailingContent = {
+                            OutlinedButton(onClick = {
+                                context.startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName))
+                            }) { Text("Settings") }
+                        },
+                        colors = clearRow(),
+                    )
+                }
+                ListItem(
+                    headlineContent = { Text("Keep notifications pinned") },
+                    supportingContent = { Text("Swiping them away brings them back; use Stop or Turn off instead") },
+                    trailingContent = { Switch(prefs.pinned, onCheckedChange = null) },
+                    colors = clearRow(),
+                    modifier = Modifier.toggleable(prefs.pinned, role = Role.Switch) { on ->
+                        container.scope.launch { container.stores.notificationPrefs.updateData { it.copy(pinned = on) } }
+                    },
+                )
+            }
+
             Section("Event") {
                 Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
@@ -150,8 +197,10 @@ fun SettingsScreen(container: AppContainer, config: UserConfig, onBack: (() -> U
 
             Section("API keys") {
                 Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(apiKey, { apiKey = it }, label = { Text("TBA API key") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                    OutlinedTextField(nexusKey, { nexusKey = it }, label = { Text("FRC Nexus API key") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(apiKey, { apiKey = it }, label = { Text("TBA API key") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+                        supportingText = { Text(ApiKeyHelp.TBA) })
+                    OutlinedTextField(nexusKey, { nexusKey = it }, label = { Text("FRC Nexus API key") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+                        supportingText = { Text(ApiKeyHelp.NEXUS) })
                     AccentButton("Save keys", onClick = { update { it.copy(apiKey = apiKey.trim(), nexusApiKey = nexusKey.trim().ifEmpty { null }) } })
                 }
             }

@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="widget_description">Your next match at a glance</string>
+    <string name="widget_description">Next match countdown, phase and alliances, plus last result and what\u2019s next</string>
+    <string name="widget_label">Next match</string>
+    <string name="schedule_widget_label">Match schedule</string>
+    <string name="schedule_widget_description">Upcoming matches with live phase, breaks and your last result. No countdown.</string>
 </resources>

@@ -18,12 +18,15 @@ import java.time.Instant
 object LiveNotification {
     const val CHANNEL_ID = "live_match"
     const val NOTIFICATION_ID = 1001
+    /** Its own group, so new posts show separately (Android 15+ may still bundle single-notification groups; it's system UX). */
+    const val GROUP = "pitwatch.live"
     val STALE_AFTER: Duration = Duration.ofMinutes(5)
 
     /** Queue, on deck, on field (iOS phase colors), then match. */
     private val SEGMENT_COLORS = StatusColors.notificationSegments.map { it.toArgb() }
 
-    data class Actions(val content: PendingIntent?, val refresh: PendingIntent?, val stop: PendingIntent?)
+    /** [dismissed] fires on swipe; the service decides whether that stops tracking or re-posts (pinned). */
+    data class Actions(val content: PendingIntent?, val refresh: PendingIntent?, val stop: PendingIntent?, val dismissed: PendingIntent? = stop)
 
     fun ensureChannel(context: Context) {
         NotificationManagerCompat.from(context).createNotificationChannel(
@@ -40,11 +43,12 @@ object LiveNotification {
             .setSmallIcon(R.drawable.ic_stat_pitwatch)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
+            .setGroup(GROUP)
             .setRequestPromotedOngoing(true)
             .setCategory(NotificationCompat.CATEGORY_PROGRESS)
             .setColor(context.getColor(android.R.color.system_accent1_600)) // Material You accent for the icon
             .setContentIntent(actions.content)
-            .setDeleteIntent(actions.stop) // swiping it away stops tracking
+            .setDeleteIntent(actions.dismissed) // the service decides: stop, or re-post when pinned
         actions.refresh?.let { builder.addAction(0, "Refresh", it) }
         actions.stop?.let { builder.addAction(0, "Stop", it) }
         staleText(lastSuccess, now)?.let(builder::setSubText)

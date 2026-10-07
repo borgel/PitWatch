@@ -162,4 +162,33 @@ class LiveMatchServiceTest {
         }
         assertEquals("2026cancmp_qm36", suppressed.suppressedMatchKey)
     }
+
+    @Test
+    fun `swiped away, not pinned - stops tracking as before`() {
+        runBlocking { container.repository.refresh(com.pitwatch.app.SNAP_NOW) }
+        val service = startService()
+        service.onStartCommand(LiveMatchService.intent(context, LiveMatchService.ACTION_DISMISSED), 0, 2)
+        com.pitwatch.app.awaitMain { shadowOf(service).isStoppedBySelf }
+    }
+
+    @Test
+    fun `swiped away, pinned - the notification comes back and tracking continues`() {
+        shadowOf(context as Application).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
+        runBlocking { container.stores.notificationPrefs.updateData { it.copy(pinned = true) } }
+        val service = startService()
+        com.pitwatch.app.awaitMain { posted() != null }
+        context.getSystemService(NotificationManager::class.java).cancel(LiveNotification.NOTIFICATION_ID) // the swipe
+        service.onStartCommand(LiveMatchService.intent(context, LiveMatchService.ACTION_DISMISSED), 0, 2)
+        com.pitwatch.app.awaitMain { posted() != null }
+        assertTrue(LiveMatchService.tracking.value)
+        kotlin.test.assertFalse(shadowOf(service).isStoppedBySelf)
+    }
+
+    @Test
+    fun `a stale dismissal never starts tracking`() {
+        val service = Robolectric.buildService(LiveMatchService::class.java).create().get()
+        service.onStartCommand(LiveMatchService.intent(context, LiveMatchService.ACTION_DISMISSED), 0, 1)
+        assertTrue(shadowOf(service).isStoppedBySelf)
+        kotlin.test.assertNull(shadowOf(service).lastForegroundNotification)
+    }
 }

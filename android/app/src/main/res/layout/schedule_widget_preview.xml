@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Shown in the widget picker (instead of Glance's loading layout). Sample content only. -->
+<!-- Fallback picker preview for launchers without generated previews. Sample content only. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -11,6 +11,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:paddingVertical="2dp"
         android:text="5507 · #34 · 1-2-0"
         android:textColor="@color/widget_countdown"
         android:textSize="12sp" />
@@ -18,30 +19,49 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Q36"
+        android:paddingVertical="2dp"
+        android:text="Q22   403–299  WIN"
         android:textColor="@color/widget_countdown"
-        android:textSize="28sp"
-        android:textStyle="bold" />
+        android:textSize="13sp" android:textStyle="bold" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="~2:35 PM"
+        android:paddingVertical="2dp"
+        android:text="Saturday"
         android:textColor="@color/widget_countdown"
-        android:textSize="13sp" />
+        android:textSize="11sp" android:textStyle="bold" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:fontFeatureSettings="tnum"
-        android:text="12:00"
+        android:paddingVertical="2dp"
+        android:text="● Q43      ~9:27 AM"
         android:textColor="@color/widget_countdown"
-        android:textSize="22sp" />
+        android:textSize="15sp" android:textStyle="bold" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="to on deck"
+        android:paddingVertical="2dp"
+        android:text="● Q52      ~10:41 AM"
+        android:textColor="@color/widget_countdown"
+        android:textSize="15sp" android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingVertical="2dp"
+        android:text="Lunch"
         android:textColor="@color/widget_countdown"
         android:textSize="12sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingVertical="2dp"
+        android:text="● Q61      ~11:54 AM"
+        android:textColor="@color/widget_countdown"
+        android:textSize="15sp" android:textStyle="bold" />
+
 </LinearLayout>

@@ -4,12 +4,15 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.test.core.app.ApplicationProvider
 import com.pitwatch.app.AppContainer
 import com.pitwatch.app.installTestContainer
 import com.pitwatch.core.config.UserConfig
 import com.pitwatch.core.store.RefreshState
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -18,6 +21,7 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 
 /** Final review: errors must stay visible in Settings — the header subtitle only fits one line. */
 @RunWith(RobolectricTestRunner::class)
@@ -48,5 +52,29 @@ class SettingsScreenTest {
         compose.setContent { SettingsScreen(container, config) }
         compose.onNodeWithText("Last refresh: never").assertIsDisplayed()
         compose.onNode(hasText("Nexus: HTTP 403", substring = true)).performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun `API key fields carry the same help text`() {
+        compose.setContent { SettingsScreen(container, config) }
+        compose.onNode(hasText(ApiKeyHelp.TBA)).performScrollTo().assertIsDisplayed()
+        compose.onNode(hasText(ApiKeyHelp.NEXUS)).performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun `notifications group turns the schedule notification and pinning on`() {
+        shadowOf(ApplicationProvider.getApplicationContext<android.app.Application>()).grantPermissions(android.Manifest.permission.POST_NOTIFICATIONS)
+        compose.setContent { SettingsScreen(container, config) }
+        compose.onNode(hasText("Schedule in notifications")).performScrollTo().performClick()
+        compose.onNode(hasText("Keep notifications pinned")).performScrollTo().performClick()
+        compose.waitUntil(5_000) { runBlocking { container.stores.notificationPrefs.data.first().let { it.scheduleEnabled && it.pinned } } }
+    }
+
+    @Test
+    fun `without notification permission the schedule switch explains instead`() {
+        shadowOf(ApplicationProvider.getApplicationContext<android.app.Application>()).denyPermissions(android.Manifest.permission.POST_NOTIFICATIONS)
+        runBlocking { container.stores.notificationPrefs.updateData { it.copy(scheduleEnabled = true) } }
+        compose.setContent { SettingsScreen(container, config) }
+        compose.onNode(hasText("Notifications are off for PitWatch", substring = true)).performScrollTo().assertIsDisplayed()
     }
 }

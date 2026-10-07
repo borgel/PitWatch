@@ -43,6 +43,7 @@ class LiveNotificationTest {
         assertEquals("3 AWAY · ON FIELD #29", n.extras.getCharSequence(Notification.EXTRA_TEXT).toString())
         assertEquals("Q32 10m", n.shortCriticalText)
         assertTrue(n.flags and Notification.FLAG_ONGOING_EVENT != 0)
+        assertEquals(LiveNotification.GROUP, n.group) // never auto-bundled with the schedule notification
     }
 
     @Test

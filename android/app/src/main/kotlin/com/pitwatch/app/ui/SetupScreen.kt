@@ -53,10 +53,11 @@ fun SetupScreen(container: AppContainer, config: UserConfig) {
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text("SET UP PITWATCH", style = condensed(24.sp, FontWeight.ExtraBold))
-        Text("Get a read API key from your account page on thebluealliance.com.")
-        OutlinedTextField(apiKey, { apiKey = it }, label = { Text("TBA API key") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(apiKey, { apiKey = it }, label = { Text("TBA API key") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+            supportingText = { Text(ApiKeyHelp.TBA) })
         OutlinedTextField(team, { team = it }, label = { Text("Team number") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(nexusKey, { nexusKey = it }, label = { Text("FRC Nexus API key (optional)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(nexusKey, { nexusKey = it }, label = { Text("FRC Nexus API key") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+            supportingText = { Text(ApiKeyHelp.NEXUS) })
         message?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         AccentButton(
             if (busy) "Checking…" else "Continue",

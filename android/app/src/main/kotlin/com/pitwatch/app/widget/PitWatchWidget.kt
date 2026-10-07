@@ -9,6 +9,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceTheme
 import androidx.glance.LocalContext
@@ -18,6 +19,10 @@ import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.provideContent
+import androidx.glance.text.FontFamily
+import androidx.glance.text.FontWeight
+import androidx.glance.text.Text
+import androidx.glance.text.TextStyle
 import com.pitwatch.app.PitWatchApp
 import com.pitwatch.app.R
 import com.pitwatch.core.config.UserConfig
@@ -32,6 +37,9 @@ class PitWatchWidget : GlanceAppWidget() {
     // Exact: the layout sees the widget's real size (Responsive reports the bucket, so a tall widget looked
     // only 250 dp high and the upcoming list was budgeted away — found on-device).
     override val sizeMode = SizeMode.Exact
+
+    // The picker shows generated previews at real sizes (the default renders at the 110 dp minimum).
+    override val previewSizeMode = SizeMode.Responsive(PREVIEW_SIZES)
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val container = (context.applicationContext as PitWatchApp).container
@@ -49,10 +57,27 @@ class PitWatchWidget : GlanceAppWidget() {
         }
     }
 
+    /** Generated widget-picker preview (Android 15+): the real layout with sample content and a static countdown. */
+    override suspend fun providePreview(context: Context, widgetCategory: Int) {
+        provideContent {
+            GlanceTheme {
+                WidgetContent(SampleWidgetData.main(Instant.now())) {
+                    Text(
+                        "3:27",
+                        style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 40.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily("sans-serif-condensed")),
+                    )
+                }
+            }
+        }
+    }
+
     companion object {
         val SMALL = DpSize(110.dp, 110.dp)
         val MEDIUM = DpSize(250.dp, 110.dp)
         val LARGE = DpSize(250.dp, 250.dp)
+
+        /** 2×2, 4×2 and 4×3 as measured on a Pixel launcher (emulator-5580). */
+        val PREVIEW_SIZES = setOf(DpSize(172.dp, 223.dp), DpSize(360.dp, 223.dp), DpSize(360.dp, 344.dp))
     }
 }
 

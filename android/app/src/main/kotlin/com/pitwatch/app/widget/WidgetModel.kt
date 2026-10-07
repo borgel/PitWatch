@@ -75,9 +75,9 @@ object WidgetLines {
     const val MAX_LINES = 9
 
     /** Days and their items within [budget] lines; a day header is only shown with at least one item under it. */
-    fun fit(days: List<MatchListModel.Day>, budget: Int): List<WidgetLine> {
+    fun fit(days: List<MatchListModel.Day>, budget: Int, cap: Int = MAX_LINES): List<WidgetLine> {
         val lines = mutableListOf<WidgetLine>()
-        var left = minOf(budget, MAX_LINES)
+        var left = minOf(budget, cap)
         for (day in days) {
             if (left < 2) break
             lines += WidgetLine.Header(day.label)
@@ -119,18 +119,18 @@ data class WidgetPlan(
 
 object WidgetPlans {
     // Part heights measured on-device (emulator-5580): the full 4×3 layout (360×344 dp) sums to ~294 dp.
-    private val PADDING = 28.dp
+    internal val PADDING = 28.dp
     private val LABEL = 40.dp
     private val COUNTDOWN = 52.dp
     private val COUNTDOWN_LARGE = 70.dp
     private val TARGET = 17.dp
     private val PHASE_BAR = 19.dp
-    private val HEADER = 18.dp
+    internal val HEADER = 18.dp
     private val ALLIANCES = 46.dp
     private val TIME = 18.dp
-    private val LAST_LINE = 38.dp
+    internal val LAST_LINE = 38.dp
     private val TITLE = 18.dp
-    private val ROW = 24.dp
+    internal val ROW = 24.dp
 
     /** The 56 sp countdown only where the list still fits beneath it; 40 sp below. */
     fun largeCountdown(height: Dp): Boolean = height >= 400.dp

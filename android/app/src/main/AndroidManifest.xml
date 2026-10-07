@@ -59,14 +59,31 @@
             android:exported="false" />
 
         <receiver
+            android:name=".notify.ScheduleNotificationReceiver"
+            android:exported="false" />
+
+        <receiver
             android:name=".widget.PitWatchWidgetReceiver"
-            android:exported="true">
+            android:exported="true"
+            android:label="@string/widget_label">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/pitwatch_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.ScheduleWidgetReceiver"
+            android:exported="true"
+            android:label="@string/schedule_widget_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/schedule_widget_info" />
         </receiver>
     </application>
 </manifest>
