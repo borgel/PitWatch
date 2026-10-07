@@ -74,4 +74,13 @@ class ScheduleWidgetContentTest {
         provideComposable { GlanceTheme { ScheduleWidgetContent(ready) } }
         onNode(hasText(beyond)).assertExists()
     }
+
+    @Test
+    fun `no upcoming matches still shows the last result`() = runGlanceAppWidgetUnitTest {
+        val done = ready.copy(state = WidgetModel.State.NO_UPCOMING, days = emptyList(), message = "No upcoming matches")
+        setAppWidgetSize(DpSize(172.dp, 223.dp))
+        provideComposable { GlanceTheme { ScheduleWidgetContent(done) } }
+        onNode(hasText("No upcoming matches")).assertExists()
+        onNode(hasText("403–299")).assertExists()
+    }
 }

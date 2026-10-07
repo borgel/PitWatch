@@ -105,7 +105,9 @@ class LiveMatchService : Service() {
                     return START_NOT_STICKY
                 }
                 scope.launch {
-                    if (container.stores.notificationPrefs.data.first().pinned) {
+                    val pinned = container.stores.notificationPrefs.data.first().pinned
+                    if (loop == null) return@launch // tracking ended while we read the setting: nothing to keep
+                    if (pinned) {
                         // Pinned: a swipe only hides it for a moment; Stop is the way out.
                         val notification = lastNotification ?: LiveNotification.build(this@LiveMatchService, null, lastSuccess, container.clock(), actions())
                         if (ContextCompat.checkSelfPermission(this@LiveMatchService, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {

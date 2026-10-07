@@ -46,4 +46,21 @@ class ScheduleNotificationTest {
         assertEquals("Set up PitWatch", c.title)
         assertEquals(emptyList(), c.lines)
     }
+
+    @Test
+    fun `when the next match isn't today, the title and first line say which day`() {
+        val firstDay = ready.days.first().date!!
+        val c = ScheduleNotification.content(ready, Locale.US, today = firstDay.minusDays(1))
+        val weekday = firstDay.format(java.time.format.DateTimeFormatter.ofPattern("EEE", Locale.US))
+        assertTrue(c.title.startsWith("Next: Q36 · $weekday "), c.title)
+        assertTrue(c.lines.first().startsWith("$weekday · Q36"), c.lines.first())
+    }
+
+    @Test
+    fun `no upcoming matches still shows the last result`() {
+        val done = ready.copy(state = com.pitwatch.app.widget.WidgetModel.State.NO_UPCOMING, days = emptyList(), message = "No upcoming matches")
+        val c = ScheduleNotification.content(done, Locale.US)
+        assertEquals("No upcoming matches", c.title)
+        assertEquals("Last Q22 W 403–299", c.summary)
+    }
 }

@@ -25,8 +25,12 @@ object ScheduleNotifier {
             return
         }
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return
-        val model = ScheduleWidgetModels.build(container.stores.cache.data.first(), container.stores.config.data.first(), container.clock())
-        manager.notify(ScheduleNotification.NOTIFICATION_ID, ScheduleNotification.build(context, ScheduleNotification.content(model)))
+        val now = container.clock()
+        val model = ScheduleWidgetModels.build(container.stores.cache.data.first(), container.stores.config.data.first(), now)
+        val content = ScheduleNotification.content(model, today = now.atZone(model.timeZone).toLocalDate())
+        // Re-check: a Turn off or swipe may have landed while this update was reading the cache.
+        if (!container.stores.notificationPrefs.data.first().scheduleEnabled) return
+        manager.notify(ScheduleNotification.NOTIFICATION_ID, ScheduleNotification.build(context, content))
     }
 
     suspend fun setEnabled(context: Context, container: AppContainer, enabled: Boolean) {

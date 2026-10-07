@@ -14,6 +14,7 @@ import com.pitwatch.app.ui.matches.MatchListModel
 import com.pitwatch.app.widget.ScheduleWidgetModel
 import com.pitwatch.app.widget.WidgetModel
 import com.pitwatch.core.model.Phase
+import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -27,20 +28,23 @@ object ScheduleNotification {
 
     data class Content(val title: String, val text: String?, val lines: List<String>, val summary: String?)
 
-    fun content(model: ScheduleWidgetModel, locale: Locale = Locale.getDefault()): Content {
-        if (model.state != WidgetModel.State.READY) return Content(model.message ?: "PitWatch", null, emptyList(), null)
-        val times = TimeFormat(model.timeZone, model.zoneLabel)
+    /** [today] defaults to the schedule's first day; the notifier passes the real date so a later day is named. */
+    fun content(model: ScheduleWidgetModel, locale: Locale = Locale.getDefault(), today: LocalDate? = null): Content {
         val summary = model.last?.let { "Last ${it.shortLabel} ${it.outcome} ${it.ourScore}–${it.theirScore}" }
+        // Out of matches (e.g. alliance selection): still say how the last one went.
+        if (model.state != WidgetModel.State.READY) return Content(model.message ?: "PitWatch", null, emptyList(), summary)
+        val times = TimeFormat(model.timeZone, model.zoneLabel)
         val rows = model.days.flatMap { day -> day.items.filterIsInstance<MatchListModel.Item.Upcoming>().map { it.row } }
         val next = rows.first()
-        val title = "Next: ${next.shortLabel} · ${times.match(next.time, next.estimated)}"
+        val dayFormat = DateTimeFormatter.ofPattern("EEE", locale)
+        val reference = today ?: model.days.firstOrNull()?.date
+        val nextDay = model.days.firstOrNull()?.date?.takeIf { it != reference }?.format(dayFormat)?.let { "$it " } ?: ""
+        val title = "Next: ${next.shortLabel} · $nextDay${times.match(next.time, next.estimated)}"
         // The last result is the summary, which the shade already shows beside the title.
         val text = rows.getOrNull(1)?.let { "then ${it.shortLabel} ${times.match(it.time, it.estimated)}" }
-        // Today's rows stand alone; the first row of each later day carries its weekday.
-        val dayFormat = DateTimeFormatter.ofPattern("EEE", locale)
-        val firstDate = model.days.firstOrNull()?.date
+        // Today's rows stand alone; the first row of any other day carries its weekday.
         val lines = model.days.flatMap { day ->
-            val prefix = day.date?.takeIf { it != firstDate }?.format(dayFormat)?.let { "$it · " } ?: ""
+            val prefix = day.date?.takeIf { it != reference }?.format(dayFormat)?.let { "$it · " } ?: ""
             day.items.mapIndexed { i, item ->
                 val head = if (i == 0) prefix else ""
                 when (item) {

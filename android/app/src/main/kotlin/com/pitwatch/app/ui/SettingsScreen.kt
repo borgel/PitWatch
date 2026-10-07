@@ -81,6 +81,8 @@ fun SettingsScreen(container: AppContainer, config: UserConfig, onBack: (() -> U
     LifecycleResumeEffect(Unit) {
         canPromote = NotificationManagerCompat.from(context).canPostPromotedNotifications()
         canNotify = notificationsAllowed()
+        // Coming back from system settings with notifications newly allowed: show the schedule now, not on the next refresh.
+        if (canNotify) container.scope.launch { ScheduleNotifier.update(context.applicationContext, container) }
         onPauseOrDispose { }
     }
     val prefs by container.stores.notificationPrefs.data.collectAsStateWithLifecycle(initialValue = NotificationPrefs())

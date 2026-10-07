@@ -1,7 +1,11 @@
 package com.pitwatch.app.ui.matches
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -41,6 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pitwatch.app.AppContainer
 import com.pitwatch.app.data.LiveControl
@@ -96,6 +101,12 @@ fun MatchesScreen(container: AppContainer, config: UserConfig, onPickEvent: () -
     val refreshState by container.stores.refreshState.data.collectAsStateWithLifecycle(initialValue = RefreshState())
     val tracking by LiveMatchService.tracking.collectAsStateWithLifecycle()
     val notificationPrefs by container.stores.notificationPrefs.data.collectAsStateWithLifecycle(initialValue = NotificationPrefs(scheduleEnabled = true))
+    fun enableSchedule() {
+        container.scope.launch { ScheduleNotifier.setEnabled(context.applicationContext, container, true) }
+    }
+    val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) enableSchedule()
+    }
     val now by produceState(container.clock()) {
         while (true) {
             delay(30_000)
@@ -132,7 +143,11 @@ fun MatchesScreen(container: AppContainer, config: UserConfig, onPickEvent: () -
         onOpenMatch = { url -> context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) },
         onPickEvent = onPickEvent,
         showScheduleOffer = !notificationPrefs.scheduleEnabled,
-        onShowSchedule = { container.scope.launch { ScheduleNotifier.setEnabled(context.applicationContext, container, true) } },
+        onShowSchedule = {
+            // Only turn it on once notifications can actually show; otherwise ask first.
+            val allowed = ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+            if (allowed) enableSchedule() else notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        },
     )
 }
 
