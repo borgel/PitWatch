@@ -204,20 +204,24 @@ internal fun UpcomingList(lines: List<WidgetLine>, times: TimeFormat) {
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         item.row.alliance?.let { Text("● ", style = TextStyle(color = ColorProvider(StatusColors.alliance(it)), fontSize = 13.sp)) }
+                        // The label never wraps; when a narrow widget runs out of room, the time is what gets trimmed.
                         Text(
                             item.row.shortLabel,
                             style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 15.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED),
-                            modifier = GlanceModifier.defaultWeight(),
+                            maxLines = 1,
                         )
-                        // Only matches already in motion get a pill.
-                        item.row.phase?.takeIf { it != Phase.PRE_QUEUE }?.let {
-                            Pill(it.stateLabel, ColorProvider(StatusColors.phase(it)), ColorProvider(StatusColors.onPhase(it)))
-                            Spacer(GlanceModifier.width(6.dp))
+                        Spacer(GlanceModifier.defaultWeight())
+                        // A match already in motion shows its phase where the time goes: its start is "now" anyway.
+                        val moving = item.row.phase?.takeIf { it != Phase.PRE_QUEUE }
+                        if (moving != null) {
+                            Pill(moving.stateLabel, ColorProvider(StatusColors.phase(moving)), ColorProvider(StatusColors.onPhase(moving)))
+                        } else {
+                            Text(
+                                times.match(item.row.time, item.row.estimated),
+                                style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 14.sp, fontFamily = CONDENSED),
+                                maxLines = 1,
+                            )
                         }
-                        Text(
-                            times.match(item.row.time, item.row.estimated),
-                            style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 14.sp, fontFamily = CONDENSED),
-                        )
                     }
                     is MatchListModel.Item.Break -> Text(item.title, style = muted, modifier = GlanceModifier.padding(vertical = 2.dp))
                 }

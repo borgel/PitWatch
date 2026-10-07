@@ -16,7 +16,9 @@ class PitWatchApp : Application() {
         LiveNotification.ensureChannel(this)
         ScheduleNotification.ensureChannel(this)
         container.scope.launch {
-            WidgetPreviews.registerOnce(container.stores.notificationPrefs, BuildConfig.VERSION_CODE, WidgetPreviews.publisher(GlanceAppWidgetManager(this@PitWatchApp)))
+            // Keyed on the install, not the version code: a sideloaded rebuild keeps its version code but may change the preview.
+            val installKey = packageManager.getPackageInfo(packageName, 0).lastUpdateTime
+            WidgetPreviews.registerOnce(container.stores.notificationPrefs, installKey, WidgetPreviews.publisher(GlanceAppWidgetManager(this@PitWatchApp)))
         }
     }
 }

@@ -39,6 +39,7 @@ import kotlinx.coroutines.flow.first
 /** Upcoming schedule and the last result only — no countdown. Renders from the persisted cache. */
 class ScheduleWidget : GlanceAppWidget() {
     override val sizeMode = SizeMode.Exact
+    override val previewSizeMode = SizeMode.Responsive(PitWatchWidget.PREVIEW_SIZES)
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val container = (context.applicationContext as PitWatchApp).container

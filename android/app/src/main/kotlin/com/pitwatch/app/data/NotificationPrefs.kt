@@ -9,6 +9,6 @@ data class NotificationPrefs(
     val scheduleEnabled: Boolean = false,
     /** Re-post notifications when swiped away; they stop only from their own actions. */
     val pinned: Boolean = false,
-    /** App version code whose widget-picker previews were last registered. */
-    val previewsVersion: Int = 0,
+    /** Install (package last-update time) whose widget-picker previews were last registered. */
+    val previewsVersion: Long = 0,
 )

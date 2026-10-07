@@ -13,12 +13,12 @@ fun interface PreviewPublisher {
     suspend fun publish(receiver: KClass<out GlanceAppWidgetReceiver>): Int
 }
 
-/** Registers both widgets' generated picker previews once per app version (the platform rate-limits this call). */
+/** Registers both widgets' generated picker previews once per install or update (the platform rate-limits this call). */
 object WidgetPreviews {
     private val RECEIVERS = listOf(PitWatchWidgetReceiver::class, ScheduleWidgetReceiver::class)
 
-    suspend fun registerOnce(prefs: DataStore<NotificationPrefs>, versionCode: Int, publisher: PreviewPublisher) {
-        if (prefs.data.first().previewsVersion == versionCode) return
+    suspend fun registerOnce(prefs: DataStore<NotificationPrefs>, installKey: Long, publisher: PreviewPublisher) {
+        if (prefs.data.first().previewsVersion == installKey) return
         val results = try {
             RECEIVERS.map { publisher.publish(it) }
         } catch (e: CancellationException) {
@@ -29,7 +29,7 @@ object WidgetPreviews {
         }
         // Rate-limited or failed: leave the version unrecorded so a later launch tries again.
         if (results.all { it == GlanceAppWidgetManager.SET_WIDGET_PREVIEWS_RESULT_SUCCESS }) {
-            prefs.updateData { it.copy(previewsVersion = versionCode) }
+            prefs.updateData { it.copy(previewsVersion = installKey) }
         }
     }
 

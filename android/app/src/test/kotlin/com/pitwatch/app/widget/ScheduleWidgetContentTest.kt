@@ -52,4 +52,15 @@ class ScheduleWidgetContentTest {
         provideComposable { GlanceTheme { ScheduleWidgetContent(ScheduleWidgetModels.build(EventCache(), UserConfig(), SNAP_NOW)) } }
         onNode(hasText("Set up PitWatch")).assertExists()
     }
+
+    @Test
+    fun `a match in motion shows its phase instead of its time`() = runGlanceAppWidgetUnitTest {
+        // On-device at 2×2 the pill pushed the time to "~4:26 P"; the phase is what matters once it's moving.
+        val next = ready.days.first().items.filterIsInstance<com.pitwatch.app.ui.matches.MatchListModel.Item.Upcoming>().first().row
+        val time = com.pitwatch.app.ui.TimeFormat(ready.timeZone, ready.zoneLabel).match(next.time, next.estimated)
+        setAppWidgetSize(DpSize(172.dp, 223.dp))
+        provideComposable { GlanceTheme { ScheduleWidgetContent(ready) } }
+        onNode(hasText("ON FIELD")).assertExists()
+        onNode(hasText(time)).assertDoesNotExist()
+    }
 }
