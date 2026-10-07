@@ -26,7 +26,8 @@ class ScheduleNotificationTest {
         val c = ScheduleNotification.content(ready, Locale.US)
         assertTrue(c.title.startsWith("Next: Q36 · "), c.title)
         assertTrue(c.text!!.startsWith("then Q"), c.text)
-        assertTrue(c.text!!.endsWith("Last Q22 W 403–299"), c.text)
+        // The summary already shows in the collapsed header; on-device it read twice when the text repeated it.
+        assertTrue("Last" !in c.text!!, c.text)
         assertEquals("Last Q22 W 403–299", c.summary)
     }
 

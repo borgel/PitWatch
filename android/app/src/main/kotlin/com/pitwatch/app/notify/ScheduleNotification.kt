@@ -21,6 +21,8 @@ import java.util.Locale
 object ScheduleNotification {
     const val CHANNEL_ID = "schedule"
     const val NOTIFICATION_ID = 1002
+    /** Its own group, so new posts show separately (Android 15+ may still bundle single-notification groups; it's system UX). */
+    const val GROUP = "pitwatch.schedule"
     private const val MAX_LINES = 6
 
     data class Content(val title: String, val text: String?, val lines: List<String>, val summary: String?)
@@ -32,8 +34,8 @@ object ScheduleNotification {
         val rows = model.days.flatMap { day -> day.items.filterIsInstance<MatchListModel.Item.Upcoming>().map { it.row } }
         val next = rows.first()
         val title = "Next: ${next.shortLabel} · ${times.match(next.time, next.estimated)}"
-        val text = listOfNotNull(rows.getOrNull(1)?.let { "then ${it.shortLabel} ${times.match(it.time, it.estimated)}" }, summary)
-            .joinToString(" · ").ifEmpty { null }
+        // The last result is the summary, which the shade already shows beside the title.
+        val text = rows.getOrNull(1)?.let { "then ${it.shortLabel} ${times.match(it.time, it.estimated)}" }
         // Today's rows stand alone; the first row of each later day carries its weekday.
         val dayFormat = DateTimeFormatter.ofPattern("EEE", locale)
         val firstDate = model.days.firstOrNull()?.date
@@ -73,6 +75,7 @@ object ScheduleNotification {
             .setContentTitle(content.title)
             .setContentText(content.text)
             .setStyle(style)
+            .setGroup(GROUP)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setShowWhen(false)

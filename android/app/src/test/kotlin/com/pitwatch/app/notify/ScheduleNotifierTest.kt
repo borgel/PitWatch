@@ -64,6 +64,8 @@ class ScheduleNotifierTest {
         assertEquals(ScheduleNotification.CHANNEL_ID, n.channelId)
         assertEquals(true, n.flags and Notification.FLAG_ONGOING_EVENT != 0)
         assertEquals(false, n.extras.getBoolean(Notification.EXTRA_REQUEST_PROMOTED_ONGOING))
+        // Its own group: otherwise Android bundles it with the live notification (seen on-device).
+        assertEquals(ScheduleNotification.GROUP, n.group)
     }
 
     @Test
