@@ -63,4 +63,15 @@ class ScheduleWidgetContentTest {
         onNode(hasText("ON FIELD")).assertExists()
         onNode(hasText(time)).assertDoesNotExist()
     }
+
+    @Test
+    fun `a tall schedule widget lists past the 9-line column cap`() = runGlanceAppWidgetUnitTest {
+        // On-device at 4×3 the list stopped at 9 lines with room to spare.
+        val beyond = WidgetLines.fit(ready.days, 50, cap = 27).drop(WidgetLines.MAX_LINES)
+            .filterIsInstance<WidgetLine.Entry>().map { it.item }
+            .filterIsInstance<com.pitwatch.app.ui.matches.MatchListModel.Item.Upcoming>().first().row.shortLabel
+        setAppWidgetSize(DpSize(360.dp, 600.dp))
+        provideComposable { GlanceTheme { ScheduleWidgetContent(ready) } }
+        onNode(hasText(beyond)).assertExists()
+    }
 }

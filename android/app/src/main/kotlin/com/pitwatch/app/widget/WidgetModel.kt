@@ -75,9 +75,9 @@ object WidgetLines {
     const val MAX_LINES = 9
 
     /** Days and their items within [budget] lines; a day header is only shown with at least one item under it. */
-    fun fit(days: List<MatchListModel.Day>, budget: Int): List<WidgetLine> {
+    fun fit(days: List<MatchListModel.Day>, budget: Int, cap: Int = MAX_LINES): List<WidgetLine> {
         val lines = mutableListOf<WidgetLine>()
-        var left = minOf(budget, MAX_LINES)
+        var left = minOf(budget, cap)
         for (day in days) {
             if (left < 2) break
             lines += WidgetLine.Header(day.label)

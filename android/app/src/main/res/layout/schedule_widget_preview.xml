@@ -12,7 +12,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:paddingVertical="2dp"
-        android:text="5507 · #3 · 7-2-0"
+        android:text="5507 · #34 · 1-2-0"
         android:textColor="@color/widget_countdown"
         android:textSize="12sp" />
 
@@ -20,7 +20,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:paddingVertical="2dp"
-        android:text="LAST · Q22   403–299  WIN"
+        android:text="Q22   403–299  WIN"
         android:textColor="@color/widget_countdown"
         android:textSize="13sp" android:textStyle="bold" />
 

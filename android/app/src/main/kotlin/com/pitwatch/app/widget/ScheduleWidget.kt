@@ -85,6 +85,6 @@ fun ScheduleWidgetContent(model: ScheduleWidgetModel) {
             return@Column
         }
         if (plan.lastLine) model.last?.let { LastLine(it, compact = !wide) }
-        UpcomingList(WidgetLines.fit(model.days, plan.listLines), times)
+        UpcomingList(WidgetLines.fit(model.days, plan.listLines, cap = WidgetLines.MAX_LINES * 3), times)
     }
 }

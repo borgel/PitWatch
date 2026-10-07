@@ -186,9 +186,19 @@ private fun LastResult(result: MatchListModel.Result) {
     }
 }
 
-/** The upcoming schedule, one line per entry. Its own Column: Glance drops children past 10 per Column. */
+/**
+ * The upcoming schedule, one line per entry. Glance drops children past 10 per Column, so the lines go in
+ * sub-columns of [WidgetLines.MAX_LINES] inside an outer Column (at most 3, for up to 27 lines).
+ */
 @Composable
 internal fun UpcomingList(lines: List<WidgetLine>, times: TimeFormat) {
+    Column {
+        lines.chunked(WidgetLines.MAX_LINES).forEach { chunk -> UpcomingChunk(chunk, times) }
+    }
+}
+
+@Composable
+private fun UpcomingChunk(lines: List<WidgetLine>, times: TimeFormat) {
     val muted = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED)
     Column {
         for (line in lines) {

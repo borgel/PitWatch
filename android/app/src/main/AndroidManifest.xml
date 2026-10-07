@@ -64,7 +64,8 @@
 
         <receiver
             android:name=".widget.PitWatchWidgetReceiver"
-            android:exported="true">
+            android:exported="true"
+            android:label="@string/widget_label">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -76,7 +77,7 @@
         <receiver
             android:name=".widget.ScheduleWidgetReceiver"
             android:exported="true"
-            android:label="PitWatch schedule">
+            android:label="@string/schedule_widget_label">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
