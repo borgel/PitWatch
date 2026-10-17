@@ -139,7 +139,7 @@ fun EventScheduleContent(model: EventScheduleModel) {
 }
 
 /**
- * Label, (wide) both alliances, then the time or the red–blue score. Our matches sit on a tinted band behind a dot in
+ * Label, (wide) both alliances, then the time or the red–blue score. Our matches sit on a tinted band with a dot in
  * our alliance's color. As few Texts as possible: every row travels in the one widget update, under the ~1 MB binder
  * limit, and each Text costs ~260 bytes before styling (see EventScheduleWidgetSizeTest).
  */
@@ -148,8 +148,8 @@ private fun MatchLine(row: EventMatchRow, teams: Boolean, trailing: String, play
     val band = if (row.ours != null) GlanceModifier.background(GlanceTheme.colors.secondaryContainer).cornerRadius(8.dp) else GlanceModifier
     val text = if (row.ours != null) GlanceTheme.colors.onSecondaryContainer else GlanceTheme.colors.onSurface
     Row(GlanceModifier.fillMaxWidth().then(band).padding(6.dp, 3.dp, 6.dp, 3.dp), verticalAlignment = Alignment.CenterVertically) {
-        row.ours?.let { Text("● ", style = TextStyle(color = ColorProvider(StatusColors.alliance(it)), fontSize = 12.sp)) }
-        // Whichever of label or teams comes last before the trailing text takes the slack, pushing it to the edge.
+        // Whichever of label or teams comes last takes the slack, pushing the dot and trailing text to the edge (and
+        // keeping the label and team columns aligned on our rows too).
         Text(
             row.shortLabel,
             style = TextStyle(color = text, fontSize = 14.sp, fontWeight = FontWeight.Bold),
@@ -163,6 +163,7 @@ private fun MatchLine(row: EventMatchRow, teams: Boolean, trailing: String, play
                 modifier = GlanceModifier.defaultWeight(),
             )
         }
+        row.ours?.let { Text("● ", style = TextStyle(color = ColorProvider(StatusColors.alliance(it)), fontSize = 12.sp)) }
         Text(trailing, style = TextStyle(color = text, fontSize = 14.sp, fontWeight = if (played) FontWeight.Bold else null))
     }
 }
