@@ -87,6 +87,17 @@
                 android:resource="@xml/schedule_widget_info" />
         </receiver>
 
+        <activity
+            android:name=".widget.EventScheduleSettingsActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:label="@string/event_schedule_widget_label"
+            android:taskAffinity="">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
         <receiver
             android:name=".widget.EventScheduleWidgetReceiver"
             android:exported="true"
