@@ -86,5 +86,17 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/schedule_widget_info" />
         </receiver>
+
+        <receiver
+            android:name=".widget.EventScheduleWidgetReceiver"
+            android:exported="true"
+            android:label="@string/event_schedule_widget_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/event_schedule_widget_info" />
+        </receiver>
     </application>
 </manifest>

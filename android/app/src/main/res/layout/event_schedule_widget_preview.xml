@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fallback picker preview for launchers without generated previews. Sample content only. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:drawable/screen_background_light"
+    android:backgroundTint="@color/widget_preview_background"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingVertical="2dp"
+        android:maxLines="1"
+        android:text="California Northern"
+        android:textColor="@color/widget_countdown"
+        android:textSize="12sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingVertical="2dp"
+        android:maxLines="1"
+        android:text="Today"
+        android:textColor="@color/widget_countdown"
+        android:textSize="11sp" android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingVertical="2dp"
+        android:maxLines="1"
+        android:text="Q36  4698 5507 1678 · 6036 9470 6814   ~4:26 PM"
+        android:textColor="@color/widget_countdown"
+        android:textSize="13sp" android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingVertical="2dp"
+        android:maxLines="1"
+        android:text="Q37  254 971 8033 · 2813 649 7419   ~4:33 PM"
+        android:textColor="@color/widget_countdown"
+        android:textSize="13sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingVertical="2dp"
+        android:maxLines="1"
+        android:text="Q38  1868 6418 5104 · 9400 4255 199   ~4:40 PM"
+        android:textColor="@color/widget_countdown"
+        android:textSize="13sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingVertical="2dp"
+        android:maxLines="1"
+        android:text="Results"
+        android:textColor="@color/widget_countdown"
+        android:textSize="11sp" android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingVertical="2dp"
+        android:maxLines="1"
+        android:text="Q35  2135 253 7419 · 1678 254 604   216–401"
+        android:textColor="@color/widget_countdown"
+        android:textSize="13sp" />
+</LinearLayout>

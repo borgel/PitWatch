@@ -28,6 +28,7 @@ class WidgetPreviewsTest {
         assertEquals("Q36", SampleWidgetData.main(now).next?.shortLabel)
         assertEquals(WidgetModel.State.READY, SampleWidgetData.schedule(now).state)
         kotlin.test.assertTrue(SampleWidgetData.schedule(now).days.isNotEmpty())
+        kotlin.test.assertTrue(SampleWidgetData.eventSchedule(now).lines.isNotEmpty())
     }
 
     @Test
@@ -36,7 +37,7 @@ class WidgetPreviewsTest {
         val ok = PreviewPublisher { calls += it.simpleName!!; GlanceAppWidgetManager.SET_WIDGET_PREVIEWS_RESULT_SUCCESS }
         WidgetPreviews.registerOnce(stores.notificationPrefs, 7L, ok)
         WidgetPreviews.registerOnce(stores.notificationPrefs, 7L, ok)
-        assertEquals(listOf("PitWatchWidgetReceiver", "ScheduleWidgetReceiver"), calls)
+        assertEquals(listOf("PitWatchWidgetReceiver", "ScheduleWidgetReceiver", "EventScheduleWidgetReceiver"), calls)
         assertEquals(7L, stores.notificationPrefs.data.first().previewsVersion)
     }
 
@@ -48,7 +49,7 @@ class WidgetPreviewsTest {
 
     @Test
     fun `previews render at real widget sizes, not the 110 dp minimum`() {
-        for (widget in listOf(PitWatchWidget(), ScheduleWidget())) {
+        for (widget in listOf(PitWatchWidget(), ScheduleWidget(), EventScheduleWidget())) {
             val mode = widget.previewSizeMode as androidx.glance.appwidget.SizeMode.Responsive
             kotlin.test.assertTrue(mode.sizes.all { it.width >= 170.dp && it.height >= 170.dp }, mode.sizes.toString())
         }
