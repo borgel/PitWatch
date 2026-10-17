@@ -28,7 +28,8 @@ class LiveNotificationTest {
         deadline: Instant? = now.plusSeconds(600),
         milestones: LiveSnapshot.Milestones = noMilestones,
         result: LiveSnapshot.Result? = null,
-    ) = LiveSnapshot("2026test_qm32", "Q32", MatchAlliance.RED, phase, deadline, milestones, 3, 29, result)
+        target: String = "to on deck",
+    ) = LiveSnapshot("2026test_qm32", "Q32", MatchAlliance.RED, phase, deadline, target, milestones, 3, 29, result)
 
     private fun build(s: LiveSnapshot?, lastSuccess: Instant? = now) =
         LiveNotification.build(context, s, lastSuccess, now, noActions)
@@ -39,8 +40,9 @@ class LiveNotificationTest {
     fun `requests promotion with title, text and status-bar chip`() {
         val n = build(snapshot())
         assertTrue(n.extras.getBoolean(Notification.EXTRA_REQUEST_PROMOTED_ONGOING))
-        assertEquals("Q32 · RED · IN QUEUE", n.extras.getCharSequence(Notification.EXTRA_TITLE).toString())
-        assertEquals("3 AWAY · ON FIELD #29", n.extras.getCharSequence(Notification.EXTRA_TEXT).toString())
+        // Asked for: the time first and prominent, so it's the title; the match line moves under it.
+        assertEquals("10m to on deck", n.extras.getCharSequence(Notification.EXTRA_TITLE).toString())
+        assertEquals("Q32 · RED · IN QUEUE · 3 AWAY · ON FIELD #29", n.extras.getCharSequence(Notification.EXTRA_TEXT).toString())
         assertEquals("Q32 10m", n.shortCriticalText)
         assertTrue(n.flags and Notification.FLAG_ONGOING_EVENT != 0)
         assertEquals(LiveNotification.GROUP, n.group) // never auto-bundled with the schedule notification
@@ -81,6 +83,23 @@ class LiveNotificationTest {
         assertEquals("Q32 W", n.shortCriticalText)
         assertEquals(400, style(n).progress)
         assertFalse(n.extras.getBoolean(Notification.EXTRA_SHOW_WHEN))
+    }
+
+    @Test
+    fun `the time title rounds up to the minute and switches to hours`() {
+        val far = build(snapshot(phase = Phase.PRE_QUEUE, deadline = now.plusSeconds(98 * 60 + 1), target = "to queue"))
+        assertEquals("1h 39m to queue", far.extras.getCharSequence(Notification.EXTRA_TITLE).toString())
+        assertEquals("2h to queue", LiveNotification.timeTitle(snapshot(deadline = now.plusSeconds(120 * 60), target = "to queue"), now))
+        assertEquals("1m to on deck", LiveNotification.timeTitle(snapshot(deadline = now.plusSeconds(20)), now))
+    }
+
+    @Test
+    fun `without a countdown the match line stays the title`() {
+        val n = build(snapshot(deadline = null))
+        assertEquals("Q32 · RED · IN QUEUE", n.extras.getCharSequence(Notification.EXTRA_TITLE).toString())
+        assertEquals("3 AWAY · ON FIELD #29", n.extras.getCharSequence(Notification.EXTRA_TEXT).toString())
+        val passed = build(snapshot(deadline = now.minusSeconds(5)))
+        assertEquals("Q32 · RED · IN QUEUE", passed.extras.getCharSequence(Notification.EXTRA_TITLE).toString())
     }
 
     @Test

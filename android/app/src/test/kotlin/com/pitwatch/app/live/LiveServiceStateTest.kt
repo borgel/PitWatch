@@ -53,7 +53,7 @@ class LiveServiceStateTest {
         service.onStartCommand(LiveMatchService.intent(context, LiveMatchService.ACTION_START), 0, 1)
         awaitMain {
             shadowOf(context.getSystemService(NotificationManager::class.java)).getNotification(LiveNotification.NOTIFICATION_ID)
-                ?.extras?.getCharSequence(Notification.EXTRA_TITLE)?.startsWith("Q36") == true
+                ?.extras?.getCharSequence(Notification.EXTRA_TEXT)?.startsWith("Q36") == true
         }
         return service
     }

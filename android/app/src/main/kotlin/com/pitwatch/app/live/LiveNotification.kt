@@ -56,17 +56,30 @@ object LiveNotification {
         if (snapshot == null) {
             return builder.setContentTitle("PitWatch").setContentText("Waiting for match data").setShowWhen(false).build()
         }
-        builder.setContentTitle(title(snapshot))
-            .setContentText(text(snapshot))
-            .setShortCriticalText(shortText(snapshot, now))
-            .setStyle(progress(snapshot, now))
+        builder.setShortCriticalText(shortText(snapshot, now)).setStyle(progress(snapshot, now))
         val deadline = snapshot.deadline
         if (snapshot.result == null && deadline != null && deadline > now) {
-            builder.setWhen(deadline.toEpochMilli()).setShowWhen(true).setUsesChronometer(true).setChronometerCountDown(true)
+            // The time leads, as the title (the platform's ticking chronometer only fits small, beside it); the match
+            // line moves under it. Re-rendered at least every minute by LiveMatchService.
+            builder.setContentTitle(timeTitle(snapshot, now))
+                .setContentText(listOfNotNull(title(snapshot), text(snapshot)).joinToString(" · "))
+                .setWhen(deadline.toEpochMilli()).setShowWhen(true).setUsesChronometer(true).setChronometerCountDown(true)
         } else {
-            builder.setShowWhen(false)
+            builder.setContentTitle(title(snapshot)).setContentText(text(snapshot)).setShowWhen(false)
         }
         return builder.build()
+    }
+
+    /** "12m to on deck", "1h 38m to queue": minutes rounded up, like the status-bar chip. */
+    fun timeTitle(s: LiveSnapshot, now: Instant): String {
+        val seconds = s.deadline?.let { Duration.between(now, it).seconds }?.coerceAtLeast(0) ?: 0
+        val minutes = (seconds + 59) / 60
+        val time = when {
+            minutes < 60 -> "${minutes}m"
+            minutes % 60 == 0L -> "${minutes / 60}h"
+            else -> "${minutes / 60}h ${minutes % 60}m"
+        }
+        return "$time ${s.target}"
     }
 
     /** "Q32 · RED · IN QUEUE", or "… · FINAL" once scored. */

@@ -58,7 +58,7 @@ class LiveWakeTest {
     private fun startTracking(): LiveMatchService {
         val service = Robolectric.buildService(LiveMatchService::class.java).create().get()
         service.onStartCommand(LiveMatchService.intent(context, LiveMatchService.ACTION_START), 0, 1)
-        awaitMain { posted()?.extras?.getCharSequence(Notification.EXTRA_TITLE)?.startsWith("Q36") == true }
+        awaitMain { posted()?.extras?.getCharSequence(Notification.EXTRA_TEXT)?.startsWith("Q36") == true }
         return service
     }
 

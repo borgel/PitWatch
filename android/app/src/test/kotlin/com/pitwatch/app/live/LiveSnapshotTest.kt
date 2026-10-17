@@ -27,6 +27,7 @@ class LiveSnapshotTest {
         assertEquals(Phase.ON_FIELD, s.phase)
         assertEquals(Instant.ofEpochMilli(1775868749195).plusSeconds(150), s.deadline)
         assertEquals(Instant.ofEpochMilli(1775867343646), s.milestones.queue)
+        assertEquals("to match end", s.target) // on the field: the countdown runs to the match's end
         assertEquals(36, s.onFieldNumber)
         assertEquals(0, s.matchesAway)
         assertNull(s.result)
@@ -38,9 +39,16 @@ class LiveSnapshotTest {
         val s = assertNotNull(LiveSnapshots.build(cache, cfg, qm36, SNAP_NOW))
         val matchTime = cache.matches.first { it.key == qm36 }.matchDate()!!
         assertEquals(Phase.PRE_QUEUE, s.phase)
+        assertEquals("to queue", s.target)
         assertEquals(matchTime.minusSeconds(600), s.deadline)
         assertEquals(matchTime, s.milestones.start)
         assertNull(s.matchesAway)
+    }
+
+    @Test
+    fun `TBA time source with no queue offset counts down to the match`() {
+        val s = assertNotNull(LiveSnapshots.build(cache, config.copy(timeSource = TimeSource.TBA), qm36, SNAP_NOW))
+        assertEquals("to match", s.target)
     }
 
     @Test
