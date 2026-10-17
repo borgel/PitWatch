@@ -58,7 +58,7 @@ object LiveSnapshots {
 
         val nexusEvent = cache.nexusEvent.takeIf { config.effectiveTimeSource == TimeSource.NEXUS }
         val onField = nexusEvent
-            ?.let { PhaseDerivation.currentMatchOnField(it.matches, fallbackMatchNumber = NO_FIELD) }
+            ?.let { PhaseDerivation.currentMatchOnField(it.matches, fallbackMatchNumber = NO_FIELD, compLevel = match.compLevel) }
             ?.takeIf { it != NO_FIELD }
         val away = onField?.takeIf { match.compLevel == "qm" }?.let { match.matchNumber - it }
 

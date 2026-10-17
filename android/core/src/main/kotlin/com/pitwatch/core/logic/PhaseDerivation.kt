@@ -61,11 +61,15 @@ object PhaseDerivation {
     fun phaseFor(match: Match, nexusEvent: NexusEvent?, now: Instant): Phase? =
         NexusMatchMerge.nexusInfo(match, nexusEvent)?.let { derivePhase(it, now).phase }
 
-    /** Match number currently on the field, from the last Nexus match whose status says so. */
-    fun currentMatchOnField(matches: List<NexusMatch>, fallbackMatchNumber: Int): Int =
+    /**
+     * Match number currently on the field, from the last Nexus match whose status says so. With [compLevel], only
+     * matches of that level count: Nexus lists practice and quals together, so before quals start the last match on
+     * the field is a practice match, whose number means nothing against a qual's.
+     */
+    fun currentMatchOnField(matches: List<NexusMatch>, fallbackMatchNumber: Int, compLevel: String? = null): Int =
         matches.lastOrNull { m ->
             val s = m.status?.lowercase() ?: return@lastOrNull false
-            "field" in s || "playing" in s
+            ("field" in s || "playing" in s) && (compLevel == null || NexusMatchMerge.compLevel(m.label) == compLevel)
         }?.let { extractMatchNumber(it.label) } ?: fallbackMatchNumber
 
     /** "Qualification 42" → 42. */

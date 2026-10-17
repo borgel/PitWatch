@@ -24,11 +24,11 @@ object NexusMatchMerge {
         }
     }
 
-    /** "Qualification 32" → "qm-1-32", "Quarterfinal 2-1" → "qf-2-1". Tolerates extra whitespace — deliberately more lenient than iOS, which keeps it and falls back to team matching. */
-    private fun parseNexusLabel(label: String): String? {
+    /** TBA comp level of a Nexus label: "Qualification 32" → "qm", "Practice 9" → "p". */
+    fun compLevel(label: String): String? {
         val parts = label.trim().split(WHITESPACE, limit = 2)
         if (parts.size != 2) return null
-        val level = when (val raw = parts[0].lowercase()) {
+        return when (val raw = parts[0].lowercase()) {
             "practice" -> "p"
             "qualification" -> "qm"
             "eighthfinal" -> "ef"
@@ -37,6 +37,13 @@ object NexusMatchMerge {
             "final" -> "f"
             else -> raw
         }
+    }
+
+    /** "Qualification 32" → "qm-1-32", "Quarterfinal 2-1" → "qf-2-1". Tolerates extra whitespace — deliberately more lenient than iOS, which keeps it and falls back to team matching. */
+    private fun parseNexusLabel(label: String): String? {
+        val parts = label.trim().split(WHITESPACE, limit = 2)
+        if (parts.size != 2) return null
+        val level = compLevel(label) ?: return null
         val number = parts[1].trim()
         if ('-' !in number) return "$level-1-$number"
         val nums = number.split('-')
