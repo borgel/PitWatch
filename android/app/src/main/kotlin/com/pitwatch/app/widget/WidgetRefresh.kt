@@ -5,12 +5,24 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.updateAll
 import com.pitwatch.app.AppContainer
 import com.pitwatch.app.PitWatchApp
 import java.time.Instant
 import kotlinx.coroutines.flow.first
+import kotlin.reflect.KClass
 import kotlinx.coroutines.launch
+
+/** Every home-screen widget the app declares (one manifest receiver each). */
+object Widgets {
+    val RECEIVERS: List<KClass<out GlanceAppWidgetReceiver>> =
+        listOf(PitWatchWidgetReceiver::class, ScheduleWidgetReceiver::class, EventScheduleWidgetReceiver::class)
+
+    suspend fun updateAll(context: Context) {
+        for (receiver in RECEIVERS) receiver.java.getDeclaredConstructor().newInstance().glanceAppWidget.updateAll(context)
+    }
+}
 
 /**
  * Widgets change with the clock (phase deadlines, match time), not only with data. Every render also arms a
@@ -19,7 +31,7 @@ import kotlinx.coroutines.launch
 object WidgetRefresh {
     private const val REQUEST_CODE = 44
 
-    suspend fun run(context: Context, container: AppContainer, render: suspend () -> Unit = { PitWatchWidget().updateAll(context); ScheduleWidget().updateAll(context) }) {
+    suspend fun run(context: Context, container: AppContainer, render: suspend () -> Unit = { Widgets.updateAll(context) }) {
         render()
         val model = WidgetModels.build(container.stores.cache.data.first(), container.stores.config.data.first(), container.clock())
         arm(context, model.countdownDeadline?.plusSeconds(1))

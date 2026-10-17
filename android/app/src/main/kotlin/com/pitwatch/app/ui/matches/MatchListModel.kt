@@ -136,13 +136,7 @@ object MatchListModels {
         fun row(match: Match): MatchListModel.MatchRow {
             val isNext = match.key == nextKey
             val nexusMatch = NexusMatchMerge.nexusInfo(match, nexus)
-            val nexusStart = nexusMatch?.times?.startDate
-            val time = nexusStart ?: if (config.useScheduledTime) {
-                match.time?.let(Instant::ofEpochSecond) ?: match.matchDate()
-            } else {
-                match.matchDate()
-            }
-            val estimated = nexusStart != null || (!config.useScheduledTime && match.predictedTime != null && match.actualTime == null)
+            val (time, estimated) = MatchTime.of(match, nexusMatch, config)
             val derived = nexusMatch?.let { PhaseDerivation.derivePhase(it, now) }
             val countdown = when {
                 !isNext -> null

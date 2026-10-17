@@ -44,4 +44,28 @@ object SampleWidgetData {
     }
 
     fun schedule(now: Instant): ScheduleWidgetModel = ScheduleWidgetModel(WidgetModel.State.READY, HEADER, listOf(today(now)), last, null)
+
+    private fun eventRow(n: Int, at: Instant?, red: List<String>, blue: List<String>, score: Pair<Int, Int>? = null) = EventMatchRow(
+        "sample_qm$n", "Q$n", at, estimated = at != null, line(*red.toTypedArray()), line(*blue.toTypedArray()),
+        ours = when ("5507") { in red -> MatchAlliance.RED; in blue -> MatchAlliance.BLUE; else -> null },
+        redScore = score?.first, blueScore = score?.second,
+    )
+
+    fun eventSchedule(now: Instant): EventScheduleModel {
+        fun at(minutes: Long) = now.plus(Duration.ofMinutes(minutes))
+        return EventScheduleModel(
+            WidgetModel.State.READY, "California Northern",
+            listOf(
+                EventScheduleLine.Header("Today"),
+                EventScheduleLine.Upcoming(eventRow(36, at(2), listOf("4698", "5507", "1678"), listOf("6036", "9470", "6814"))),
+                EventScheduleLine.Upcoming(eventRow(37, at(9), listOf("254", "971", "8033"), listOf("2813", "649", "7419"))),
+                EventScheduleLine.Upcoming(eventRow(38, at(16), listOf("1868", "6418", "5104"), listOf("9400", "4255", "199"))),
+                EventScheduleLine.Upcoming(eventRow(39, at(23), listOf("3256", "2135", "253"), listOf("5507", "841", "100"))),
+                EventScheduleLine.Header(EventScheduleModels.RESULTS),
+                EventScheduleLine.Played(eventRow(35, null, listOf("2135", "253", "7419"), listOf("1678", "254", "604"), 216 to 401)),
+                EventScheduleLine.Played(eventRow(34, null, listOf("971", "649", "8033"), listOf("6814", "4698", "199"), 288 to 263)),
+            ),
+            null,
+        )
+    }
 }
