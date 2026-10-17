@@ -48,6 +48,12 @@ data class EventMatchRow(
 object EventScheduleModels {
     const val RESULTS = "Results"
 
+    /**
+     * Every line travels in the one widget update (~1 MB binder limit; see EventScheduleWidgetSizeTest). Past this, the
+     * oldest results go first, then the far end of the upcoming schedule. A 120-match event uses ~125 lines.
+     */
+    const val MAX_LINES = 180
+
     fun build(
         cache: EventCache,
         config: UserConfig,
@@ -84,7 +90,7 @@ object EventScheduleModels {
 
         val (played, upcoming) = cache.matches.sortedBy { it.sortOrder }.partition { it.isPlayed }
         val dayFormat = DateTimeFormatter.ofPattern("EEEE, MMM d", locale)
-        val lines = buildList {
+        val upcomingLines = buildList {
             var day: LocalDate? = null
             for ((i, match) in upcoming.withIndex()) {
                 val r = row(match, played = false)
@@ -96,11 +102,15 @@ object EventScheduleModels {
                 }
                 add(EventScheduleLine.Upcoming(r))
             }
-            if (showPlayed && played.isNotEmpty()) {
-                add(EventScheduleLine.Header(RESULTS))
-                played.asReversed().forEach { add(EventScheduleLine.Played(row(it, played = true))) }
-            }
+        }.take(MAX_LINES).dropLastWhile { it is EventScheduleLine.Header }
+        // Results get what's left after the header: newest first, so the oldest are the ones cut.
+        val resultRoom = MAX_LINES - upcomingLines.size - 1
+        val resultLines = if (showPlayed && played.isNotEmpty() && resultRoom > 0) {
+            listOf(EventScheduleLine.Header(RESULTS)) + played.asReversed().take(resultRoom).map { EventScheduleLine.Played(row(it, played = true)) }
+        } else {
+            emptyList()
         }
+        val lines = upcomingLines + resultLines
         if (lines.isEmpty()) {
             val message = if (cache.matches.isEmpty()) "No matches yet" else "No upcoming matches"
             return EventScheduleModel(WidgetModel.State.NO_UPCOMING, list.title, emptyList(), message, zone, list.zoneLabel)

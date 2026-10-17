@@ -92,4 +92,19 @@ class EventScheduleModelTest {
         assertEquals(WidgetModel.State.READY, doneWithResults.state)
         assertEquals(35, doneWithResults.played().size)
     }
+
+    @Test
+    fun `an outsized event drops the oldest results first, keeping every upcoming match`() {
+        val cache = snapshotCache()
+        val played = cache.matches.first { it.isPlayed }
+        val upcoming = cache.matches.first { !it.isPlayed }
+        // 150 played and 100 upcoming quals: past the line cap.
+        val matches = (1..150).map { n -> played.copy(key = "2026cancmp_qm$n", matchNumber = n) } +
+            (151..250).map { n -> upcoming.copy(key = "2026cancmp_qm$n", matchNumber = n) }
+        val m = build(cache = cache.copy(matches = matches))
+        assertTrue(m.lines.size <= EventScheduleModels.MAX_LINES, "${m.lines.size} lines")
+        assertEquals(100, m.upcoming().size)
+        assertEquals("Q150", m.played().first().shortLabel)
+        assertTrue(m.played().last().shortLabel != "Q1", "the oldest results are the ones dropped")
+    }
 }

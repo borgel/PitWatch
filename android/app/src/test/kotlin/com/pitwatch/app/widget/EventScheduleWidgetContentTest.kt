@@ -30,10 +30,10 @@ class EventScheduleWidgetContentTest {
         onNode(hasText("California Northern")).assertExists()
         onNode(hasTestTag("event-schedule-list")).assertExists()
         onNode(hasText("Q36")).assertExists()
-        // Our number gets its own chip, once in each of our matches.
+        onNode(hasText("4698 5507 1678  ·  6036 9470 6814")).assertExists() // red, then blue
+        // Each of our matches gets a dot in our alliance's color.
         val ourMatches = ready.lines.count { (it as? EventScheduleLine.Upcoming)?.row?.ours != null || (it as? EventScheduleLine.Played)?.row?.ours != null }
-        onAllNodes(hasTextEqualTo("5507")).assertCountEquals(ourMatches)
-        onNode(hasText("6036 9470 6814")).assertExists()
+        onAllNodes(hasTextEqualTo("● ")).assertCountEquals(ourMatches)
         val q36 = (ready.lines.first { it is EventScheduleLine.Upcoming } as EventScheduleLine.Upcoming).row
         onNode(hasText(TimeFormat(LA, null).match(q36.time, q36.estimated))).assertExists()
         onNode(hasText("Results")).assertExists()

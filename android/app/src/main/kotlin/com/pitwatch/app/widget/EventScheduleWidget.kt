@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.datastore.preferences.core.Preferences
@@ -24,13 +25,10 @@ import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.currentState
 import androidx.glance.layout.Alignment
-import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
-import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
-import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.width
 import androidx.glance.semantics.semantics
@@ -42,10 +40,8 @@ import androidx.glance.unit.ColorProvider
 import com.pitwatch.app.MainActivity
 import com.pitwatch.app.PitWatchApp
 import com.pitwatch.app.ui.TimeFormat
-import com.pitwatch.app.ui.matches.MatchListModel
 import com.pitwatch.app.ui.theme.StatusColors
 import com.pitwatch.core.config.UserConfig
-import com.pitwatch.core.model.MatchAlliance
 import com.pitwatch.core.store.EventCache
 import java.time.Instant
 import kotlinx.coroutines.flow.Flow
@@ -53,7 +49,8 @@ import kotlinx.coroutines.flow.first
 
 /** Every match at the event in a scrolling list. Each placed widget keeps its own "show played matches" choice. */
 class EventScheduleWidget : GlanceAppWidget() {
-    override val sizeMode = SizeMode.Exact
+    // Two fixed layouts, not one per launcher-reported size: each copy carries the whole list (see MatchLine).
+    override val sizeMode = SizeMode.Responsive(SIZES)
     override val previewSizeMode = SizeMode.Responsive(PitWatchWidget.PREVIEW_SIZES)
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
@@ -78,6 +75,11 @@ class EventScheduleWidget : GlanceAppWidget() {
 
         /** Wide enough for both alliances' team numbers beside the label and time. */
         val TEAMS_WIDTH = 300.dp
+
+        val SIZES = setOf(DpSize(110.dp, 110.dp), DpSize(TEAMS_WIDTH, 110.dp))
+
+        /** Lines grouped into each list item: under a Column's 10-child limit. */
+        const val LINES_PER_ITEM = WidgetLines.MAX_LINES
     }
 }
 
@@ -115,65 +117,52 @@ fun EventScheduleContent(model: EventScheduleModel) {
             return@Column
         }
         LazyColumn(GlanceModifier.fillMaxSize().padding(top = 2.dp).semantics { testTag = "event-schedule-list" }) {
-            items(model.lines) { line ->
-                when (line) {
-                    is EventScheduleLine.Header -> Text(
-                        line.label,
-                        style = TextStyle(color = GlanceTheme.colors.primary, fontSize = 11.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED),
-                        modifier = GlanceModifier.padding(top = 6.dp, bottom = 1.dp),
-                    )
-                    is EventScheduleLine.Upcoming -> MatchLine(line.row, teams, times.match(line.row.time, line.row.estimated), played = false)
-                    is EventScheduleLine.Played -> MatchLine(line.row, teams, "${line.row.redScore}–${line.row.blueScore}", played = true)
+            // Several lines per list item: each item is its own RemoteViews with a fixed cost, and every item travels
+            // in the one widget update (see EventScheduleWidgetSizeTest). A Column holds at most 10 children.
+            items(model.lines.chunked(EventScheduleWidget.LINES_PER_ITEM)) { chunk ->
+                Column(GlanceModifier.fillMaxWidth()) {
+                    for (line in chunk) {
+                        when (line) {
+                            is EventScheduleLine.Header -> Text(
+                                line.label,
+                                style = TextStyle(color = GlanceTheme.colors.primary, fontSize = 11.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED),
+                                modifier = GlanceModifier.padding(top = 6.dp, bottom = 1.dp),
+                            )
+                            is EventScheduleLine.Upcoming -> MatchLine(line.row, teams, times.match(line.row.time, line.row.estimated), played = false)
+                            is EventScheduleLine.Played -> MatchLine(line.row, teams, "${line.row.redScore}–${line.row.blueScore}", played = true)
+                        }
+                    }
                 }
             }
         }
     }
 }
 
-/** Label, (wide) both alliances, then the time or the red–blue score. Our matches sit on a tinted band. */
+/**
+ * Label, (wide) both alliances, then the time or the red–blue score. Our matches sit on a tinted band behind a dot in
+ * our alliance's color. As few Texts as possible: every row travels in the one widget update, under the ~1 MB binder
+ * limit, and each Text costs ~260 bytes before styling (see EventScheduleWidgetSizeTest).
+ */
 @Composable
 private fun MatchLine(row: EventMatchRow, teams: Boolean, trailing: String, played: Boolean) {
     val band = if (row.ours != null) GlanceModifier.background(GlanceTheme.colors.secondaryContainer).cornerRadius(8.dp) else GlanceModifier
     val text = if (row.ours != null) GlanceTheme.colors.onSecondaryContainer else GlanceTheme.colors.onSurface
-    Row(GlanceModifier.fillMaxWidth().then(band).padding(horizontal = 6.dp, vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
-        // Narrow widgets have no team numbers, so a dot in our alliance's color marks our matches.
-        if (!teams) row.ours?.let { Text("● ", style = TextStyle(color = ColorProvider(StatusColors.alliance(it)), fontSize = 12.sp)) }
+    Row(GlanceModifier.fillMaxWidth().then(band).padding(6.dp, 3.dp, 6.dp, 3.dp), verticalAlignment = Alignment.CenterVertically) {
+        row.ours?.let { Text("● ", style = TextStyle(color = ColorProvider(StatusColors.alliance(it)), fontSize = 12.sp)) }
+        // Whichever of label or teams comes last before the trailing text takes the slack, pushing it to the edge.
         Text(
             row.shortLabel,
-            style = TextStyle(color = text, fontSize = 14.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED),
-            maxLines = 1,
-            modifier = if (teams) GlanceModifier.width(52.dp) else GlanceModifier,
+            style = TextStyle(color = text, fontSize = 14.sp, fontWeight = FontWeight.Bold),
+            modifier = if (teams) GlanceModifier.width(46.dp) else GlanceModifier.defaultWeight(),
         )
         if (teams) {
-            Teams(MatchAlliance.RED, row.red, text)
-            Spacer(GlanceModifier.width(8.dp))
-            Teams(MatchAlliance.BLUE, row.blue, text)
+            Text(
+                row.red.teams.joinToString(" ") { it.number } + "  ·  " + row.blue.teams.joinToString(" ") { it.number },
+                style = TextStyle(color = text, fontSize = 13.sp, fontFamily = CONDENSED),
+                maxLines = 1,
+                modifier = GlanceModifier.defaultWeight(),
+            )
         }
-        Spacer(GlanceModifier.defaultWeight())
-        Text(
-            trailing,
-            style = TextStyle(
-                color = text, fontSize = 14.sp, fontFamily = CONDENSED,
-                fontWeight = if (played) FontWeight.Bold else FontWeight.Normal,
-            ),
-            maxLines = 1,
-        )
-    }
-}
-
-@Composable
-private fun Teams(alliance: MatchAlliance, line: MatchListModel.AllianceLine, color: ColorProvider) {
-    val style = TextStyle(color = color, fontSize = 13.sp, fontFamily = CONDENSED)
-    val (before, us, after) = TeamSplit.of(line, separator = " ")
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(GlanceModifier.width(3.dp).height(13.dp).background(ColorProvider(StatusColors.alliance(alliance))).cornerRadius(2.dp)) {}
-        Spacer(GlanceModifier.width(4.dp))
-        if (before.isNotEmpty()) Text(before, style = style, maxLines = 1)
-        us?.let {
-            Box(GlanceModifier.background(GlanceTheme.colors.primary).cornerRadius(4.dp).padding(horizontal = 3.dp)) {
-                Text(it, style = style.copy(color = GlanceTheme.colors.onPrimary, fontWeight = FontWeight.Bold), maxLines = 1)
-            }
-        }
-        if (after.isNotEmpty()) Text(after, style = style, maxLines = 1)
+        Text(trailing, style = TextStyle(color = text, fontSize = 14.sp, fontWeight = if (played) FontWeight.Bold else null))
     }
 }

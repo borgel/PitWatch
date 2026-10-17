@@ -94,12 +94,12 @@ object WidgetLines {
 
 /** "4698 · ", "5507", " · 1678": the text either side of our team, so it can sit in its own chip. */
 object TeamSplit {
-    fun of(line: MatchListModel.AllianceLine, separator: String = " · "): Triple<String, String?, String> {
+    fun of(line: MatchListModel.AllianceLine): Triple<String, String?, String> {
         val numbers = line.teams.map { it.number }
         val i = line.teams.indexOfFirst { it.isUs }
-        if (i < 0) return Triple(numbers.joinToString(separator), null, "")
-        val before = numbers.take(i).joinToString(separator).let { if (it.isEmpty()) it else "$it$separator" }
-        val after = numbers.drop(i + 1).joinToString(separator).let { if (it.isEmpty()) it else "$separator$it" }
+        if (i < 0) return Triple(numbers.joinToString(" · "), null, "")
+        val before = numbers.take(i).joinToString(" · ").let { if (it.isEmpty()) it else "$it · " }
+        val after = numbers.drop(i + 1).joinToString(" · ").let { if (it.isEmpty()) it else " · $it" }
         return Triple(before, numbers[i], after)
     }
 }
