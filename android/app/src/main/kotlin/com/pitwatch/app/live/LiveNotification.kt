@@ -55,10 +55,9 @@ object LiveNotification {
             .setGroup(GROUP)
             .setRequestPromotedOngoing(true)
             .setCategory(NotificationCompat.CATEGORY_PROGRESS)
-            .setColor(context.getColor(android.R.color.system_accent1_600)) // Material You accent for the icon (and card)
-            // Android 16 only promotes colorized notifications to Live Updates (hasPromotableCharacteristics); a
-            // foreground service's notification may colorize.
-            .setColorized(true)
+            .setColor(context.getColor(android.R.color.system_accent1_600)) // Material You accent for the icon
+            // Never setColorized(true): Live Updates must not be colorized, and a colorized one stays out of Samsung's
+            // Now Bar. (The base API 36 source has the pre-release rule that required it; the shipped rule is the reverse.)
             // Match times aren't sensitive: show everything on the lock screen.
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setContentIntent(actions.content)

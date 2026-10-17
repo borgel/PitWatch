@@ -49,12 +49,13 @@ class LiveNotificationTest {
     }
 
     @Test
-    fun `shows in full on the lock screen and asks to be colorized for Live Update promotion`() {
-        // Asked for: visible on the lock screen. Match times aren't sensitive; Android 16's promotion check wants
-        // EXTRA_COLORIZED (Notification.hasPromotableCharacteristics).
+    fun `shows in full on the lock screen and stays eligible for Live Update promotion`() {
+        // Asked for: visible on the lock screen. Match times aren't sensitive. Live Updates "must NOT setColorized
+        // to TRUE" (developer.android.com, Live Update requirements): colorizing kept it out of Samsung's Now Bar.
+        // (The base API 36 source, and so Robolectric, still has the pre-release rule that required it.)
         val n = build(snapshot())
         assertEquals(Notification.VISIBILITY_PUBLIC, n.visibility)
-        assertTrue(n.extras.getBoolean(Notification.EXTRA_COLORIZED))
+        assertFalse(n.extras.getBoolean(Notification.EXTRA_COLORIZED))
         assertEquals(LiveNotification.CHANNEL_ID, n.channelId)
     }
 
