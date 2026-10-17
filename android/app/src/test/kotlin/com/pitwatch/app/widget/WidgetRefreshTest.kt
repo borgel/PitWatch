@@ -58,7 +58,7 @@ class WidgetRefreshTest {
         WidgetRefresh.run(context, container) { renders++ }
         assertEquals(1, renders)
         // qm36 is on the field; its countdown ends at start + 150 s.
-        assertEquals(Instant.ofEpochMilli(1775868749195).plusSeconds(151).toEpochMilli(), widgetAlarm()!!.triggerAtMs)
+        assertEquals(Instant.ofEpochMilli(1775868749195).plusSeconds(1).toEpochMilli(), widgetAlarm()!!.triggerAtMs) // just after the match start
     }
 
     @Test

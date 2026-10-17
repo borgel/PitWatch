@@ -13,6 +13,8 @@ object PhaseDerivation {
     data class Result(
         val phase: Phase,
         val deadline: Instant?,
+        /** What [deadline] counts to: "queue", "on deck", "on field", "match start" or "match end". */
+        val target: String,
         val phaseStart: Instant,
         val queueDeadline: Instant?,
         val onDeckDeadline: Instant?,
@@ -29,8 +31,14 @@ object PhaseDerivation {
         val times = nexusMatch.times
         val matchEnd = times.startDate?.plus(MATCH_DURATION)
 
+        // On the field, count to the (estimated) start while it's ahead, then to the end.
+        val startAhead = times.startDate?.takeIf { it > now }
+        val onFieldDeadline = startAhead ?: matchEnd
+
         fun result(phase: Phase, deadline: Instant?, phaseStart: Instant) = Result(
-            phase, deadline, phaseStart,
+            phase, deadline,
+            target = phase.nextPhaseProse ?: if (startAhead != null) "match start" else "match end",
+            phaseStart = phaseStart,
             queueDeadline = times.queueDate,
             onDeckDeadline = times.onDeckDate,
             onFieldDeadline = times.onFieldDate,
@@ -41,7 +49,7 @@ object PhaseDerivation {
         val status = nexusMatch.status?.lowercase()
         if (status != null && "soon" !in status) {
             if ("field" in status || "playing" in status) {
-                return result(Phase.ON_FIELD, matchEnd, times.onFieldDate ?: now)
+                return result(Phase.ON_FIELD, onFieldDeadline, times.onFieldDate ?: now)
             }
             if ("deck" in status) {
                 return result(Phase.ON_DECK, times.onFieldDate, times.onDeckDate ?: now)
@@ -51,7 +59,7 @@ object PhaseDerivation {
             }
         }
 
-        times.onFieldDate?.takeIf { it <= now }?.let { return result(Phase.ON_FIELD, matchEnd, it) }
+        times.onFieldDate?.takeIf { it <= now }?.let { return result(Phase.ON_FIELD, onFieldDeadline, it) }
         times.onDeckDate?.takeIf { it <= now }?.let { return result(Phase.ON_DECK, times.onFieldDate, it) }
         times.queueDate?.takeIf { it <= now }?.let { return result(Phase.QUEUEING, times.onDeckDate, it) }
         return result(Phase.PRE_QUEUE, times.queueDate, now)

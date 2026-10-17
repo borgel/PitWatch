@@ -68,7 +68,7 @@ object LiveSnapshots {
         if (nexusMatch != null) {
             val d = PhaseDerivation.derivePhase(nexusMatch, now)
             return LiveSnapshot(
-                match.key, match.shortLabel, alliance, d.phase, d.deadline, "to " + (d.phase.nextPhaseProse ?: "match end"),
+                match.key, match.shortLabel, alliance, d.phase, d.deadline, "to " + d.target,
                 LiveSnapshot.Milestones(d.queueDeadline, d.onDeckDeadline, d.onFieldDeadline, d.matchStartDeadline, d.matchEndDeadline),
                 away, onField, result,
             )

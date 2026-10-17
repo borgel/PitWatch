@@ -39,7 +39,7 @@ class WidgetContentTest {
     fun `2x2 - countdown target and phase bar`() = runGlanceAppWidgetUnitTest {
         setAppWidgetSize(androidx.compose.ui.unit.DpSize(170.dp, 170.dp))
         provideComposable { GlanceTheme { WidgetContent(ready) { Text("COUNTDOWN") } } }
-        onNode(hasText("to match end")).assertExists() // what the countdown counts to
+        onNode(hasText("to match start")).assertExists() // what the countdown counts to (on the field, before the start)
         onAllNodes(hasTestTag("phase-step")).assertCountEquals(4)
     }
 

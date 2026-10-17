@@ -140,7 +140,7 @@ object MatchListModels {
             val derived = nexusMatch?.let { PhaseDerivation.derivePhase(it, now) }
             val countdown = when {
                 !isNext -> null
-                derived != null -> derived.deadline?.let { MatchListModel.Countdown(it, "to " + (derived.phase.nextPhaseProse ?: "match end")) }
+                derived != null -> derived.deadline?.let { MatchListModel.Countdown(it, "to " + derived.target) }
                 else -> time?.let {
                     MatchListModel.Countdown(it.minus(config.queueOffset), if (config.queueOffsetMinutes > 0) "to queue" else "to match")
                 }
