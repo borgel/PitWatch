@@ -59,6 +59,30 @@ class PhaseDerivationTest {
     }
 
     @Test
+    fun `on the field before the start counts to the match start`() {
+        // Asked for: once on the field, the time to match start (Nexus's estimate), not to match end.
+        val n = nexus(-600, -300, -60, 45)
+        val result = PhaseDerivation.derivePhase(n, ref)
+        assertEquals(Phase.ON_FIELD, result.phase)
+        assertEquals(n.times.startDate, result.deadline)
+        assertEquals("match start", result.target)
+        val byStatus = PhaseDerivation.derivePhase(nexus(300, 600, 900, 1200, "On field"), ref)
+        assertEquals(byStatus.matchStartDeadline, byStatus.deadline)
+        assertEquals("match start", byStatus.target)
+    }
+
+    @Test
+    fun `targets name what each phase counts to`() {
+        assertEquals("queue", PhaseDerivation.derivePhase(nexus(300, 600, 900, 1200), ref).target)
+        assertEquals("on deck", PhaseDerivation.derivePhase(nexus(-60, 300, 600, 900), ref).target)
+        assertEquals("on field", PhaseDerivation.derivePhase(nexus(-300, -60, 300, 600), ref).target)
+        assertEquals("match end", PhaseDerivation.derivePhase(nexus(-600, -300, -120, -60), ref).target)
+        // On the field with no start estimate: nothing to count to.
+        val noStart = PhaseDerivation.derivePhase(nexus(-600, -300, -120, null), ref)
+        assertNull(noStart.deadline)
+    }
+
+    @Test
     fun `nexus status On Field overrides times`() {
         assertEquals(Phase.ON_FIELD, PhaseDerivation.derivePhase(nexus(300, 600, 900, 1200, "On Field"), ref).phase)
     }

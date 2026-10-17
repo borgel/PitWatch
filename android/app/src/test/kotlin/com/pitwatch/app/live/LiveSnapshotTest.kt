@@ -25,9 +25,9 @@ class LiveSnapshotTest {
         assertEquals("Q36", s.matchLabel)
         assertEquals(MatchAlliance.RED, s.alliance)
         assertEquals(Phase.ON_FIELD, s.phase)
-        assertEquals(Instant.ofEpochMilli(1775868749195).plusSeconds(150), s.deadline)
+        assertEquals(Instant.ofEpochMilli(1775868749195), s.deadline)
         assertEquals(Instant.ofEpochMilli(1775867343646), s.milestones.queue)
-        assertEquals("to match end", s.target) // on the field: the countdown runs to the match's end
+        assertEquals("to match start", s.target) // on the field before the start: it counts to the start
         assertEquals(36, s.onFieldNumber)
         assertEquals(0, s.matchesAway)
         assertNull(s.result)

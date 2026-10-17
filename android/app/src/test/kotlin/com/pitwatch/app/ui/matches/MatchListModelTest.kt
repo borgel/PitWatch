@@ -64,7 +64,7 @@ class MatchListModelTest {
         val next = (build().days[0].items[0] as MatchListModel.Item.Upcoming).row
         assertTrue(next.isNext)
         assertEquals(Phase.ON_FIELD, next.phase)
-        assertEquals(MatchListModel.Countdown(Instant.ofEpochMilli(1775868749195).plusSeconds(150), "to match end"), next.countdown)
+        assertEquals(MatchListModel.Countdown(Instant.ofEpochMilli(1775868749195), "to match start"), next.countdown) // on the field, 65 s before the start
         assertTrue(next.red.teams.single { it.isUs }.number == "5507")
         assertEquals(cache.oprs!!.summedOpr(listOf("frc4698", "frc5507", "frc1678")), next.red.summedOpr)
         assertTrue(next.estimated)

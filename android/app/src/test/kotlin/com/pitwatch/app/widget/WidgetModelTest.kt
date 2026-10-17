@@ -38,7 +38,7 @@ class WidgetModelTest {
         }
         assertEquals(listOf("End of day", "Q43"), later)
         assertEquals("Q22", m.last?.shortLabel)
-        assertEquals(Instant.ofEpochMilli(1775868749195).plusSeconds(150), m.countdownDeadline)
+        assertEquals(Instant.ofEpochMilli(1775868749195), m.countdownDeadline) // the match start
     }
 
     @Test
