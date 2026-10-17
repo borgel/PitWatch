@@ -98,6 +98,16 @@ class PhaseDerivationTest {
         assertEquals(7, PhaseDerivation.currentMatchOnField(emptyList(), fallbackMatchNumber = 7))
     }
 
+    @Test
+    fun `practice matches on the field don't count toward quals`() {
+        // Seen on-device before quals began: "Practice 9" was read as match 9, against our Qual 5.
+        val matches = (1..9).map { NexusMatch("Practice $it", status = "On field") } +
+            (1..12).map { NexusMatch("Qualification $it", status = "Queuing soon") }
+        assertEquals(-1, PhaseDerivation.currentMatchOnField(matches, fallbackMatchNumber = -1, compLevel = "qm"))
+        val started = matches.map { if (it.label == "Qualification 1") it.copy(status = "On field") else it }
+        assertEquals(1, PhaseDerivation.currentMatchOnField(started, fallbackMatchNumber = -1, compLevel = "qm"))
+    }
+
     private fun correlated(status: String) = NexusEvent(
         dataAsOfTime = 0,
         matches = listOf(

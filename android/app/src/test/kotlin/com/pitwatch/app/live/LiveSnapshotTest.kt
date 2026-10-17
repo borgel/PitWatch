@@ -54,6 +54,24 @@ class LiveSnapshotTest {
     }
 
     @Test
+    fun `before quals start, a practice match on the field isn't our field position`() {
+        // On-device: "Q5 · BLUE · UPCOMING" over "NOW · ON FIELD #9" — Practice 9 was on the field.
+        val nexus = assertNotNull(cache.nexusEvent)
+        val beforeQuals = nexus.copy(
+            matches = nexus.matches.map { m ->
+                when {
+                    m.label.startsWith("Practice") -> m.copy(status = "On field")
+                    else -> m.copy(status = "Queuing soon")
+                }
+            },
+        )
+        val s = assertNotNull(LiveSnapshots.build(cache.copy(nexusEvent = beforeQuals), config, qm36, SNAP_NOW))
+        assertNull(s.onFieldNumber)
+        assertNull(s.matchesAway)
+        assertNull(LiveNotification.text(s))
+    }
+
+    @Test
     fun `null for an unknown match or an unconfigured team`() {
         assertNull(LiveSnapshots.build(cache, config, "nope", SNAP_NOW))
         assertNull(LiveSnapshots.build(cache, UserConfig(), qm36, SNAP_NOW))
