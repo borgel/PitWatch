@@ -117,12 +117,18 @@ class WidgetModelTest {
     }
 
     @Test
-    fun `a short wide widget keeps both alliances and drops the start time`() {
-        // On-device: at 4×2 the blue alliance line was cut off at the bottom.
+    fun `a short wide widget keeps both alliances, and the start time now fits too`() {
+        // On-device: at 4×2 the blue alliance line was cut off at the bottom. With the header beside the match number
+        // (no line of its own on wide widgets), the start time fits as well.
         val p = plan(223, tall = false)
-        kotlin.test.assertTrue(p.alliances && p.phaseBar && p.target)
-        kotlin.test.assertFalse(p.time)
+        kotlin.test.assertTrue(p.header && p.alliances && p.phaseBar && p.target && p.time)
         assertEquals(0, p.listLines)
+    }
+
+    @Test
+    fun `on a wide widget the header costs no height`() {
+        kotlin.test.assertTrue(plan(110, wide = true, tall = false).header)
+        kotlin.test.assertFalse(plan(110, wide = false, tall = false).header)
     }
 
     @Test
