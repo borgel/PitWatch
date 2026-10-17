@@ -76,7 +76,6 @@ fun WidgetContent(model: WidgetModel, countdown: @Composable (Instant) -> Unit) 
                     AllianceRow(MatchAlliance.BLUE, next.blue)
                 }
             }
-            if (wide && !tall) model.last?.let { LastResult(it) }
         }
         val lines = WidgetLines.fit(model.laterDays, plan.listLines)
         if (tall && (plan.lastLine || lines.isNotEmpty())) {
@@ -188,7 +187,7 @@ internal fun LastLine(result: MatchListModel.Result, compact: Boolean) {
     }
 }
 
-/** Wide, short widgets: a column beside the next match. */
+/** Wide widgets with no upcoming match: the last result, below the message. */
 @Composable
 private fun LastResult(result: MatchListModel.Result) {
     Column(GlanceModifier.padding(start = 8.dp, top = 4.dp)) {

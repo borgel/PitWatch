@@ -44,15 +44,15 @@ class WidgetContentTest {
     }
 
     @Test
-    fun `4x2 - both alliances fit, with the last result beside them`() = runGlanceAppWidgetUnitTest {
-        // On-device (emulator-5580): at 4×2 the blue alliance line was cut off.
+    fun `4x2 - both alliances fit, with no last result in the corner`() = runGlanceAppWidgetUnitTest {
+        // On-device (emulator-5580): at 4×2 the blue alliance line was cut off. Asked for: no last-match score at the
+        // top right (taller widgets keep their "LAST" line below the next match).
         setAppWidgetSize(androidx.compose.ui.unit.DpSize(360.dp, 223.dp))
         provideComposable { GlanceTheme { WidgetContent(ready) { Text("COUNTDOWN") } } }
         onNode(hasText("4698 · ")).assertExists()
         onNode(hasText("6036 · 9470 · 6814")).assertExists()
-        onNode(hasText("LAST")).assertExists()
-        onNode(hasText("403–299")).assertExists()
-        onNode(hasText("WIN")).assertExists()
+        onNode(hasText("LAST")).assertDoesNotExist()
+        onNode(hasText("403–299")).assertDoesNotExist()
     }
 
     @Test
