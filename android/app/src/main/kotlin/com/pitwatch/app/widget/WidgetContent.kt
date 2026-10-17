@@ -59,7 +59,8 @@ fun WidgetContent(model: WidgetModel, countdown: @Composable (Instant) -> Unit) 
             .padding(horizontal = 16.dp, vertical = 14.dp).clickable(actionStartActivity<MainActivity>())
             .semantics { testTag = "widget-root" },
     ) {
-        if (plan.header || next == null) Text(model.header, style = muted, maxLines = 1)
+        // Wide widgets put the header beside the match number instead (see NextMatch), saving a line.
+        if ((plan.header && !wide) || next == null) Text(model.header, style = muted, maxLines = 1)
         if (plan.eventTitle) model.eventTitle?.let { Text(it.uppercase(), style = muted, maxLines = 1) }
         if (model.state != WidgetModel.State.READY || next == null) {
             Text(model.message.orEmpty(), style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 16.sp), modifier = GlanceModifier.padding(top = 8.dp))
@@ -68,7 +69,7 @@ fun WidgetContent(model: WidgetModel, countdown: @Composable (Instant) -> Unit) 
         }
         Row(GlanceModifier.fillMaxWidth().padding(top = 4.dp)) {
             Column(GlanceModifier.defaultWeight()) {
-                NextMatch(next, times, model.countdownDeadline, plan, countdown)
+                NextMatch(next, times, model.countdownDeadline, plan, header = model.header.takeIf { wide && plan.header }, countdown)
                 if (plan.phaseBar) next.phase?.let { PhaseBar(it) }
                 if (plan.alliances) {
                     AllianceRow(MatchAlliance.RED, next.red)
@@ -90,12 +91,24 @@ fun WidgetContent(model: WidgetModel, countdown: @Composable (Instant) -> Unit) 
 }
 
 @Composable
-private fun NextMatch(row: MatchListModel.MatchRow, times: TimeFormat, deadline: Instant?, plan: WidgetPlan, countdown: @Composable (Instant) -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
+private fun NextMatch(
+    row: MatchListModel.MatchRow,
+    times: TimeFormat,
+    deadline: Instant?,
+    plan: WidgetPlan,
+    /** Wide widgets only: the team header, at the right end of the match number's line. */
+    header: String?,
+    countdown: @Composable (Instant) -> Unit,
+) {
+    Row(GlanceModifier.fillMaxWidth().semantics { testTag = "next-match-line" }, verticalAlignment = Alignment.CenterVertically) {
         Text(row.shortLabel, style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 30.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED))
         row.phase?.let {
             Spacer(GlanceModifier.width(8.dp))
             Pill(it.stateLabel, ColorProvider(StatusColors.phase(it)), ColorProvider(StatusColors.onPhase(it)))
+        }
+        header?.let {
+            Spacer(GlanceModifier.defaultWeight())
+            Text(it, style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED), maxLines = 1)
         }
     }
     if (plan.time) Text(times.match(row.time, row.estimated), style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 13.sp))

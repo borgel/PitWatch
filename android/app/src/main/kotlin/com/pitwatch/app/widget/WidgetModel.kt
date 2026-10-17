@@ -137,7 +137,8 @@ object WidgetPlans {
 
     /**
      * The match label and countdown always show; then, in priority order, each part is drawn only if it fits:
-     * what the countdown counts to, the phase bar, the team header, the alliances (wide only), the start time,
+     * what the countdown counts to, the phase bar, the team header (narrow only; wide widgets put it beside the match
+     * number, at no cost), the alliances (wide only), the start time,
      * and on tall widgets the last result and event title. Nothing is drawn to be clipped.
      */
     fun plan(
@@ -157,7 +158,8 @@ object WidgetPlans {
         val earlyTime = !hasCountdown && take(true, TIME)
         val target = take(hasCountdown && hasTarget, TARGET)
         val phaseBar = take(hasPhase, PHASE_BAR)
-        val header = take(true, HEADER)
+        // Wide widgets draw the header beside the match number, so it costs no height there.
+        val header = wide || take(true, HEADER)
         val alliances = take(wide, ALLIANCES)
         val time = earlyTime || take(true, TIME)
         val lastLine = take(tall && hasLast, LAST_LINE)

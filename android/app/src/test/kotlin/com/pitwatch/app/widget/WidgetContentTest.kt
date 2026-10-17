@@ -56,6 +56,24 @@ class WidgetContentTest {
     }
 
     @Test
+    fun `wide - the team header shares the match number's line`() = runGlanceAppWidgetUnitTest {
+        // Asked for: the header on its own line above cost a line of the widget's height.
+        setAppWidgetSize(androidx.compose.ui.unit.DpSize(360.dp, 223.dp))
+        provideComposable { GlanceTheme { WidgetContent(ready) { Text("COUNTDOWN") } } }
+        onNode(hasTestTag("next-match-line")).onChildren().assertAny(hasText("Q36"))
+        onNode(hasTestTag("next-match-line")).onChildren().assertAny(hasText("5507 · #34 · 1-2-0"))
+        onNode(hasTestTag("widget-root")).onChildren().filter(hasText("5507 · #34 · 1-2-0")).assertCountEquals(0)
+    }
+
+    @Test
+    fun `narrow - the team header keeps its own line on top`() = runGlanceAppWidgetUnitTest {
+        setAppWidgetSize(androidx.compose.ui.unit.DpSize(172.dp, 223.dp))
+        provideComposable { GlanceTheme { WidgetContent(ready) { Text("COUNTDOWN") } } }
+        onNode(hasTestTag("widget-root")).onChildren().assertAny(hasText("5507 · #34 · 1-2-0"))
+        onNode(hasTestTag("next-match-line")).onChildren().filter(hasText("5507 · #34 · 1-2-0")).assertCountEquals(0)
+    }
+
+    @Test
     fun `large - upcoming list with breaks`() = runGlanceAppWidgetUnitTest {
         setAppWidgetSize(androidx.compose.ui.unit.DpSize(250.dp, 600.dp)) // tall enough that the 9-line cap, not the height, ends the list
         provideComposable { GlanceTheme { WidgetContent(ready) { Text("COUNTDOWN") } } }
@@ -106,7 +124,8 @@ class WidgetContentTest {
     fun `the widget's outer column stays under Glance's 10-children limit`() = runGlanceAppWidgetUnitTest {
         setAppWidgetSize(androidx.compose.ui.unit.DpSize(250.dp, 600.dp)) // every optional part drawn
         provideComposable { GlanceTheme { WidgetContent(ready) { Text("COUNTDOWN") } } }
-        // header, event, next match, divider, last result, list: 6 of the 10 Glance renders. Adding more? Recount.
-        onNode(hasTestTag("widget-root")).onChildren().assertCountEquals(6)
+        // event, next match (with the header beside it), divider, last result, list: 5 of the 10 Glance renders.
+        // Adding more? Recount.
+        onNode(hasTestTag("widget-root")).onChildren().assertCountEquals(5)
     }
 }
