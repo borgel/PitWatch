@@ -66,8 +66,8 @@ class LiveMatchServiceTest {
     fun `polls and shows the tracked match`() {
         shadowOf(context as Application).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
         startService()
-        awaitMain { posted()?.extras?.getCharSequence(Notification.EXTRA_TITLE)?.startsWith("Q36") == true }
-        assertEquals("Q36 · RED · ON FIELD", posted()!!.extras.getCharSequence(Notification.EXTRA_TITLE).toString())
+        awaitMain { posted()?.extras?.getCharSequence(Notification.EXTRA_TEXT)?.startsWith("Q36") == true }
+        assertTrue(posted()!!.extras.getCharSequence(Notification.EXTRA_TEXT).toString().startsWith("Q36 · RED · ON FIELD")) // under the countdown title
     }
 
     @Test
@@ -99,17 +99,17 @@ class LiveMatchServiceTest {
     fun `redundant start keeps the live notification`() {
         shadowOf(context as Application).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
         val service = startService()
-        awaitMain { posted()?.extras?.getCharSequence(Notification.EXTRA_TITLE)?.startsWith("Q36") == true }
+        awaitMain { posted()?.extras?.getCharSequence(Notification.EXTRA_TEXT)?.startsWith("Q36") == true }
         service.onStartCommand(LiveMatchService.intent(context, LiveMatchService.ACTION_START), 0, 2)
         val foreground = shadowOf(service).lastForegroundNotification
-        assertEquals("Q36 · RED · ON FIELD", foreground.extras.getCharSequence(Notification.EXTRA_TITLE).toString())
+        assertTrue(foreground.extras.getCharSequence(Notification.EXTRA_TEXT).toString().startsWith("Q36 · RED · ON FIELD"))
     }
 
     @Test
     fun `screen on triggers an immediate poll`() {
         shadowOf(context as Application).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
         startService()
-        awaitMain { posted()?.extras?.getCharSequence(Notification.EXTRA_TITLE)?.startsWith("Q36") == true }
+        awaitMain { posted()?.extras?.getCharSequence(Notification.EXTRA_TEXT)?.startsWith("Q36") == true }
         val before = nexus.requests.size
         context.sendBroadcast(android.content.Intent(android.content.Intent.ACTION_SCREEN_ON))
         awaitMain { nexus.requests.size > before }
@@ -122,7 +122,7 @@ class LiveMatchServiceTest {
         runBlocking { container.stores.config.updateData { UserConfig(teamNumber = 5507, apiKey = "k", nexusApiKey = "n") } }
         shadowOf(context as Application).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
         startService()
-        awaitMain { posted()?.extras?.getCharSequence(Notification.EXTRA_TITLE)?.startsWith("Q36") == true }
+        awaitMain { posted()?.extras?.getCharSequence(Notification.EXTRA_TEXT)?.startsWith("Q36") == true }
         assertEquals(null, posted()!!.extras.getCharSequence(Notification.EXTRA_SUB_TEXT))
     }
 
@@ -135,7 +135,7 @@ class LiveMatchServiceTest {
         runBlocking { container.stores.config.updateData { UserConfig(teamNumber = 5507, apiKey = "k", nexusApiKey = "n") } }
         shadowOf(context as Application).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
         val service = startService()
-        awaitMain { posted()?.extras?.getCharSequence(Notification.EXTRA_TITLE)?.startsWith("Q36") == true }
+        awaitMain { posted()?.extras?.getCharSequence(Notification.EXTRA_TEXT)?.startsWith("Q36") == true }
         // The loop must still be alive: a Refresh poke produces another poll.
         val before = nexusApi.requests.size
         service.onStartCommand(LiveMatchService.intent(context, LiveMatchService.ACTION_REFRESH), 0, 2)

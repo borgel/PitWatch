@@ -17,6 +17,8 @@ data class LiveSnapshot(
     val phase: Phase,
     /** When the current phase's countdown ends; null when unknown. */
     val deadline: Instant?,
+    /** What [deadline] counts to, e.g. "to on deck"; the notification's title reads "12m to on deck". */
+    val target: String,
     val milestones: Milestones,
     /** Matches between the one on the field and ours (quals only); null without a Nexus field status. */
     val matchesAway: Int?,
@@ -66,7 +68,7 @@ object LiveSnapshots {
         if (nexusMatch != null) {
             val d = PhaseDerivation.derivePhase(nexusMatch, now)
             return LiveSnapshot(
-                match.key, match.shortLabel, alliance, d.phase, d.deadline,
+                match.key, match.shortLabel, alliance, d.phase, d.deadline, "to " + (d.phase.nextPhaseProse ?: "match end"),
                 LiveSnapshot.Milestones(d.queueDeadline, d.onDeckDeadline, d.onFieldDeadline, d.matchStartDeadline, d.matchEndDeadline),
                 away, onField, result,
             )
@@ -80,6 +82,7 @@ object LiveSnapshots {
         }
         return LiveSnapshot(
             match.key, match.shortLabel, alliance, Phase.PRE_QUEUE, matchTime?.minus(config.queueOffset),
+            if (config.queueOffsetMinutes > 0) "to queue" else "to match",
             LiveSnapshot.Milestones(null, null, null, matchTime, matchTime?.plus(PhaseDerivation.MATCH_DURATION)),
             away, onField, result,
         )
