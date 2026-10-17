@@ -59,7 +59,6 @@ class LiveMatchService : Service() {
     }
     private var loop: Job? = null
     private var tracked: String? = null
-    private var resultSeenAt: Instant? = null
     private var lastSuccess: Instant? = null
     private var lastTbaPoll: Instant? = null
     private var failures = 0
@@ -194,14 +193,13 @@ class LiveMatchService : Service() {
                 }
                 val cache = container.repository.cache.first()
                 val config = container.stores.config.data.first()
-                when (val decision = LiveLifecycle.decide(cache, config, tracked, resultSeenAt, now)) {
+                when (val decision = LiveLifecycle.decide(cache, config, tracked, now)) {
                     LiveDecision.Stop -> {
                         stopTracking(suppress = false)
                         return null
                     }
                     is LiveDecision.Track -> if (decision.matchKey != tracked) {
                         tracked = decision.matchKey
-                        resultSeenAt = null
                     }
                 }
                 nextPollAt = now.plus(PollCadence.nextDelay(cache, config, tracked, now, failures))
@@ -229,7 +227,6 @@ class LiveMatchService : Service() {
         val cache = container.repository.cache.first()
         val config = container.stores.config.data.first()
         val snapshot = tracked?.let { LiveSnapshots.build(cache, config, it, now) }
-        if (snapshot?.result != null && resultSeenAt == null) resultSeenAt = now
         // Without the permission the notification is hidden but tracking (and the FGS) continue.
         val notification = LiveNotification.build(this, snapshot, lastSuccess, now, actions())
         lastNotification = notification

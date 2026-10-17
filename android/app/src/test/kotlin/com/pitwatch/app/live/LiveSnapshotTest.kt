@@ -30,7 +30,6 @@ class LiveSnapshotTest {
         assertEquals("to match start", s.target) // on the field before the start: it counts to the start
         assertEquals(36, s.onFieldNumber)
         assertEquals(0, s.matchesAway)
-        assertNull(s.result)
     }
 
     @Test
@@ -49,16 +48,6 @@ class LiveSnapshotTest {
     fun `TBA time source with no queue offset counts down to the match`() {
         val s = assertNotNull(LiveSnapshots.build(cache, config.copy(timeSource = TimeSource.TBA), qm36, SNAP_NOW))
         assertEquals("to match", s.target)
-    }
-
-    @Test
-    fun `played match carries the result from our side`() {
-        val played = testMatch(32, actualTime = 100, red = listOf("frc1234", "frc2", "frc3"), redScore = 95, blueScore = 80)
-        val s = assertNotNull(LiveSnapshots.build(EventCache(matches = listOf(played)), UserConfig(teamNumber = 1234, apiKey = "k"), played.key, SNAP_NOW))
-        assertEquals(LiveSnapshot.Result(95, 80), s.result)
-        assertEquals("W", s.result?.outcome)
-        val blueSide = assertNotNull(LiveSnapshots.build(EventCache(matches = listOf(played)), UserConfig(teamNumber = 3456, apiKey = "k"), played.key, SNAP_NOW))
-        assertEquals("L", blueSide.result?.outcome)
     }
 
     @Test
