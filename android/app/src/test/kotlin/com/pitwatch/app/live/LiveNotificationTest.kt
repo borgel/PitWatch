@@ -49,6 +49,29 @@ class LiveNotificationTest {
     }
 
     @Test
+    fun `shows in full on the lock screen and asks to be colorized for Live Update promotion`() {
+        // Asked for: visible on the lock screen. Match times aren't sensitive; Android 16's promotion check wants
+        // EXTRA_COLORIZED (Notification.hasPromotableCharacteristics).
+        val n = build(snapshot())
+        assertEquals(Notification.VISIBILITY_PUBLIC, n.visibility)
+        assertTrue(n.extras.getBoolean(Notification.EXTRA_COLORIZED))
+        assertEquals(LiveNotification.CHANNEL_ID, n.channelId)
+    }
+
+    @Test
+    fun `its channel isn't silent, but makes no sound, and replaces the old silent one`() {
+        val manager = context.getSystemService(android.app.NotificationManager::class.java)
+        manager.createNotificationChannel(android.app.NotificationChannel("live_match", "Live match", android.app.NotificationManager.IMPORTANCE_LOW))
+        LiveNotification.ensureChannel(context)
+        val channel = kotlin.test.assertNotNull(manager.getNotificationChannel(LiveNotification.CHANNEL_ID))
+        assertEquals(android.app.NotificationManager.IMPORTANCE_DEFAULT, channel.importance)
+        assertNull(channel.sound)
+        assertFalse(channel.shouldVibrate())
+        assertEquals(Notification.VISIBILITY_PUBLIC, channel.lockscreenVisibility)
+        assertNull(manager.getNotificationChannel("live_match"), "the old silent channel is removed")
+    }
+
+    @Test
     fun `counts down to the phase deadline`() {
         val n = build(snapshot())
         assertEquals(now.plusSeconds(600).toEpochMilli(), n.`when`)
