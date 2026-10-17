@@ -71,7 +71,7 @@ object LiveNotification {
         }
         builder.setShortCriticalText(shortText(snapshot, now)).setStyle(progress(snapshot, now))
         val deadline = snapshot.deadline
-        if (snapshot.result == null && deadline != null && deadline > now) {
+        if (deadline != null && deadline > now) {
             // The time leads, as the title (the platform's ticking chronometer only fits small, beside it); the match
             // line moves under it. Re-rendered at least every minute by LiveMatchService.
             builder.setContentTitle(timeTitle(snapshot, now))
@@ -95,22 +95,20 @@ object LiveNotification {
         return "$time ${s.target}"
     }
 
-    /** "Q32 · RED · IN QUEUE", or "… · FINAL" once scored. */
+    /** "Q32 · RED · IN QUEUE". */
     fun title(s: LiveSnapshot): String =
-        listOfNotNull(s.matchLabel, s.alliance?.displayName, if (s.result != null) "FINAL" else s.phase.stateLabel)
+        listOfNotNull(s.matchLabel, s.alliance?.displayName, s.phase.stateLabel)
             .joinToString(" · ")
 
-    /** "3 AWAY · ON FIELD #29", or "W 95–80" once scored. */
+    /** "3 AWAY · ON FIELD #29". */
     fun text(s: LiveSnapshot): String? {
-        s.result?.let { return "${it.outcome} ${it.ourScore}–${it.theirScore}" }
         return listOfNotNull(s.matchesAway?.let(MatchesAwayDisplay::text), s.onFieldNumber?.let { "ON FIELD #$it" })
             .joinToString(" · ")
             .ifEmpty { null }
     }
 
-    /** Status-bar chip: "Q32 12m" counting down, "Q32 2h" when far out, "Q32 W" after the result. */
+    /** Status-bar chip: "Q32 12m" counting down, "Q32 2h" when far out. */
     fun shortText(s: LiveSnapshot, now: Instant): String {
-        s.result?.let { return "${s.matchLabel} ${it.outcome}" }
         val deadline = s.deadline ?: return s.matchLabel
         val remaining = Duration.between(now, deadline)
         val minutes = if (remaining.isNegative || remaining.isZero) 0 else (remaining.seconds + 59) / 60
@@ -147,6 +145,6 @@ object LiveNotification {
         return NotificationCompat.ProgressStyle()
             .setProgressSegments(segments)
             .setProgressPoints(points)
-            .setProgress(if (s.result != null) lengths.sum() else position)
+            .setProgress(position)
     }
 }

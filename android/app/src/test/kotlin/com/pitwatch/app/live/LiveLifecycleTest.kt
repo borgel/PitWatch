@@ -22,48 +22,42 @@ class LiveLifecycleTest {
 
     @Test
     fun `untracked follows the next match, or stops with nothing upcoming`() {
-        assertEquals(LiveDecision.Track(laterToday.key), LiveLifecycle.decide(cache(played, laterToday), near, null, null, now))
-        assertEquals(LiveDecision.Stop, LiveLifecycle.decide(cache(played), near, null, null, now))
+        assertEquals(LiveDecision.Track(laterToday.key), LiveLifecycle.decide(cache(played, laterToday), near, null, now))
+        assertEquals(LiveDecision.Stop, LiveLifecycle.decide(cache(played), near, null, now))
     }
 
     @Test
     fun `keeps an unplayed tracked match`() {
-        assertEquals(LiveDecision.Track(laterToday.key), LiveLifecycle.decide(cache(laterToday), near, laterToday.key, null, now))
+        assertEquals(LiveDecision.Track(laterToday.key), LiveLifecycle.decide(cache(laterToday), near, laterToday.key, now))
     }
 
     @Test
-    fun `keeps showing a result until the linger elapses`() {
-        assertEquals(LiveDecision.Track(played.key), LiveLifecycle.decide(cache(played, laterToday), near, played.key, null, now))
-        assertEquals(LiveDecision.Track(played.key), LiveLifecycle.decide(cache(played, laterToday), near, played.key, now.minusSeconds(14 * 60), now))
+    fun `near-match mode stops as soon as the tracked match is scored`() {
+        // Asked for: no score in the live notification, so no lingering on the result.
+        assertEquals(LiveDecision.Stop, LiveLifecycle.decide(cache(played, laterToday), near, played.key, now))
     }
 
     @Test
-    fun `near-match mode stops after 15 minutes of result`() {
-        assertEquals(LiveDecision.Stop, LiveLifecycle.decide(cache(played, laterToday), near, played.key, now.minusSeconds(16 * 60), now))
-    }
-
-    @Test
-    fun `all-day mode rolls to a same-day match after 5 minutes`() {
-        assertEquals(LiveDecision.Track(played.key), LiveLifecycle.decide(cache(played, laterToday), allDay, played.key, now.minusSeconds(4 * 60), now))
-        assertEquals(LiveDecision.Track(laterToday.key), LiveLifecycle.decide(cache(played, laterToday), allDay, played.key, now.minusSeconds(6 * 60), now))
+    fun `all-day mode moves to the same-day match as soon as the score arrives`() {
+        assertEquals(LiveDecision.Track(laterToday.key), LiveLifecycle.decide(cache(played, laterToday), allDay, played.key, now))
     }
 
     @Test
     fun `all-day mode stops when the next match is another day in the event zone`() {
-        assertEquals(LiveDecision.Stop, LiveLifecycle.decide(cache(played, tomorrow), allDay, played.key, now.minusSeconds(6 * 60), now))
+        assertEquals(LiveDecision.Stop, LiveLifecycle.decide(cache(played, tomorrow), allDay, played.key, now))
     }
 
     private val unscored = testMatch(15, time = now.minusSeconds(2 * 3600).epochSecond) // never scored by TBA
 
     @Test
     fun `an unscored match long past its time is given up on`() {
-        assertEquals(LiveDecision.Stop, LiveLifecycle.decide(cache(unscored, laterToday), near, unscored.key, null, now))
-        assertEquals(LiveDecision.Track(laterToday.key), LiveLifecycle.decide(cache(unscored, laterToday), allDay, unscored.key, null, now))
+        assertEquals(LiveDecision.Stop, LiveLifecycle.decide(cache(unscored, laterToday), near, unscored.key, now))
+        assertEquals(LiveDecision.Track(laterToday.key), LiveLifecycle.decide(cache(unscored, laterToday), allDay, unscored.key, now))
     }
 
     @Test
     fun `a late-running match is not given up on`() {
         val late = testMatch(15, time = now.minusSeconds(40 * 60).epochSecond) // 40 min behind: within the hour of grace
-        assertEquals(LiveDecision.Track(late.key), LiveLifecycle.decide(cache(late, laterToday), near, late.key, null, now))
+        assertEquals(LiveDecision.Track(late.key), LiveLifecycle.decide(cache(late, laterToday), near, late.key, now))
     }
 }

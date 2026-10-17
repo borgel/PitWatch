@@ -27,9 +27,8 @@ class LiveNotificationTest {
         phase: Phase = Phase.QUEUEING,
         deadline: Instant? = now.plusSeconds(600),
         milestones: LiveSnapshot.Milestones = noMilestones,
-        result: LiveSnapshot.Result? = null,
         target: String = "to on deck",
-    ) = LiveSnapshot("2026test_qm32", "Q32", MatchAlliance.RED, phase, deadline, target, milestones, 3, 29, result)
+    ) = LiveSnapshot("2026test_qm32", "Q32", MatchAlliance.RED, phase, deadline, target, milestones, 3, 29)
 
     private fun build(s: LiveSnapshot?, lastSuccess: Instant? = now) =
         LiveNotification.build(context, s, lastSuccess, now, noActions)
@@ -100,16 +99,6 @@ class LiveNotificationTest {
     }
 
     @Test
-    fun `result shows the outcome and fills the bar`() {
-        val n = build(snapshot(result = LiveSnapshot.Result(95, 80)))
-        assertEquals("Q32 · RED · FINAL", n.extras.getCharSequence(Notification.EXTRA_TITLE).toString())
-        assertEquals("W 95–80", n.extras.getCharSequence(Notification.EXTRA_TEXT).toString())
-        assertEquals("Q32 W", n.shortCriticalText)
-        assertEquals(400, style(n).progress)
-        assertFalse(n.extras.getBoolean(Notification.EXTRA_SHOW_WHEN))
-    }
-
-    @Test
     fun `the time title rounds up to the minute and switches to hours`() {
         val far = build(snapshot(phase = Phase.PRE_QUEUE, deadline = now.plusSeconds(98 * 60 + 1), target = "to queue"))
         assertEquals("1h 39m to queue", far.extras.getCharSequence(Notification.EXTRA_TITLE).toString())
@@ -124,6 +113,18 @@ class LiveNotificationTest {
         assertEquals("3 AWAY · ON FIELD #29", n.extras.getCharSequence(Notification.EXTRA_TEXT).toString())
         val passed = build(snapshot(deadline = now.minusSeconds(5)))
         assertEquals("Q32 · RED · IN QUEUE", passed.extras.getCharSequence(Notification.EXTRA_TITLE).toString())
+    }
+
+    @Test
+    fun `a scored match never shows its score`() {
+        // Asked for: no last-match score in the live notification (the tracker also moves on once it's scored).
+        val played = com.pitwatch.app.testMatch(32, actualTime = 100, red = listOf("frc1234", "frc2", "frc3"), redScore = 95, blueScore = 80)
+        val s = kotlin.test.assertNotNull(
+            LiveSnapshots.build(com.pitwatch.core.store.EventCache(matches = listOf(played)), com.pitwatch.core.config.UserConfig(teamNumber = 1234, apiKey = "k"), played.key, now),
+        )
+        val n = build(s)
+        val shown = listOf(Notification.EXTRA_TITLE, Notification.EXTRA_TEXT).map { n.extras.getCharSequence(it)?.toString().orEmpty() }
+        assertTrue(shown.none { "95" in it || "80" in it || "FINAL" in it }, shown.toString())
     }
 
     @Test

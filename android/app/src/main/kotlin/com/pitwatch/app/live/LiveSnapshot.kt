@@ -23,19 +23,8 @@ data class LiveSnapshot(
     /** Matches between the one on the field and ours (quals only); null without a Nexus field status. */
     val matchesAway: Int?,
     val onFieldNumber: Int?,
-    /** Set once the tracked match is scored. */
-    val result: Result?,
 ) {
     data class Milestones(val queue: Instant?, val onDeck: Instant?, val onField: Instant?, val start: Instant?, val end: Instant?)
-
-    data class Result(val ourScore: Int, val theirScore: Int) {
-        val outcome: String
-            get() = when {
-                ourScore > theirScore -> "W"
-                ourScore < theirScore -> "L"
-                else -> "T"
-            }
-    }
 }
 
 object LiveSnapshots {
@@ -45,17 +34,10 @@ object LiveSnapshots {
     fun build(cache: EventCache, config: UserConfig, trackedMatchKey: String, now: Instant): LiveSnapshot? {
         val teamKey = config.teamKey ?: return null
         val match = cache.matches.firstOrNull { it.key == trackedMatchKey } ?: return null
-        val color = match.allianceColor(teamKey)
-        val alliance = when (color) {
+        val alliance = when (match.allianceColor(teamKey)) {
             "red" -> MatchAlliance.RED
             "blue" -> MatchAlliance.BLUE
             else -> null
-        }
-        val result = if (match.isPlayed && color != null) {
-            val other = if (color == "red") "blue" else "red"
-            LiveSnapshot.Result(match.alliances[color]?.score ?: 0, match.alliances[other]?.score ?: 0)
-        } else {
-            null
         }
 
         val nexusEvent = cache.nexusEvent.takeIf { config.effectiveTimeSource == TimeSource.NEXUS }
@@ -70,7 +52,7 @@ object LiveSnapshots {
             return LiveSnapshot(
                 match.key, match.shortLabel, alliance, d.phase, d.deadline, "to " + d.target,
                 LiveSnapshot.Milestones(d.queueDeadline, d.onDeckDeadline, d.onFieldDeadline, d.matchStartDeadline, d.matchEndDeadline),
-                away, onField, result,
+                away, onField,
             )
         }
 
@@ -84,7 +66,7 @@ object LiveSnapshots {
             match.key, match.shortLabel, alliance, Phase.PRE_QUEUE, matchTime?.minus(config.queueOffset),
             if (config.queueOffsetMinutes > 0) "to queue" else "to match",
             LiveSnapshot.Milestones(null, null, null, matchTime, matchTime?.plus(PhaseDerivation.MATCH_DURATION)),
-            away, onField, result,
+            away, onField,
         )
     }
 }
