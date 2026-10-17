@@ -1,0 +1,179 @@
+package com.pitwatch.app.widget
+
+import android.content.Context
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.glance.GlanceId
+import androidx.glance.GlanceModifier
+import androidx.glance.GlanceTheme
+import androidx.glance.LocalSize
+import androidx.glance.action.actionStartActivity
+import androidx.glance.action.clickable
+import androidx.glance.appwidget.GlanceAppWidget
+import androidx.glance.appwidget.GlanceAppWidgetReceiver
+import androidx.glance.appwidget.SizeMode
+import androidx.glance.appwidget.cornerRadius
+import androidx.glance.appwidget.lazy.LazyColumn
+import androidx.glance.appwidget.lazy.items
+import androidx.glance.appwidget.provideContent
+import androidx.glance.background
+import androidx.glance.currentState
+import androidx.glance.layout.Alignment
+import androidx.glance.layout.Box
+import androidx.glance.layout.Column
+import androidx.glance.layout.Row
+import androidx.glance.layout.Spacer
+import androidx.glance.layout.fillMaxSize
+import androidx.glance.layout.fillMaxWidth
+import androidx.glance.layout.height
+import androidx.glance.layout.padding
+import androidx.glance.layout.width
+import androidx.glance.semantics.semantics
+import androidx.glance.semantics.testTag
+import androidx.glance.text.FontWeight
+import androidx.glance.text.Text
+import androidx.glance.text.TextStyle
+import androidx.glance.unit.ColorProvider
+import com.pitwatch.app.MainActivity
+import com.pitwatch.app.PitWatchApp
+import com.pitwatch.app.ui.TimeFormat
+import com.pitwatch.app.ui.matches.MatchListModel
+import com.pitwatch.app.ui.theme.StatusColors
+import com.pitwatch.core.config.UserConfig
+import com.pitwatch.core.model.MatchAlliance
+import com.pitwatch.core.store.EventCache
+import java.time.Instant
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+
+/** Every match at the event in a scrolling list. Each placed widget keeps its own "show played matches" choice. */
+class EventScheduleWidget : GlanceAppWidget() {
+    override val sizeMode = SizeMode.Exact
+    override val previewSizeMode = SizeMode.Responsive(PitWatchWidget.PREVIEW_SIZES)
+
+    override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val container = (context.applicationContext as PitWatchApp).container
+        val stores = container.stores
+        val initialCache = stores.cache.data.first()
+        val initialConfig = stores.config.data.first()
+        provideContent {
+            val showPlayed = currentState<Preferences>()[SHOW_PLAYED] ?: true
+            GlanceTheme { LiveEventScheduleWidget(stores.cache.data, stores.config.data, initialCache, initialConfig, showPlayed, container.clock) }
+        }
+    }
+
+    /** Generated widget-picker preview (Android 15+): the real layout with sample content. */
+    override suspend fun providePreview(context: Context, widgetCategory: Int) {
+        provideContent { GlanceTheme { EventScheduleContent(SampleWidgetData.eventSchedule(Instant.now())) } }
+    }
+
+    companion object {
+        /** Per-widget (Glance state) setting; on by default. */
+        val SHOW_PLAYED = booleanPreferencesKey("show_played")
+
+        /** Wide enough for both alliances' team numbers beside the label and time. */
+        val TEAMS_WIDTH = 300.dp
+    }
+}
+
+class EventScheduleWidgetReceiver : GlanceAppWidgetReceiver() {
+    override val glanceAppWidget: GlanceAppWidget = EventScheduleWidget()
+}
+
+@Composable
+fun LiveEventScheduleWidget(
+    cacheFlow: Flow<EventCache>,
+    configFlow: Flow<UserConfig>,
+    initialCache: EventCache,
+    initialConfig: UserConfig,
+    showPlayed: Boolean,
+    clock: () -> Instant,
+) {
+    val cache by cacheFlow.collectAsState(initialCache)
+    val config by configFlow.collectAsState(initialConfig)
+    EventScheduleContent(EventScheduleModels.build(cache, config, showPlayed, clock()))
+}
+
+@Composable
+fun EventScheduleContent(model: EventScheduleModel) {
+    val teams = LocalSize.current.width >= EventScheduleWidget.TEAMS_WIDTH
+    val muted = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED)
+    val times = TimeFormat(model.timeZone, model.zoneLabel)
+    Column(
+        GlanceModifier.fillMaxSize().background(GlanceTheme.colors.widgetBackground).cornerRadius(24.dp)
+            .padding(horizontal = 16.dp, vertical = 14.dp).clickable(actionStartActivity<MainActivity>())
+            .semantics { testTag = "event-schedule-root" },
+    ) {
+        Text(model.title, style = muted, maxLines = 1)
+        if (model.state != WidgetModel.State.READY) {
+            Text(model.message.orEmpty(), style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 16.sp), modifier = GlanceModifier.padding(top = 8.dp))
+            return@Column
+        }
+        LazyColumn(GlanceModifier.fillMaxSize().padding(top = 2.dp).semantics { testTag = "event-schedule-list" }) {
+            items(model.lines) { line ->
+                when (line) {
+                    is EventScheduleLine.Header -> Text(
+                        line.label,
+                        style = TextStyle(color = GlanceTheme.colors.primary, fontSize = 11.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED),
+                        modifier = GlanceModifier.padding(top = 6.dp, bottom = 1.dp),
+                    )
+                    is EventScheduleLine.Upcoming -> MatchLine(line.row, teams, times.match(line.row.time, line.row.estimated), played = false)
+                    is EventScheduleLine.Played -> MatchLine(line.row, teams, "${line.row.redScore}–${line.row.blueScore}", played = true)
+                }
+            }
+        }
+    }
+}
+
+/** Label, (wide) both alliances, then the time or the red–blue score. Our matches sit on a tinted band. */
+@Composable
+private fun MatchLine(row: EventMatchRow, teams: Boolean, trailing: String, played: Boolean) {
+    val band = if (row.ours != null) GlanceModifier.background(GlanceTheme.colors.secondaryContainer).cornerRadius(8.dp) else GlanceModifier
+    val text = if (row.ours != null) GlanceTheme.colors.onSecondaryContainer else GlanceTheme.colors.onSurface
+    Row(GlanceModifier.fillMaxWidth().then(band).padding(horizontal = 6.dp, vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
+        // Narrow widgets have no team numbers, so a dot in our alliance's color marks our matches.
+        if (!teams) row.ours?.let { Text("● ", style = TextStyle(color = ColorProvider(StatusColors.alliance(it)), fontSize = 12.sp)) }
+        Text(
+            row.shortLabel,
+            style = TextStyle(color = text, fontSize = 14.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED),
+            maxLines = 1,
+            modifier = if (teams) GlanceModifier.width(52.dp) else GlanceModifier,
+        )
+        if (teams) {
+            Teams(MatchAlliance.RED, row.red, text)
+            Spacer(GlanceModifier.width(8.dp))
+            Teams(MatchAlliance.BLUE, row.blue, text)
+        }
+        Spacer(GlanceModifier.defaultWeight())
+        Text(
+            trailing,
+            style = TextStyle(
+                color = text, fontSize = 14.sp, fontFamily = CONDENSED,
+                fontWeight = if (played) FontWeight.Bold else FontWeight.Normal,
+            ),
+            maxLines = 1,
+        )
+    }
+}
+
+@Composable
+private fun Teams(alliance: MatchAlliance, line: MatchListModel.AllianceLine, color: ColorProvider) {
+    val style = TextStyle(color = color, fontSize = 13.sp, fontFamily = CONDENSED)
+    val (before, us, after) = TeamSplit.of(line, separator = " ")
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(GlanceModifier.width(3.dp).height(13.dp).background(ColorProvider(StatusColors.alliance(alliance))).cornerRadius(2.dp)) {}
+        Spacer(GlanceModifier.width(4.dp))
+        if (before.isNotEmpty()) Text(before, style = style, maxLines = 1)
+        us?.let {
+            Box(GlanceModifier.background(GlanceTheme.colors.primary).cornerRadius(4.dp).padding(horizontal = 3.dp)) {
+                Text(it, style = style.copy(color = GlanceTheme.colors.onPrimary, fontWeight = FontWeight.Bold), maxLines = 1)
+            }
+        }
+        if (after.isNotEmpty()) Text(after, style = style, maxLines = 1)
+    }
+}

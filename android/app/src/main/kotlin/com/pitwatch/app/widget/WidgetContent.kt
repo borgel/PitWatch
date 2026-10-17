@@ -37,7 +37,7 @@ import com.pitwatch.core.model.Phase
 import java.time.Instant
 
 /** Glance can't load bundled fonts; the system condensed face stands in for Barlow Condensed. */
-private val CONDENSED = FontFamily("sans-serif-condensed")
+internal val CONDENSED = FontFamily("sans-serif-condensed")
 
 /** The widget at whatever size it's placed; [countdown] renders the live chronometer (swappable in tests). */
 @Composable
