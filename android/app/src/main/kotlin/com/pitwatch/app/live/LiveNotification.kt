@@ -1,12 +1,12 @@
 package com.pitwatch.app.live
 
 import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import androidx.compose.ui.graphics.toArgb
-import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
 import com.pitwatch.app.R
 import com.pitwatch.app.ui.theme.StatusColors
 import com.pitwatch.core.model.MatchesAwayDisplay
@@ -16,7 +16,12 @@ import java.time.Instant
 
 /** Builds the promoted Live Update for the tracked match. Pure apart from the Context it builds with. */
 object LiveNotification {
-    const val CHANNEL_ID = "live_match"
+    /**
+     * v2: default importance (still silent), so it isn't filed with silent notifications, which lock screens
+     * collapse or hide. A channel's importance can't change once created, hence the new id.
+     */
+    const val CHANNEL_ID = "live_match_v2"
+    private const val OLD_CHANNEL_ID = "live_match"
     const val NOTIFICATION_ID = 1001
     /** Its own group, so new posts show separately (Android 15+ may still bundle single-notification groups; it's system UX). */
     const val GROUP = "pitwatch.live"
@@ -29,13 +34,17 @@ object LiveNotification {
     data class Actions(val content: PendingIntent?, val refresh: PendingIntent?, val stop: PendingIntent?, val dismissed: PendingIntent? = stop)
 
     fun ensureChannel(context: Context) {
-        NotificationManagerCompat.from(context).createNotificationChannel(
-            NotificationChannelCompat.Builder(CHANNEL_ID, NotificationManagerCompat.IMPORTANCE_LOW)
-                .setName("Live match")
-                .setDescription("Queue status for the match you're tracking")
-                .setShowBadge(false)
-                .build(),
+        val manager = context.getSystemService(NotificationManager::class.java)
+        manager.createNotificationChannel(
+            NotificationChannel(CHANNEL_ID, "Live match", NotificationManager.IMPORTANCE_DEFAULT).apply {
+                description = "Queue status for the match you're tracking"
+                setShowBadge(false)
+                setSound(null, null)
+                enableVibration(false)
+                lockscreenVisibility = Notification.VISIBILITY_PUBLIC // applies on creation; later it's the user's
+            },
         )
+        manager.deleteNotificationChannel(OLD_CHANNEL_ID)
     }
 
     fun build(context: Context, snapshot: LiveSnapshot?, lastSuccess: Instant?, now: Instant, actions: Actions): Notification {
@@ -46,7 +55,12 @@ object LiveNotification {
             .setGroup(GROUP)
             .setRequestPromotedOngoing(true)
             .setCategory(NotificationCompat.CATEGORY_PROGRESS)
-            .setColor(context.getColor(android.R.color.system_accent1_600)) // Material You accent for the icon
+            .setColor(context.getColor(android.R.color.system_accent1_600)) // Material You accent for the icon (and card)
+            // Android 16 only promotes colorized notifications to Live Updates (hasPromotableCharacteristics); a
+            // foreground service's notification may colorize.
+            .setColorized(true)
+            // Match times aren't sensitive: show everything on the lock screen.
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setContentIntent(actions.content)
             .setDeleteIntent(actions.dismissed) // the service decides: stop, or re-post when pinned
         actions.refresh?.let { builder.addAction(0, "Refresh", it) }
