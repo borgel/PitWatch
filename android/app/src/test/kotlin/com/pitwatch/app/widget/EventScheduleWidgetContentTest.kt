@@ -63,4 +63,15 @@ class EventScheduleWidgetContentTest {
         provideComposable { GlanceTheme { EventScheduleContent(EventScheduleModels.build(EventCache(), UserConfig(), true, SNAP_NOW)) } }
         onNode(hasText("Set up PitWatch")).assertExists()
     }
+
+    @Test
+    fun `a disqualified team carries a red card mark after its number`() = runGlanceAppWidgetUnitTest {
+        setAppWidgetSize(DpSize(360.dp, 600.dp))
+        // Only the results, so Q16 (5419 disqualified) is within the list.
+        val played = EventScheduleModels.build(snapshotCache(), config, showPlayed = true, SNAP_NOW, Locale.US, LA)
+        val q16Only = played.copy(lines = played.lines.filter { it is EventScheduleLine.Played && it.row.shortLabel == "Q16" })
+        provideComposable { GlanceTheme { EventScheduleContent(q16Only) } }
+        onAllNodes(hasTestTag("red-card")).assertCountEquals(1)
+        onNode(hasText("5419")).assertExists()
+    }
 }

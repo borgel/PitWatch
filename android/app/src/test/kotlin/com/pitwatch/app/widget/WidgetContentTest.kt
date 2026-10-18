@@ -12,6 +12,7 @@ import com.pitwatch.app.SNAP
 import com.pitwatch.app.SNAP_NOW
 import com.pitwatch.app.fixture
 import com.pitwatch.app.snapshotCache
+import com.pitwatch.app.withQ22Dq
 import com.pitwatch.core.PitWatchJson
 import com.pitwatch.core.config.UserConfig
 import com.pitwatch.core.model.EventRankings
@@ -137,5 +138,19 @@ class WidgetContentTest {
         onNode(hasTestTag("widget-root")).onChildren().assertCountEquals(4)
         // top row, stage bar, stage labels (names only at 250 dp), two alliances, footer, and so the start time: 7.
         onNode(hasTestTag("scoreboard")).onChildren().assertCountEquals(7)
+    }
+
+    @Test
+    fun `the last result line names a disqualified team with a red card`() = runGlanceAppWidgetUnitTest {
+        setContext(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+        setAppWidgetSize(DpSize(250.dp, 600.dp))
+        val dq = WidgetModels.build(
+            snapshotCache().withQ22Dq().copy(rankings = PitWatchJson.decodeFromString<EventRankings>(fixture("$SNAP/tba_rankings.json"))),
+            UserConfig(teamNumber = 5507, apiKey = "k", nexusApiKey = "n"), SNAP_NOW, Locale.US, com.pitwatch.app.LA,
+        )
+        provideComposable { GlanceTheme { WidgetContent(dq) { Text("COUNTDOWN") } } }
+        onNode(hasText("LAST · Q22")).assertExists()
+        onAllNodes(hasTestTag("red-card")).assertCountEquals(1)
+        onNode(hasTextEqualTo("9400")).assertExists()
     }
 }

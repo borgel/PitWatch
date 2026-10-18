@@ -152,3 +152,10 @@ fun awaitMain(timeoutMs: Long = 5_000, condition: () -> Boolean) {
         Thread.sleep(10)
     }
 }
+
+/** Our real Q22 result, with 9400 (red alliance) disqualified, as TBA marks a red card. */
+fun com.pitwatch.core.store.EventCache.withQ22Dq(): com.pitwatch.core.store.EventCache = copy(
+    matches = matches.map { m ->
+        if (m.key != "2026cancmp_qm22") m else m.copy(alliances = m.alliances.mapValues { (color, a) -> if (color == "red") a.copy(dqTeamKeys = listOf("frc9400")) else a })
+    },
+)

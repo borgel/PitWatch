@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.TextStyle
@@ -110,27 +111,41 @@ fun OutcomePill(result: MatchListModel.Result, fontSize: TextUnit = 13.sp) {
 }
 
 @Composable
-fun TeamChip(number: String, container: Color, content: Color, style: TextStyle) {
+fun TeamChip(number: String, container: Color, content: Color, style: TextStyle, description: String = "Your team, $number") {
     Text(
         number,
         Modifier
             .background(container, RoundedCornerShape(5.dp))
             .padding(horizontal = 6.dp)
-            .clearAndSetSemantics { contentDescription = "Your team, $number" },
+            .clearAndSetSemantics { contentDescription = description },
         color = content,
         style = style,
         maxLines = 1,
     )
 }
 
-/** "4698 · [5507] · 1678": our team in a chip. */
+/** A red card: the team was disqualified from the match (TBA marks red cards; it publishes no yellow cards). */
+@Composable
+fun RedCardMark() {
+    Box(Modifier.padding(start = 3.dp).size(width = 7.dp, height = 10.dp).background(StatusColors.redCard, RoundedCornerShape(1.5.dp)).testTag("red-card"))
+}
+
+/** "4698 · [5507] · 1678": our team in a chip; a disqualified team followed by a red card. */
 @Composable
 private fun Teams(line: MatchListModel.AllianceLine, style: TextStyle, color: Color, chipContainer: Color, chipContent: Color) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         line.teams.forEachIndexed { i, team ->
             // Separators are visual only: TalkBack reads the numbers, not "dot".
             if (i > 0) Text(" · ", Modifier.clearAndSetSemantics {}, style = style, color = color)
-            if (team.isUs) TeamChip(team.number, chipContainer, chipContent, style) else Text(team.number, style = style, color = color, maxLines = 1)
+            val dq = if (team.dq) ", disqualified (red card)" else ""
+            if (team.isUs) {
+                TeamChip(team.number, chipContainer, chipContent, style, description = "Your team, ${team.number}$dq")
+            } else {
+                // Only a disqualified team needs its number read with the card; others read as plain text.
+                val label = if (team.dq) Modifier.clearAndSetSemantics { contentDescription = team.number + dq } else Modifier
+                Text(team.number, label, style = style, color = color, maxLines = 1)
+            }
+            if (team.dq) RedCardMark()
         }
     }
 }

@@ -58,6 +58,9 @@ object StatusColors {
         else -> null
     }
 
+    /** A red card (disqualified from the match): brighter than the red alliance so it reads on it. */
+    val redCard: Color = Color(0xFFFF3B30)
+
     /** Live Update progress segments: queue, on deck, on field, then the match itself. */
     val notificationSegments: List<Color> =
         listOf(Phase.QUEUEING, Phase.ON_DECK, Phase.ON_FIELD).map(::phase) + Color(0xFF0A84FF)

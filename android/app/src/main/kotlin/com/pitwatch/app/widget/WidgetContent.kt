@@ -159,6 +159,12 @@ private fun OutcomePill(result: MatchListModel.Result) {
     )
 }
 
+/** A red card: the team was disqualified from the match (TBA marks red cards; it publishes no yellow cards). */
+@Composable
+internal fun RedCard() {
+    Box(GlanceModifier.width(6.dp).height(9.dp).background(ColorProvider(StatusColors.redCard)).cornerRadius(2.dp).semantics { testTag = "red-card" }) {}
+}
+
 /** Tall widgets: one line above the list; [compact] (narrow widgets) drops "LAST ·" — the outcome pill says it. */
 @Composable
 internal fun LastLine(result: MatchListModel.Result, compact: Boolean) {
@@ -172,6 +178,13 @@ internal fun LastLine(result: MatchListModel.Result, compact: Boolean) {
         Text("${result.ourScore}–${result.theirScore}", style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 14.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED))
         Spacer(GlanceModifier.width(6.dp))
         OutcomePill(result)
+        // Asked for: who got a red card in that match, after the score ("▮5419").
+        result.disqualified.forEach { team ->
+            Spacer(GlanceModifier.width(6.dp))
+            RedCard()
+            Spacer(GlanceModifier.width(2.dp))
+            Text(team, style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 13.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED), maxLines = 1)
+        }
     }
 }
 
