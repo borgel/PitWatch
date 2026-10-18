@@ -90,4 +90,14 @@ class SimpleWidgetContentTest {
         onNode(hasText("COUNTDOWN")).assertExists() // composes the widget
         assertEquals(true, alignEnd)
     }
+
+    @Test
+    fun `no phase yet - the stage bar still shows, empty`() = runGlanceAppWidgetUnitTest {
+        setContext(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+        setAppWidgetSize(DpSize(360.dp, 223.dp))
+        val noPhase = ready.copy(next = ready.next!!.copy(phase = null))
+        provideComposable { GlanceTheme { SimpleWidgetContent(noPhase) { Text("COUNTDOWN") } } }
+        onAllNodes(hasTestTag("phase-step")).assertCountEquals(4)
+        onNode(hasText("QUEUE")).assertExists()
+    }
 }

@@ -179,7 +179,6 @@ object WidgetPlans {
         width: Dp,
         tall: Boolean,
         hasCountdown: Boolean,
-        hasPhase: Boolean,
         hasTarget: Boolean,
         hasLast: Boolean,
         hasFooter: Boolean,
@@ -202,7 +201,8 @@ object WidgetPlans {
             time = !hasCountdown && take(true, TIME) // without a countdown, the start time is what matters most
         }
         val target = take(hasCountdown && hasTarget, TARGET)
-        val phaseBar = take(hasPhase, PHASE_BAR)
+        // Even before Nexus reports a phase: then the bar is empty, and its labels still carry the stage times.
+        val phaseBar = take(true, PHASE_BAR)
         val stageLabels = when {
             !take(phaseBar, STAGE_LABELS) -> StageLabels.NONE
             width >= STAGE_TIMES -> StageLabels.TIMES
@@ -259,7 +259,7 @@ object SimplePlans {
             left -= TOP_NARROW
             target = take(hasCountdown, TARGET)
         }
-        val phaseBar = take(hasPhase, PHASE_BAR)
+        val phaseBar = take(true, PHASE_BAR) // empty until Nexus reports a phase (see WidgetPlans)
         val stageLabels = when {
             !take(phaseBar, STAGE_LABELS) -> StageLabels.NONE
             width >= WidgetPlans.STAGE_TIMES -> StageLabels.TIMES
