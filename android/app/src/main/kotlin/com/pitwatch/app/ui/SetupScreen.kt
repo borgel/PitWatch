@@ -14,6 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,6 +32,7 @@ import com.pitwatch.app.BuildConfig
 import com.pitwatch.app.schedule.RefreshWorker
 import com.pitwatch.app.ui.scoreboard.AccentButton
 import com.pitwatch.app.ui.scoreboard.condensed
+import com.pitwatch.core.api.NexusClient
 import com.pitwatch.core.api.TbaClient
 import com.pitwatch.core.config.UserConfig
 import io.ktor.client.HttpClient
@@ -38,7 +40,7 @@ import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.HttpTimeout
 import kotlinx.coroutines.launch
 
-/** Checks the entered key and team against TBA (key, team, Nexus key). */
+/** Checks the entered key and team against TBA, and a Nexus key against Nexus (key, team, Nexus key). */
 typealias SetupCheck = suspend (String, String, String) -> SetupValidator.Outcome
 
 private val checkWithTba: SetupCheck = { apiKey, team, nexusKey ->
@@ -50,7 +52,11 @@ private val checkWithTba: SetupCheck = { apiKey, team, nexusKey ->
         }
     }
     try {
-        SetupValidator.validate(apiKey, team, nexusKey) { TbaClient(it, http, BuildConfig.TBA_BASE_URL) }
+        SetupValidator.validate(
+            apiKey, team, nexusKey,
+            client = { TbaClient(it, http, BuildConfig.TBA_BASE_URL) },
+            nexus = { NexusClient(it, http, BuildConfig.NEXUS_BASE_URL) },
+        )
     } finally {
         http.close()
     }
@@ -67,7 +73,20 @@ fun SetupScreen(container: AppContainer, config: UserConfig, validate: SetupChec
     // Not saveable: the check runs in this screen's scope, which a recreated activity (rotation, theme) cancels —
     // a restored "busy" would leave the button disabled on "Checking…" for good.
     var busy by remember { mutableStateOf(false) }
+    /** What was entered, when a server couldn't be reached to check it: offered as "Continue anyway". */
+    var unverified by remember { mutableStateOf<SetupValidator.Outcome.Valid?>(null) }
     val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
+    fun finish(entered: SetupValidator.Outcome.Valid) {
+        notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        // The write swaps this screen out (cancelling its scope), so finish on the app scope.
+        val appContext = context.applicationContext
+        container.scope.launch {
+            container.stores.config.updateData {
+                it.copy(teamNumber = entered.teamNumber, apiKey = entered.apiKey, nexusApiKey = entered.nexusApiKey)
+            }
+            RefreshWorker.refreshNow(appContext)
+        }
+    }
 
     Column(
         // Edge-to-edge: keep the form clear of the status and navigation bars.
@@ -81,27 +100,27 @@ fun SetupScreen(container: AppContainer, config: UserConfig, validate: SetupChec
         OutlinedTextField(nexusKey, { nexusKey = it }, label = { Text("FRC Nexus API key") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
             supportingText = { Text(ApiKeyHelp.NEXUS) })
         message?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        unverified?.let { entered ->
+            // No connection (e.g. venue Wi-Fi): don't trap the user; the first refresh checks the keys.
+            Text("You can continue now; PitWatch checks the keys on its first refresh.", style = MaterialTheme.typography.bodySmall)
+            TextButton(onClick = { finish(entered) }) { Text("Continue anyway") }
+        }
         AccentButton(
             if (busy) "Checking…" else "Continue",
             enabled = !busy,
             onClick = {
                 busy = true
+                unverified = null
                 scope.launch {
                     val outcome = validate(apiKey, team, nexusKey)
                     busy = false
                     when (outcome) {
                         is SetupValidator.Outcome.Invalid -> message = outcome.message
-                        is SetupValidator.Outcome.Valid -> {
-                            notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-                            // The write swaps this screen out (cancelling its scope), so finish on the app scope.
-                            val appContext = context.applicationContext
-                            container.scope.launch {
-                                container.stores.config.updateData {
-                                    it.copy(teamNumber = outcome.teamNumber, apiKey = outcome.apiKey, nexusApiKey = outcome.nexusApiKey)
-                                }
-                                RefreshWorker.refreshNow(appContext)
-                            }
+                        is SetupValidator.Outcome.Unreachable -> {
+                            message = outcome.message
+                            unverified = outcome.unverified
                         }
+                        is SetupValidator.Outcome.Valid -> finish(outcome)
                     }
                 }
             },
