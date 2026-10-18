@@ -79,6 +79,8 @@ class LiveMatchService : Service() {
     private var foregroundId = LiveNotification.NOTIFICATION_ID
     /** The card alerts once per tracking session; re-posts (a pinned swipe, back from "Waiting") are silent. */
     private var cardAlerted = false
+    /** Swiped away (not pinned): no card until tracking stops; the regular Live Update (with buttons) instead. */
+    private var cardHidden = false
     /** Theme of the last render; only a light/dark switch (not e.g. rotation) redraws. */
     private var lastNight: Boolean? = null
     /** What the last render counted down to; the loop wakes as its minute count changes. */
@@ -127,6 +129,20 @@ class LiveMatchService : Service() {
                     } else {
                         stopTracking(suppress = true)
                     }
+                }
+                return START_STICKY
+            }
+            ACTION_CARD_DISMISSED -> {
+                if (loop == null) { // not tracking (a stale intent): never resurrect anything
+                    stopSelf(startId)
+                    return START_NOT_STICKY
+                }
+                scope.launch {
+                    val pinned = container.stores.notificationPrefs.data.first().pinned
+                    if (loop == null) return@launch
+                    // Swiping the scoreboard only hides it (asked for); pinned, it comes back like any other swipe.
+                    if (!pinned) cardHidden = true
+                    redraw()
                 }
                 return START_STICKY
             }
@@ -268,7 +284,7 @@ class LiveMatchService : Service() {
         val config = container.stores.config.data.first()
         val snapshot = tracked?.let { LiveSnapshots.build(cache, config, it, now) }
         lastDeadline = snapshot?.deadline
-        val rich = container.stores.notificationPrefs.data.first().richLive
+        val rich = container.stores.notificationPrefs.data.first().richLive && !cardHidden
         val night = isNight()
         val notification = LiveNotification.build(this, snapshot, lastSuccess, now, actions(), rich)
         val card = snapshot?.takeIf { rich }?.let { LiveCard.build(this, cache, config, it, now, actions(), night, silent = cardAlerted) }
@@ -326,6 +342,7 @@ class LiveMatchService : Service() {
         lastNotification = null
         lastCard = null
         cardAlerted = false
+        cardHidden = false
         lastNight = null
         LiveWakeAlarm.cancel(this)
         if (wakeLock.isHeld) wakeLock.release()
@@ -365,6 +382,7 @@ class LiveMatchService : Service() {
         refresh = PendingIntent.getService(this, 1, intent(this, ACTION_REFRESH), PendingIntent.FLAG_IMMUTABLE),
         stop = PendingIntent.getService(this, 2, intent(this, ACTION_STOP), PendingIntent.FLAG_IMMUTABLE),
         dismissed = PendingIntent.getService(this, 3, intent(this, ACTION_DISMISSED), PendingIntent.FLAG_IMMUTABLE),
+        cardDismissed = PendingIntent.getService(this, 4, intent(this, ACTION_CARD_DISMISSED), PendingIntent.FLAG_IMMUTABLE),
     )
 
     companion object {
@@ -378,6 +396,7 @@ class LiveMatchService : Service() {
         const val ACTION_WAKE = "com.pitwatch.app.live.WAKE"
         /** The notification was swiped away. */
         const val ACTION_DISMISSED = "com.pitwatch.app.live.DISMISSED"
+        const val ACTION_CARD_DISMISSED = "com.pitwatch.app.live.CARD_DISMISSED"
         private val WAKE_LOCK_TIMEOUT: Duration = Duration.ofSeconds(60)
         private const val TAG = "LiveMatchService"
         private val RENDER_TICK: Duration = Duration.ofSeconds(60)

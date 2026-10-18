@@ -90,7 +90,7 @@ object LiveCard {
             .setColor(colors.background)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setContentIntent(actions.content)
-            .setDeleteIntent(actions.dismissed) // the service decides: stop, or re-post when pinned
+            .setDeleteIntent(actions.cardDismissed) // the service decides: hide it, or re-post when pinned
         actions.refresh?.let { builder.addAction(0, "Refresh", it) }
         actions.stop?.let { builder.addAction(0, "Stop", it) }
         val deadline = s.deadline?.takeIf { it > now }
