@@ -2,6 +2,7 @@ package com.pitwatch.app
 
 import android.app.Application
 import androidx.glance.appwidget.GlanceAppWidgetManager
+import com.pitwatch.app.live.LiveCard
 import com.pitwatch.app.live.LiveNotification
 import com.pitwatch.app.notify.ScheduleNotification
 import com.pitwatch.app.widget.WidgetPreviews
@@ -14,6 +15,7 @@ class PitWatchApp : Application() {
         super.onCreate()
         container = AppContainer.create(this)
         LiveNotification.ensureChannel(this)
+        LiveCard.ensureChannel(this)
         ScheduleNotification.ensureChannel(this)
         container.scope.launch {
             // Keyed on the install, not the version code: a sideloaded rebuild keeps its version code but may change the preview.

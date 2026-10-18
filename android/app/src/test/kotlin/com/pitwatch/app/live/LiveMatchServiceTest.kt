@@ -40,6 +40,8 @@ class LiveMatchServiceTest {
     fun setUp() {
         container = installTestContainer(tmp.root, nexus = nexus)
         runBlocking { container.stores.config.updateData { UserConfig(teamNumber = 5507, apiKey = "k", nexusApiKey = "n") } }
+        // These cover the single (classic) Live Update; RichLiveServiceTest covers the scoreboard card beside it.
+        runBlocking { container.stores.notificationPrefs.updateData { it.copy(richLive = false) } }
     }
 
     @After

@@ -92,6 +92,13 @@ class LiveCardTest {
     }
 
     @Test
+    fun `its channel exists from app start, alerts, and shows on the lock screen`() {
+        val channel = assertNotNull(context.getSystemService(android.app.NotificationManager::class.java).getNotificationChannel(LiveCard.CHANNEL_ID))
+        assertEquals(android.app.NotificationManager.IMPORTANCE_DEFAULT, channel.importance)
+        assertEquals(Notification.VISIBILITY_PUBLIC, channel.lockscreenVisibility)
+    }
+
+    @Test
     fun `scoreboard text follows the theme`() {
         val dark = LiveCard.colors(context, dark = true)
         val light = LiveCard.colors(context, dark = false)

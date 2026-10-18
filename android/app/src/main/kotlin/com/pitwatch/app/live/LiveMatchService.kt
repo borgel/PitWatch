@@ -11,6 +11,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
+import android.content.res.Configuration
 import android.net.ConnectivityManager
 import android.net.Network
 import android.os.IBinder
@@ -36,7 +37,10 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -68,6 +72,10 @@ class LiveMatchService : Service() {
     private var lastStartId = 0
     /** Last rendered notification, re-used on redundant starts so the live card never blanks. */
     private var lastNotification: Notification? = null
+    /** Rich mode's last scoreboard card ([LiveCard]); null in classic mode or before there's a match. */
+    private var lastCard: Notification? = null
+    /** Which notification the foreground service currently shows: the card when there is one, else the Live Update. */
+    private var foregroundId = LiveNotification.NOTIFICATION_ID
     /** What the last render counted down to; the loop wakes as its minute count changes. */
     private var lastDeadline: Instant? = null
     /** Set for a START_STICKY restart: resume only if we're still inside the live window. */
@@ -110,10 +118,10 @@ class LiveMatchService : Service() {
                     if (loop == null) return@launch // tracking ended while we read the setting: nothing to keep
                     if (pinned) {
                         // Pinned: a swipe only hides it for a moment; Stop is the way out.
-                        val notification = lastNotification ?: LiveNotification.build(this@LiveMatchService, null, lastSuccess, container.clock(), actions())
-                        if (ContextCompat.checkSelfPermission(this@LiveMatchService, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
-                            NotificationManagerCompat.from(this@LiveMatchService).notify(LiveNotification.NOTIFICATION_ID, notification)
+                        if (lastNotification == null) {
+                            lastNotification = LiveNotification.build(this@LiveMatchService, null, lastSuccess, container.clock(), actions())
                         }
+                        post() // both come back in rich mode
                     } else {
                         stopTracking(suppress = true)
                     }
@@ -130,9 +138,11 @@ class LiveMatchService : Service() {
                 return START_STICKY
             }
         }
-        val notification = lastNotification ?: LiveNotification.build(this, null, lastSuccess, container.clock(), actions())
+        val card = lastCard
+        val notification = card ?: lastNotification ?: LiveNotification.build(this, null, lastSuccess, container.clock(), actions())
         try {
-            ServiceCompat.startForeground(this, LiveNotification.NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+            foregroundId = if (card != null) LiveCard.NOTIFICATION_ID else LiveNotification.NOTIFICATION_ID
+            ServiceCompat.startForeground(this, foregroundId, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
         } catch (e: ForegroundServiceStartNotAllowedException) {
             // e.g. a sticky restart from the background: give up quietly; the alarm/worker will start us later.
             stopTracking(suppress = false)
@@ -141,10 +151,24 @@ class LiveMatchService : Service() {
         if (loop == null) {
             restarted = intent == null // START_STICKY redelivers a null intent after process death
             registerTriggers()
-            loop = scope.launch { runLoop() }
+            loop = scope.launch {
+                // Turning the rich notification on or off applies straight away.
+                launch { container.stores.notificationPrefs.data.map { it.richLive }.distinctUntilChanged().drop(1).collect { redraw() } }
+                runLoop()
+            }
             trackingState.value = true
         }
         return START_STICKY
+    }
+
+    /** Light/dark switched: redraw so the scoreboard card's colors follow straight away. */
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        redraw()
+    }
+
+    private fun redraw() {
+        if (loop != null) scope.launch { render(container.clock()) }
     }
 
     override fun onDestroy() {
@@ -232,13 +256,32 @@ class LiveMatchService : Service() {
         val config = container.stores.config.data.first()
         val snapshot = tracked?.let { LiveSnapshots.build(cache, config, it, now) }
         lastDeadline = snapshot?.deadline
-        // Without the permission the notification is hidden but tracking (and the FGS) continue.
-        val notification = LiveNotification.build(this, snapshot, lastSuccess, now, actions())
-        lastNotification = notification
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
-            NotificationManagerCompat.from(this).notify(LiveNotification.NOTIFICATION_ID, notification)
-        }
+        val rich = container.stores.notificationPrefs.data.first().richLive
+        lastNotification = LiveNotification.build(this, snapshot, lastSuccess, now, actions(), rich)
+        lastCard = snapshot?.takeIf { rich }?.let { LiveCard.build(this, cache, config, it, now, actions(), isNight()) }
+        post()
     }
+
+    /**
+     * Posts the Live Update and, in rich mode, the scoreboard card. The card is then the foreground-service notification:
+     * the only kind an app may colorize (a Live Update must not be). Switching which one that is removes the previous
+     * one, so the Live Update is posted after. Without the permission both are hidden but tracking (and the FGS) go on.
+     */
+    private fun post() {
+        val card = lastCard
+        val notification = lastNotification ?: return
+        val wanted = if (card != null) LiveCard.NOTIFICATION_ID else LiveNotification.NOTIFICATION_ID
+        if (wanted != foregroundId) {
+            ServiceCompat.startForeground(this, wanted, card ?: notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+            foregroundId = wanted
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return
+        val manager = NotificationManagerCompat.from(this)
+        if (card != null) manager.notify(LiveCard.NOTIFICATION_ID, card) else manager.cancel(LiveCard.NOTIFICATION_ID)
+        manager.notify(LiveNotification.NOTIFICATION_ID, notification)
+    }
+
+    private fun isNight() = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
 
     private fun stopTracking(suppress: Boolean) {
         val key = tracked
@@ -258,9 +301,14 @@ class LiveMatchService : Service() {
             rearmAutoStart(appContext, container)
         }
         lastNotification = null
+        lastCard = null
         LiveWakeAlarm.cancel(this)
         if (wakeLock.isHeld) wakeLock.release()
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
+        // In rich mode the Live Update isn't the foreground notification, so removing that one isn't enough.
+        NotificationManagerCompat.from(this).cancel(LiveNotification.NOTIFICATION_ID)
+        NotificationManagerCompat.from(this).cancel(LiveCard.NOTIFICATION_ID)
+        foregroundId = LiveNotification.NOTIFICATION_ID
         // stopSelf(startId): if a newer start is already queued, the service stays and that start re-runs tracking.
         stopSelf(lastStartId)
     }
