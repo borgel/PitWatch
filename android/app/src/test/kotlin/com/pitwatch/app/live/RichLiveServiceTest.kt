@@ -98,6 +98,38 @@ class RichLiveServiceTest {
     }
 
     @Test
+    fun `a redraw still in flight when tracking stops posts nothing afterwards`() {
+        // Final review: a theme-change redraw that resumed after Stop re-posted both, and nothing removed them.
+        val service = start()
+        awaitMain { card() != null && liveUpdate() != null }
+        RuntimeEnvironment.setQualifiers("notnight")
+        service.onConfigurationChanged(context.resources.configuration)
+        service.onStartCommand(LiveMatchService.intent(context, LiveMatchService.ACTION_STOP), 0, 2)
+        awaitMain { shadowOf(service).isStoppedBySelf }
+        val until = System.currentTimeMillis() + 1_500
+        while (System.currentTimeMillis() < until) {
+            shadowOf(android.os.Looper.getMainLooper()).idle()
+            Thread.sleep(20)
+        }
+        assertNull(card())
+        assertNull(liveUpdate())
+    }
+
+    @Test
+    fun `the card alerts once per tracking session, not again when it's re-posted`() {
+        // Final review: a pinned swipe (or coming back from "Waiting") re-posted the card with its sound.
+        runBlocking { container.stores.notificationPrefs.updateData { it.copy(pinned = true) } }
+        val service = start()
+        awaitMain { card() != null }
+        kotlin.test.assertNotEquals(Notification.GROUP_ALERT_SUMMARY, card()!!.groupAlertBehavior, "the first one alerts")
+        manager.cancel(LiveCard.NOTIFICATION_ID) // the swipe
+        service.onStartCommand(LiveMatchService.intent(context, LiveMatchService.ACTION_DISMISSED), 0, 2)
+        awaitMain { card() != null }
+        assertEquals(Notification.GROUP_ALERT_SUMMARY, card()!!.groupAlertBehavior, "re-posted silently")
+        assertEquals(LiveCard.NOTIFICATION_ID, shadowOf(service).lastForegroundNotificationId)
+    }
+
+    @Test
     fun `pinned - swiping either away brings both back`() {
         runBlocking { container.stores.notificationPrefs.updateData { it.copy(pinned = true) } }
         val service = start()

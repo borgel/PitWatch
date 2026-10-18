@@ -71,6 +71,8 @@ object LiveCard {
         now: Instant,
         actions: LiveNotification.Actions,
         dark: Boolean,
+        /** Re-posts after the first: no sound (onlyAlertOnce only covers updates while it's still showing). */
+        silent: Boolean = false,
     ): Notification {
         val colors = colors(context, dark)
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
@@ -82,6 +84,7 @@ object LiveCard {
             .setContentText(collapsedText(s, now))
             .setOngoing(true)
             .setOnlyAlertOnce(true) // alerts when tracking starts, then updates quietly
+            .setSilent(silent)
             .setGroup(GROUP)
             .setColorized(true)
             .setColor(colors.background)

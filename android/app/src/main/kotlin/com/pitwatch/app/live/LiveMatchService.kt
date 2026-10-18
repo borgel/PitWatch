@@ -35,6 +35,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -76,6 +77,10 @@ class LiveMatchService : Service() {
     private var lastCard: Notification? = null
     /** Which notification the foreground service currently shows: the card when there is one, else the Live Update. */
     private var foregroundId = LiveNotification.NOTIFICATION_ID
+    /** The card alerts once per tracking session; re-posts (a pinned swipe, back from "Waiting") are silent. */
+    private var cardAlerted = false
+    /** Theme of the last render; only a light/dark switch (not e.g. rotation) redraws. */
+    private var lastNight: Boolean? = null
     /** What the last render counted down to; the loop wakes as its minute count changes. */
     private var lastDeadline: Instant? = null
     /** Set for a START_STICKY restart: resume only if we're still inside the live window. */
@@ -118,10 +123,7 @@ class LiveMatchService : Service() {
                     if (loop == null) return@launch // tracking ended while we read the setting: nothing to keep
                     if (pinned) {
                         // Pinned: a swipe only hides it for a moment; Stop is the way out.
-                        if (lastNotification == null) {
-                            lastNotification = LiveNotification.build(this@LiveMatchService, null, lastSuccess, container.clock(), actions())
-                        }
-                        post() // both come back in rich mode
+                        redraw() // both come back in rich mode (the card silently)
                     } else {
                         stopTracking(suppress = true)
                     }
@@ -164,11 +166,21 @@ class LiveMatchService : Service() {
     /** Light/dark switched: redraw so the scoreboard card's colors follow straight away. */
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        redraw()
+        if (lastNight != null && lastNight != isNight()) redraw()
     }
 
+    /** Renders now, as a child of the tracking loop: stopping cancels it, so it can't post after Stop. */
     private fun redraw() {
-        if (loop != null) scope.launch { render(container.clock()) }
+        val loop = loop ?: return
+        scope.launch(loop) {
+            try {
+                render(container.clock())
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "redraw failed", e) // a failed child would otherwise cancel the loop
+            }
+        }
     }
 
     override fun onDestroy() {
@@ -230,7 +242,7 @@ class LiveMatchService : Service() {
                 }
                 nextPollAt = now.plus(PollCadence.nextDelay(cache, config, tracked, now, failures))
             }
-            render(now)
+            render(container.clock()) // after the refresh, so the title's minute is current
         } finally {
             if (wakeLock.isHeld) wakeLock.release()
         }
@@ -257,8 +269,13 @@ class LiveMatchService : Service() {
         val snapshot = tracked?.let { LiveSnapshots.build(cache, config, it, now) }
         lastDeadline = snapshot?.deadline
         val rich = container.stores.notificationPrefs.data.first().richLive
-        lastNotification = LiveNotification.build(this, snapshot, lastSuccess, now, actions(), rich)
-        lastCard = snapshot?.takeIf { rich }?.let { LiveCard.build(this, cache, config, it, now, actions(), isNight()) }
+        val night = isNight()
+        val notification = LiveNotification.build(this, snapshot, lastSuccess, now, actions(), rich)
+        val card = snapshot?.takeIf { rich }?.let { LiveCard.build(this, cache, config, it, now, actions(), night, silent = cardAlerted) }
+        currentCoroutineContext().ensureActive() // stopped while reading: post nothing
+        lastNotification = notification
+        lastCard = card
+        lastNight = night
         post()
     }
 
@@ -272,9 +289,15 @@ class LiveMatchService : Service() {
         val notification = lastNotification ?: return
         val wanted = if (card != null) LiveCard.NOTIFICATION_ID else LiveNotification.NOTIFICATION_ID
         if (wanted != foregroundId) {
-            ServiceCompat.startForeground(this, wanted, card ?: notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
-            foregroundId = wanted
+            try {
+                ServiceCompat.startForeground(this, wanted, card ?: notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+                foregroundId = wanted
+            } catch (e: IllegalStateException) { // incl. ForegroundServiceStartNotAllowedException
+                // Keep the current foreground notification; both still get posted below (the card just uncolored).
+                Log.w(TAG, "couldn't switch the foreground notification", e)
+            }
         }
+        if (card != null) cardAlerted = true
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return
         val manager = NotificationManagerCompat.from(this)
         if (card != null) manager.notify(LiveCard.NOTIFICATION_ID, card) else manager.cancel(LiveCard.NOTIFICATION_ID)
@@ -302,6 +325,8 @@ class LiveMatchService : Service() {
         }
         lastNotification = null
         lastCard = null
+        cardAlerted = false
+        lastNight = null
         LiveWakeAlarm.cancel(this)
         if (wakeLock.isHeld) wakeLock.release()
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
