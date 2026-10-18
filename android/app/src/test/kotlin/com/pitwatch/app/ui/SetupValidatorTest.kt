@@ -35,4 +35,13 @@ class SetupValidatorTest {
         assertEquals("TBA rejected that API key", (SetupValidator.validate("bad", "5507", "", client) as SetupValidator.Outcome.Invalid).message)
         assertEquals("Team 9999 not found", (SetupValidator.validate("k", "9999", "", client) as SetupValidator.Outcome.Invalid).message)
     }
+
+    @Test
+    fun `no connection says so plainly, never 'null'`() = runBlocking {
+        // A network failure often carries no message: it read "Couldn't reach TBA: null".
+        tba.on("/team/frc5507") { throw java.net.UnknownHostException() }
+        assertEquals(SetupValidator.NO_CONNECTION, (SetupValidator.validate("k", "5507", "", client) as SetupValidator.Outcome.Invalid).message)
+        tba.on("/team/frc5507") { throw java.net.SocketTimeoutException() }
+        assertEquals(SetupValidator.NO_CONNECTION, (SetupValidator.validate("k", "5507", "", client) as SetupValidator.Outcome.Invalid).message)
+    }
 }

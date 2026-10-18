@@ -60,4 +60,16 @@ class SetupScreenTest {
         restore.emulateSavedInstanceStateRestore()
         compose.onNodeWithText("CONTINUE").assertIsEnabled()
     }
+
+    @Test
+    fun `a failed check shows why and can be retried`() {
+        var attempts = 0
+        compose.setContent {
+            SetupScreen(container, UserConfig(), validate = { _, _, _ -> attempts++; SetupValidator.Outcome.Invalid(SetupValidator.NO_CONNECTION) })
+        }
+        compose.onNodeWithText("CONTINUE").performClick()
+        compose.onNodeWithText(SetupValidator.NO_CONNECTION).assertIsDisplayed()
+        compose.onNodeWithText("CONTINUE").assertIsEnabled().performClick()
+        compose.waitUntil(5_000) { attempts == 2 }
+    }
 }

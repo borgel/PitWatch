@@ -35,13 +35,20 @@ import com.pitwatch.core.api.TbaClient
 import com.pitwatch.core.config.UserConfig
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.HttpTimeout
 import kotlinx.coroutines.launch
 
 /** Checks the entered key and team against TBA (key, team, Nexus key). */
 typealias SetupCheck = suspend (String, String, String) -> SetupValidator.Outcome
 
 private val checkWithTba: SetupCheck = { apiKey, team, nexusKey ->
-    val http = HttpClient(OkHttp)
+    // Bounded like the app's own client, so a stalled network ends in a message, not an endless "Checking…".
+    val http = HttpClient(OkHttp) {
+        install(HttpTimeout) {
+            requestTimeoutMillis = 15_000
+            connectTimeoutMillis = 10_000
+        }
+    }
     try {
         SetupValidator.validate(apiKey, team, nexusKey) { TbaClient(it, http, BuildConfig.TBA_BASE_URL) }
     } finally {
