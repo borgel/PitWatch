@@ -17,7 +17,7 @@ import kotlinx.coroutines.launch
 /** Every home-screen widget the app declares (one manifest receiver each). */
 object Widgets {
     val RECEIVERS: List<KClass<out GlanceAppWidgetReceiver>> =
-        listOf(PitWatchWidgetReceiver::class, ScheduleWidgetReceiver::class, EventScheduleWidgetReceiver::class)
+        listOf(PitWatchWidgetReceiver::class, SimpleWidgetReceiver::class, ScheduleWidgetReceiver::class, EventScheduleWidgetReceiver::class)
 
     suspend fun updateAll(context: Context) {
         for (receiver in RECEIVERS) receiver.java.getDeclaredConstructor().newInstance().glanceAppWidget.updateAll(context)

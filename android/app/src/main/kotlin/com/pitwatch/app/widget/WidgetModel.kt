@@ -1,5 +1,7 @@
 package com.pitwatch.app.widget
 
+import com.pitwatch.app.live.LiveCard
+import com.pitwatch.app.live.LiveSnapshots
 import com.pitwatch.app.ui.matches.MatchListModel
 import com.pitwatch.app.ui.matches.MatchListModels
 import androidx.compose.ui.unit.Dp
@@ -28,8 +30,12 @@ data class WidgetModel(
     val countdownDeadline: Instant?,
     val timeZone: ZoneId = ZoneId.systemDefault(),
     val zoneLabel: String? = null,
-    /** "12m behind", "On time": how the event is running, shown under the team [header]. */
+    /** "12m behind", "On time": how the event is running (part of [footer]). */
     val scheduleDelay: String? = null,
+    /** The next match's stage times — queue, on deck, on field, start — as the live card shows them. */
+    val stageTimes: List<Instant?> = emptyList(),
+    /** "NOW · FIELD #36 · 24M BEHIND", as the live card's last line. */
+    val footer: String? = null,
 ) {
     enum class State { NOT_CONFIGURED, NO_EVENT, NO_UPCOMING, READY }
 }
@@ -65,7 +71,11 @@ object WidgetModels {
         val deadline = next.countdown?.deadline?.takeIf { it > now }
         val nexus = cache.nexusEvent.takeIf { config.effectiveTimeSource == TimeSource.NEXUS }
         val delay = ScheduleDelay.of(cache.matches, nexus)?.let(ScheduleDelay::text)
-        return WidgetModel(WidgetModel.State.READY, header, next, laterDays, last, null, deadline, zone, list.zoneLabel, delay)
+        // The live card's own snapshot, so the widgets and the card show the same stage times and footer.
+        val live = LiveSnapshots.build(cache, config, next.key, now)
+        val stageTimes = live?.milestones?.let { listOf(it.queue, it.onDeck, it.onField, it.start) }.orEmpty()
+        val footer = live?.let(LiveCard::footer)?.ifEmpty { null }
+        return WidgetModel(WidgetModel.State.READY, header, next, laterDays, last, null, deadline, zone, list.zoneLabel, delay, stageTimes, footer)
     }
 }
 
@@ -109,69 +119,150 @@ object TeamSplit {
     }
 }
 
+/** How the stage bar's labels fit: none, the stage names, or names with their clock times ("QUEUE 9:41"). */
+enum class StageLabels { NONE, NAMES, TIMES }
+
 /** Which parts of the widget fit at a size; the upcoming list gets the height that's left. */
 data class WidgetPlan(
+    /** The team record: top-right corner on wide widgets (no cost), its own top line on narrow ones. */
     val header: Boolean,
     val phaseBar: Boolean,
+    val stageLabels: StageLabels,
+    /** What the countdown counts to ("TO MATCH START"). */
     val target: Boolean,
     val alliances: Boolean,
+    /** "NOW · FIELD #36 · 24M BEHIND", as the live card's last line. */
+    val footer: Boolean,
+    /** Narrow widgets give the footer two lines: one cut it to "24M BEH…" on-device. */
+    val footerLines: Int,
+    /** The start time on its own line (when the stage labels don't already show it). */
     val time: Boolean,
     val lastLine: Boolean,
-    /** How far ahead or behind: beside the start time on wide widgets (under the header), its own line on narrow. */
-    val delay: Boolean,
     val listLines: Int,
     val largeCountdown: Boolean,
 )
 
 object WidgetPlans {
-    // Part heights measured on-device (emulator-5580): the full 4×3 layout (360×344 dp) sums to ~294 dp.
+    // Part heights in dp, measured on-device (emulator-5580) for the previous layout and the live card's.
     internal val PADDING = 28.dp
     private val LABEL = 40.dp
+    private val PILL = 22.dp
     private val COUNTDOWN = 52.dp
     private val COUNTDOWN_LARGE = 70.dp
     private val TARGET = 17.dp
-    private val PHASE_BAR = 19.dp
     internal val HEADER = 18.dp
+    private val PHASE_BAR = 19.dp
+    private val STAGE_LABELS = 16.dp
     private val ALLIANCES = 46.dp
+    private val FOOTER = 18.dp
     private val TIME = 18.dp
     internal val LAST_LINE = 38.dp
-    private val DELAY = 18.dp
     internal val ROW = 24.dp
+    /** From here the scoreboard's top is two columns: match and phase left; record, countdown and target right. */
+    val WIDE = 250.dp
+    /** From here each stage label fits its clock time ("QUEUE 9:41"). */
+    val STAGE_TIMES = 300.dp
 
     /** The 56 sp countdown only where the list still fits beneath it; 40 sp below. */
     fun largeCountdown(height: Dp): Boolean = height >= 400.dp
 
     /**
-     * The match label and countdown always show; then, in priority order, each part is drawn only if it fits:
-     * what the countdown counts to, the phase bar, the team header (narrow only; wide widgets put it beside the match
-     * number, at no cost), the alliances (wide only), the start time,
-     * how far ahead or behind the event is (narrow only; wide widgets put it
-     * beside the start time), and on tall widgets the last result. Nothing is drawn to be clipped.
+     * The match label and countdown always show; then, in priority order, each part is drawn only if it fits: what the
+     * countdown counts to, the stage bar and its labels, the record (narrow only — wide widgets put it in the top-right
+     * corner, at no cost), the alliances (wide only), the footer, the start time, and on tall widgets the last result.
+     * Nothing is drawn to be clipped.
      */
     fun plan(
         height: Dp,
-        wide: Boolean,
+        width: Dp,
         tall: Boolean,
         hasCountdown: Boolean,
         hasPhase: Boolean,
         hasTarget: Boolean,
         hasLast: Boolean,
-        hasDelay: Boolean,
+        hasFooter: Boolean,
     ): WidgetPlan {
+        val wide = width >= WIDE
         val large = largeCountdown(height)
-        var left = height - PADDING - LABEL - if (hasCountdown) (if (large) COUNTDOWN_LARGE else COUNTDOWN) else 0.dp
+        val countdown = if (large) COUNTDOWN_LARGE else COUNTDOWN
+        var left = height - PADDING
         fun take(wanted: Boolean, cost: Dp): Boolean = (wanted && left >= cost).also { if (it) left -= cost }
-        // Without a countdown, the start time is the next match's most useful line.
-        val earlyTime = !hasCountdown && take(true, TIME)
+        val header: Boolean
+        var time: Boolean
+        if (wide) {
+            // Left: match and phase pill. Right: record over the countdown (or, without one, the start time).
+            left -= maxOf(LABEL + PILL, HEADER + if (hasCountdown) countdown else TIME)
+            header = true
+            time = !hasCountdown
+        } else {
+            left -= LABEL + if (hasCountdown) countdown else 0.dp
+            header = false
+            time = !hasCountdown && take(true, TIME) // without a countdown, the start time is what matters most
+        }
         val target = take(hasCountdown && hasTarget, TARGET)
         val phaseBar = take(hasPhase, PHASE_BAR)
-        // Wide widgets draw the header beside the match number, so it costs no height there.
-        val header = wide || take(true, HEADER)
+        val stageLabels = when {
+            !take(phaseBar, STAGE_LABELS) -> StageLabels.NONE
+            width >= STAGE_TIMES -> StageLabels.TIMES
+            else -> StageLabels.NAMES
+        }
+        val narrowHeader = !wide && take(true, HEADER)
         val alliances = take(wide, ALLIANCES)
-        val time = earlyTime || take(true, TIME)
-        val delay = if (wide) time && hasDelay else take(hasDelay, DELAY)
+        val footerLines = if (wide) 1 else 2
+        val footer = take(hasFooter, FOOTER * footerLines)
+        // The start time shows in the START label when there are times; otherwise on its own line.
+        if (!time && stageLabels != StageLabels.TIMES) time = take(true, TIME)
         val lastLine = take(tall && hasLast, LAST_LINE)
         val lines = if (tall) (left / ROW).toInt().coerceAtLeast(0) else 0
-        return WidgetPlan(header, phaseBar, target, alliances, time, lastLine, delay, lines, large)
+        return WidgetPlan(header || narrowHeader, phaseBar, stageLabels, target, alliances, footer, footerLines, time, lastLine, lines, large)
+    }
+}
+
+/** What the simple widget fits: its top (match chip, phase, countdown, target), then the stage bar. */
+data class SimplePlan(
+    /** Too short for more: the match chip and countdown side by side. */
+    val singleRow: Boolean,
+    /** Room to fill the top with big type (56 sp countdown). */
+    val big: Boolean,
+    val phase: Boolean,
+    val target: Boolean,
+    val phaseBar: Boolean,
+    val stageLabels: StageLabels,
+)
+
+object SimplePlans {
+    private val PADDING = 28.dp
+    private val SINGLE_ROW_BELOW = 60.dp
+    private val TOP_BIG = 96.dp
+    private val TOP_WIDE = 70.dp
+    private val TOP_NARROW = 96.dp
+    private val TARGET = 17.dp
+    private val PHASE_BAR = 19.dp
+    private val STAGE_LABELS = 16.dp
+
+    /** Asked for: the top filled with the next match number, main time and phase name; the stage bar below. */
+    fun plan(height: Dp, width: Dp, hasCountdown: Boolean, hasPhase: Boolean): SimplePlan {
+        var left = height - PADDING
+        if (left < SINGLE_ROW_BELOW) return SimplePlan(true, false, false, false, false, StageLabels.NONE)
+        fun take(wanted: Boolean, cost: Dp): Boolean = (wanted && left >= cost).also { if (it) left -= cost }
+        val big: Boolean
+        val target: Boolean
+        if (width >= WidgetPlans.WIDE) {
+            // Two columns: chip over the phase on the left, countdown over its target on the right.
+            big = left >= TOP_BIG + PHASE_BAR
+            left -= if (big) TOP_BIG else TOP_WIDE
+            target = hasCountdown
+        } else {
+            big = false
+            left -= TOP_NARROW
+            target = take(hasCountdown, TARGET)
+        }
+        val phaseBar = take(hasPhase, PHASE_BAR)
+        val stageLabels = when {
+            !take(phaseBar, STAGE_LABELS) -> StageLabels.NONE
+            width >= WidgetPlans.STAGE_TIMES -> StageLabels.TIMES
+            else -> StageLabels.NAMES
+        }
+        return SimplePlan(false, big, hasPhase, target, phaseBar, stageLabels)
     }
 }

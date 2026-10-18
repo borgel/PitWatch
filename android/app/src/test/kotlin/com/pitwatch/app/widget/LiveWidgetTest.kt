@@ -20,6 +20,7 @@ import org.robolectric.RobolectricTestRunner
 class LiveWidgetTest {
     @Test
     fun `renders from the stores' current values`() = runGlanceAppWidgetUnitTest {
+        setContext(androidx.test.core.app.ApplicationProvider.getApplicationContext()) // the scoreboard colors need it
         setAppWidgetSize(PitWatchWidget.SMALL)
         val config = UserConfig(teamNumber = 5507, apiKey = "k", nexusApiKey = "n")
         val cache = MutableStateFlow(snapshotCache())
