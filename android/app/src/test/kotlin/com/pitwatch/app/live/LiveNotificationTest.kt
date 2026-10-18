@@ -28,7 +28,8 @@ class LiveNotificationTest {
         deadline: Instant? = now.plusSeconds(600),
         milestones: LiveSnapshot.Milestones = noMilestones,
         target: String = "to on deck",
-    ) = LiveSnapshot("2026test_qm32", "Q32", MatchAlliance.RED, phase, deadline, target, milestones, 3, 29)
+        scheduleDelay: java.time.Duration? = null,
+    ) = LiveSnapshot("2026test_qm32", "Q32", MatchAlliance.RED, phase, deadline, target, milestones, 3, 29, scheduleDelay)
 
     private fun build(s: LiveSnapshot?, lastSuccess: Instant? = now) =
         LiveNotification.build(context, s, lastSuccess, now, noActions)
@@ -45,6 +46,14 @@ class LiveNotificationTest {
         assertEquals("Q32 10m", n.shortCriticalText)
         assertTrue(n.flags and Notification.FLAG_ONGOING_EVENT != 0)
         assertEquals(LiveNotification.GROUP, n.group) // never auto-bundled with the schedule notification
+    }
+
+    @Test
+    fun `ends the match line with how far ahead or behind the event is`() {
+        val behind = build(snapshot(scheduleDelay = java.time.Duration.ofMinutes(12)))
+        assertEquals("Q32 · RED · IN QUEUE · 3 AWAY · ON FIELD #29 · 12m behind", behind.extras.getCharSequence(Notification.EXTRA_TEXT).toString())
+        val onTime = build(snapshot(deadline = null, scheduleDelay = java.time.Duration.ofMinutes(1)))
+        assertEquals("3 AWAY · ON FIELD #29 · On time", onTime.extras.getCharSequence(Notification.EXTRA_TEXT).toString())
     }
 
     @Test
