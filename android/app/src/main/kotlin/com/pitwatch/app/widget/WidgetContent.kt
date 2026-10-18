@@ -5,7 +5,9 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.glance.ColorFilter
 import androidx.glance.GlanceModifier
+import androidx.glance.ImageProvider
 import androidx.glance.GlanceTheme
 import androidx.glance.LocalSize
 import androidx.glance.action.actionStartActivity
@@ -31,6 +33,7 @@ import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.pitwatch.app.MainActivity
+import com.pitwatch.app.R
 import com.pitwatch.app.ui.TimeFormat
 import com.pitwatch.app.ui.matches.MatchListModel
 import com.pitwatch.app.ui.theme.StatusColors
@@ -151,7 +154,10 @@ private fun Scoreboard(
 
 @Composable
 private fun Pill(text: String, container: ColorProvider, content: ColorProvider, modifier: GlanceModifier = GlanceModifier, side: Dp = 8.dp) {
-    Box(modifier.background(container).cornerRadius(10.dp).padding(horizontal = side, vertical = 2.dp), contentAlignment = Alignment.Center) {
+    Box(
+        modifier.background(ImageProvider(R.drawable.widget_pill), colorFilter = ColorFilter.tint(container)).padding(horizontal = side, vertical = 2.dp),
+        contentAlignment = Alignment.Center,
+    ) {
         Text(text, style = TextStyle(color = content, fontSize = 11.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED))
     }
 }
@@ -171,8 +177,11 @@ private fun OutcomePill(result: MatchListModel.Result, modifier: GlanceModifier 
 
 /** A red card: the team was disqualified from the match (TBA marks red cards; it publishes no yellow cards). */
 @Composable
-internal fun RedCard() {
-    Box(GlanceModifier.width(6.dp).height(9.dp).background(ColorProvider(StatusColors.redCard)).cornerRadius(2.dp).semantics { testTag = "red-card" }) {}
+internal fun RedCard(space: Dp = 4.dp) {
+    // A little room on both sides, so it doesn't crowd the numbers beside it (asked for).
+    Box(GlanceModifier.padding(horizontal = space)) {
+        Box(GlanceModifier.width(6.dp).height(9.dp).background(ColorProvider(StatusColors.redCard)).cornerRadius(2.dp).semantics { testTag = "red-card" }) {}
+    }
 }
 
 /** Tall widgets: one line above the list; [compact] (narrow widgets) drops "LAST ·" — the outcome pill says it. */
@@ -190,9 +199,8 @@ internal fun LastLine(result: MatchListModel.Result, compact: Boolean) {
         OutcomePill(result)
         // Asked for: who got a red card in that match, after the score ("▮5419").
         result.disqualified.forEach { team ->
-            Spacer(GlanceModifier.width(6.dp))
+            Spacer(GlanceModifier.width(4.dp))
             RedCard()
-            Spacer(GlanceModifier.width(2.dp))
             Text(team, style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 13.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED), maxLines = 1)
         }
     }
@@ -204,8 +212,8 @@ internal fun LastLine(result: MatchListModel.Result, compact: Boolean) {
  */
 private class HistoryCells(val label: Dp, val score: Dp, val outcome: Dp, val side: Dp, val labelSp: Int, val scoreSp: Int, val pillPadding: Dp)
 private val WIDE_CELLS = HistoryCells(label = 46.dp, score = 66.dp, outcome = 46.dp, side = 6.dp, labelSp = 15, scoreSp = 14, pillPadding = 8.dp)
-// Rendered at 172 dp (2 cells): 52 dp cut the score to "270–2…"; this fits "Q100", "403–299" and "LOSS" in 134 dp.
-private val NARROW_CELLS = HistoryCells(label = 32.dp, score = 54.dp, outcome = 40.dp, side = 4.dp, labelSp = 14, scoreSp = 13, pillPadding = 4.dp)
+// Rendered at 172 dp (2 cells): 52 dp cut the score to "270–2…"; this fits "Q16▮", "403–299" and "LOSS" in 134 dp.
+private val NARROW_CELLS = HistoryCells(label = 34.dp, score = 54.dp, outcome = 38.dp, side = 4.dp, labelSp = 14, scoreSp = 13, pillPadding = 4.dp)
 
 /** Once there's nothing upcoming: how many results fit under the record, the message and the title. */
 object HistoryPlans {
@@ -267,7 +275,7 @@ private fun HistoryRow(result: MatchListModel.Result, wide: Boolean, stripe: Col
             // Narrow: no room after the pill, so a red card is just its mark beside the match ("Q16▮").
             Row(GlanceModifier.width(cells.label), verticalAlignment = Alignment.CenterVertically) {
                 Text(result.shortLabel, style = bold.copy(fontSize = cells.labelSp.sp), maxLines = 1)
-                if (result.disqualified.isNotEmpty()) RedCard()
+                if (result.disqualified.isNotEmpty()) RedCard(space = 2.dp)
             }
         }
         Text(
@@ -282,9 +290,8 @@ private fun HistoryRow(result: MatchListModel.Result, wide: Boolean, stripe: Col
         }
         if (wide) {
             result.disqualified.forEach { team ->
-                Spacer(GlanceModifier.width(6.dp))
+                Spacer(GlanceModifier.width(4.dp))
                 RedCard()
-                Spacer(GlanceModifier.width(2.dp))
                 Text(team, style = muted, maxLines = 1)
             }
         }
