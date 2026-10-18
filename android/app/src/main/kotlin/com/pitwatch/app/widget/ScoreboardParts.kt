@@ -43,6 +43,12 @@ import java.time.format.DateTimeFormatter
 /** Size of the platform Chronometer a widget's countdown slot draws (it can't take a Glance style). */
 val LocalCountdownSp = compositionLocalOf { 40f }
 
+/**
+ * Right-align the Chronometer's text. Glance gives an AndroidRemoteViews its column's full width rather than its
+ * text's, so in a right-hand column the clock fills the column and must hug its right edge (found on-device).
+ */
+val LocalCountdownAlignEnd = compositionLocalOf { false }
+
 /** The card's colors, light and dark: the system switches between them with the theme. */
 internal class ScoreboardColors(val background: ColorProvider, val text: ColorProvider, val muted: ColorProvider, val empty: ColorProvider)
 

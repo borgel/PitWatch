@@ -153,4 +153,26 @@ class WidgetContentTest {
         onAllNodes(hasTestTag("red-card")).assertCountEquals(1)
         onNode(hasTextEqualTo("9400")).assertExists()
     }
+
+    @Test
+    fun `wide - the countdown hugs the right edge of a column that takes the spare width`() = runGlanceAppWidgetUnitTest {
+        // On-device: the clock showed "01:1". Glance gives the Chronometer its column's width, and that column was only
+        // as wide as the record above it; the clock now right-aligns in a column taking all the spare width.
+        setContext(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+        setAppWidgetSize(DpSize(360.dp, 223.dp))
+        var alignEnd: Boolean? = null
+        provideComposable { GlanceTheme { WidgetContent(ready) { alignEnd = LocalCountdownAlignEnd.current; Text("COUNTDOWN") } } }
+        onNode(hasTestTag("scoreboard-right")).assertExists()
+        kotlin.test.assertEquals(true, alignEnd)
+    }
+
+    @Test
+    fun `narrow - the countdown stays left-aligned`() = runGlanceAppWidgetUnitTest {
+        setContext(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+        setAppWidgetSize(DpSize(172.dp, 344.dp))
+        var alignEnd: Boolean? = null
+        provideComposable { GlanceTheme { WidgetContent(ready) { alignEnd = LocalCountdownAlignEnd.current; Text("COUNTDOWN") } } }
+        onNode(hasText("COUNTDOWN")).assertExists() // composes the widget
+        kotlin.test.assertEquals(false, alignEnd)
+    }
 }

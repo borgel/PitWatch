@@ -3,6 +3,7 @@ package com.pitwatch.app.widget
 import android.content.Context
 import android.os.SystemClock
 import android.util.TypedValue
+import android.view.Gravity
 import android.widget.RemoteViews
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -117,6 +118,7 @@ internal fun ChronometerCountdown(deadline: Instant, now: Instant) {
         setChronometer(R.id.countdown, SystemClock.elapsedRealtime() + remaining, null, true)
         setChronometerCountDown(R.id.countdown, true)
         setTextViewTextSize(R.id.countdown, TypedValue.COMPLEX_UNIT_SP, textSp)
+        setInt(R.id.countdown, "setGravity", if (LocalCountdownAlignEnd.current) Gravity.END else Gravity.START)
     }
     AndroidRemoteViews(views)
 }

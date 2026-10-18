@@ -122,12 +122,13 @@ fun SimpleWidgetContent(model: WidgetModel, countdown: @Composable (Instant) -> 
                 mainTime()
             }
             wide -> Row(GlanceModifier.fillMaxWidth()) {
-                Column(GlanceModifier.defaultWeight()) {
+                // The chip side takes only what it needs; the clock's side takes the rest (see LocalCountdownAlignEnd).
+                Column {
                     MatchChip(next.shortLabel, next.alliance, chipSp, colors)
                     if (plan.phase) next.phase?.let { PhasePill(it, if (plan.big) 15.sp else 12.sp) }
                 }
-                Column(horizontalAlignment = Alignment.End) {
-                    mainTime()
+                Column(horizontalAlignment = Alignment.End, modifier = GlanceModifier.defaultWeight()) {
+                    CompositionLocalProvider(LocalCountdownAlignEnd provides true) { mainTime() }
                     target?.let { Text(it, style = labelStyle(colors.muted, if (plan.big) 14.sp else 12.sp), maxLines = 1) }
                 }
             }
