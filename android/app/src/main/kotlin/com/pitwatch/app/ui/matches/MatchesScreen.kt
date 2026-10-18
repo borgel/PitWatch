@@ -12,11 +12,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -55,6 +57,7 @@ import com.pitwatch.app.notify.ScheduleNotifier
 import com.pitwatch.app.schedule.rearmAutoStart
 import com.pitwatch.app.ui.LocalTimeFormat
 import com.pitwatch.app.ui.TimeFormat
+import com.pitwatch.app.ui.isWideWindow
 import com.pitwatch.app.ui.scoreboard.AccentButton
 import com.pitwatch.app.ui.scoreboard.AllianceBands
 import com.pitwatch.app.ui.scoreboard.AllianceLine
@@ -190,60 +193,102 @@ private fun MatchesBody(
         },
     ) { padding ->
         PullToRefreshBox(isRefreshing = refreshing, onRefresh = onRefresh, modifier = Modifier.padding(padding)) {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize().testTag("matches"),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                item(key = "hero") { Hero(model, now, tracking, onToggleTracking, onOpenMatch) }
-                model.nowQueuing?.let { queuing ->
-                    item(key = "queuing") {
-                        Text(
-                            "NOW QUEUING · ${queuing.uppercase()}",
-                            Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
-                            style = condensed(17.sp),
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-                    }
+            val next: LazyListScope.() -> Unit = { nextItems(model, now, tracking, onToggleTracking, onOpenMatch, onPickEvent) }
+            val list: LazyListScope.() -> Unit = { listItems(model, onOpenMatch, showScheduleOffer, onShowSchedule) }
+            if (isWideWindow()) {
+                // Wide window (open foldable, tablet, sideways phone): the next match beside the list, each scrolling.
+                Row(Modifier.fillMaxSize()) {
+                    LazyColumn(
+                        modifier = Modifier.weight(0.45f).fillMaxHeight().testTag("matches-next"),
+                        contentPadding = PaddingValues(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 24.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        content = next,
+                    )
+                    LazyColumn(
+                        modifier = Modifier.weight(0.55f).fillMaxHeight().testTag("matches-list"),
+                        contentPadding = PaddingValues(start = 8.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        content = list,
+                    )
                 }
-                if (model.nexusUnavailable) {
-                    item(key = "nexus") {
-                        Text(
-                            "Nexus unavailable — showing TBA times",
-                            Modifier.padding(horizontal = 4.dp),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-                model.error?.let { error -> item(key = "error") { ErrorBanner(error) } }
-                when (model.empty) {
-                    MatchListModel.Empty.NO_EVENT -> item(key = "empty") { EmptyState("No event yet", "Pick an event", onPickEvent) }
-                    MatchListModel.Empty.NO_MATCHES -> item(key = "empty") { EmptyState("No matches scheduled yet", null, null) }
-                    else -> Unit
-                }
-                model.days.forEachIndexed { index, day ->
-                    // The hero shows the next match; a day left with no match (empty, or only a break) is skipped.
-                    val items = day.items.filterNot { it is MatchListModel.Item.Upcoming && it.row.isNext }
-                    if (items.none { it is MatchListModel.Item.Upcoming }) return@forEachIndexed
-                    item(key = "day:$index") { SectionLabel(day.label, Modifier.padding(start = 4.dp, top = 6.dp)) }
-                    items(items, key = { it.id }) { item ->
-                        when (item) {
-                            is MatchListModel.Item.Upcoming -> MatchRowItem(item.row, onOpenMatch)
-                            is MatchListModel.Item.Break -> BreakRow(item)
-                        }
-                    }
-                }
-                if (model.results.isNotEmpty()) {
-                    item(key = "results") { SectionLabel("Last", Modifier.padding(start = 4.dp, top = 6.dp)) }
-                    items(model.results, key = { "result:${it.key}" }) { ResultRow(it, onOpenMatch) }
-                }
-                if (showScheduleOffer && model.empty == null) {
-                    item(key = "schedule-offer") {
-                        TextButton(onClick = onShowSchedule, modifier = Modifier.fillMaxWidth()) { Text("Show schedule in notifications") }
-                    }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize().testTag("matches"),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    next()
+                    list()
                 }
             }
+        }
+    }
+}
+
+/** The next match and what bears on it: the hero card, the queue line, Nexus and refresh problems, empty states. */
+private fun LazyListScope.nextItems(
+    model: MatchListModel,
+    now: Instant,
+    tracking: Boolean,
+    onToggleTracking: () -> Unit,
+    onOpenMatch: (url: String) -> Unit,
+    onPickEvent: () -> Unit,
+) {
+    item(key = "hero") { Hero(model, now, tracking, onToggleTracking, onOpenMatch) }
+    model.nowQueuing?.let { queuing ->
+        item(key = "queuing") {
+            Text(
+                "NOW QUEUING · ${queuing.uppercase()}",
+                Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                style = condensed(17.sp),
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
+    }
+    if (model.nexusUnavailable) {
+        item(key = "nexus") {
+            Text(
+                "Nexus unavailable — showing TBA times",
+                Modifier.padding(horizontal = 4.dp),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+    model.error?.let { error -> item(key = "error") { ErrorBanner(error) } }
+    when (model.empty) {
+        MatchListModel.Empty.NO_EVENT -> item(key = "empty") { EmptyState("No event yet", "Pick an event", onPickEvent) }
+        MatchListModel.Empty.NO_MATCHES -> item(key = "empty") { EmptyState("No matches scheduled yet", null, null) }
+        else -> Unit
+    }
+}
+
+/** What follows: the later matches by day (with breaks), then results, then the schedule notification offer. */
+private fun LazyListScope.listItems(
+    model: MatchListModel,
+    onOpenMatch: (url: String) -> Unit,
+    showScheduleOffer: Boolean,
+    onShowSchedule: () -> Unit,
+) {
+    model.days.forEachIndexed { index, day ->
+        // The hero shows the next match; a day left with no match (empty, or only a break) is skipped.
+        val items = day.items.filterNot { it is MatchListModel.Item.Upcoming && it.row.isNext }
+        if (items.none { it is MatchListModel.Item.Upcoming }) return@forEachIndexed
+        item(key = "day:$index") { SectionLabel(day.label, Modifier.padding(start = 4.dp, top = 6.dp)) }
+        items(items, key = { it.id }) { item ->
+            when (item) {
+                is MatchListModel.Item.Upcoming -> MatchRowItem(item.row, onOpenMatch)
+                is MatchListModel.Item.Break -> BreakRow(item)
+            }
+        }
+    }
+    if (model.results.isNotEmpty()) {
+        item(key = "results") { SectionLabel("Last", Modifier.padding(start = 4.dp, top = 6.dp)) }
+        items(model.results, key = { "result:${it.key}" }) { ResultRow(it, onOpenMatch) }
+    }
+    if (showScheduleOffer && model.empty == null) {
+        item(key = "schedule-offer") {
+            TextButton(onClick = onShowSchedule, modifier = Modifier.fillMaxWidth()) { Text("Show schedule in notifications") }
         }
     }
 }
