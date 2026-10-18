@@ -2,9 +2,12 @@ package com.pitwatch.app.ui
 
 import com.pitwatch.core.api.TbaClient
 import com.pitwatch.core.api.TbaException
+import java.io.IOException
 import kotlin.coroutines.cancellation.CancellationException
 
 object SetupValidator {
+    const val NO_CONNECTION = "Couldn't reach TBA. Check your connection and try again."
+
     sealed interface Outcome {
         data class Valid(val teamNumber: Int, val apiKey: String, val nexusApiKey: String?, val teamName: String?) : Outcome
         data class Invalid(val message: String) : Outcome
@@ -28,8 +31,10 @@ object SetupValidator {
                     else -> "TBA error ${e.statusCode}"
                 },
             )
+        } catch (e: IOException) { // no network, DNS, timeouts (ktor's timeout is an IOException too)
+            Outcome.Invalid(NO_CONNECTION)
         } catch (e: Exception) {
-            Outcome.Invalid("Couldn't reach TBA: ${e.message}")
+            Outcome.Invalid("Couldn't check with TBA (${e.message ?: e::class.simpleName}). Try again.")
         }
     }
 }

@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -34,17 +35,38 @@ import com.pitwatch.core.api.TbaClient
 import com.pitwatch.core.config.UserConfig
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.HttpTimeout
 import kotlinx.coroutines.launch
 
+/** Checks the entered key and team against TBA (key, team, Nexus key). */
+typealias SetupCheck = suspend (String, String, String) -> SetupValidator.Outcome
+
+private val checkWithTba: SetupCheck = { apiKey, team, nexusKey ->
+    // Bounded like the app's own client, so a stalled network ends in a message, not an endless "Checking…".
+    val http = HttpClient(OkHttp) {
+        install(HttpTimeout) {
+            requestTimeoutMillis = 15_000
+            connectTimeoutMillis = 10_000
+        }
+    }
+    try {
+        SetupValidator.validate(apiKey, team, nexusKey) { TbaClient(it, http, BuildConfig.TBA_BASE_URL) }
+    } finally {
+        http.close()
+    }
+}
+
 @Composable
-fun SetupScreen(container: AppContainer, config: UserConfig) {
+fun SetupScreen(container: AppContainer, config: UserConfig, validate: SetupCheck = checkWithTba) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var apiKey by rememberSaveable { mutableStateOf(config.apiKey.orEmpty()) }
     var team by rememberSaveable { mutableStateOf(config.teamNumber?.toString().orEmpty()) }
     var nexusKey by rememberSaveable { mutableStateOf(config.nexusApiKey.orEmpty()) }
     var message by rememberSaveable { mutableStateOf<String?>(null) }
-    var busy by rememberSaveable { mutableStateOf(false) }
+    // Not saveable: the check runs in this screen's scope, which a recreated activity (rotation, theme) cancels —
+    // a restored "busy" would leave the button disabled on "Checking…" for good.
+    var busy by remember { mutableStateOf(false) }
     val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
 
     Column(
@@ -65,12 +87,7 @@ fun SetupScreen(container: AppContainer, config: UserConfig) {
             onClick = {
                 busy = true
                 scope.launch {
-                    val http = HttpClient(OkHttp)
-                    val outcome = try {
-                        SetupValidator.validate(apiKey, team, nexusKey) { TbaClient(it, http, BuildConfig.TBA_BASE_URL) }
-                    } finally {
-                        http.close()
-                    }
+                    val outcome = validate(apiKey, team, nexusKey)
                     busy = false
                     when (outcome) {
                         is SetupValidator.Outcome.Invalid -> message = outcome.message
