@@ -66,6 +66,16 @@ class WidgetContentTest {
     }
 
     @Test
+    fun `wide - how far behind sits under the record, at the end of the start time's line`() = runGlanceAppWidgetUnitTest {
+        // Asked for: the delay below the team's record, with the record and match kept at the very top.
+        setAppWidgetSize(androidx.compose.ui.unit.DpSize(360.dp, 344.dp))
+        provideComposable { GlanceTheme { WidgetContent(ready) { Text("COUNTDOWN") } } }
+        onNode(hasTestTag("time-line")).onChildren().assertAny(hasText("24M BEHIND"))
+        onNode(hasTestTag("time-line")).onChildren().assertAny(hasText("~"))
+        onNode(hasText("CALIFORNIA NORTHERN")).assertDoesNotExist()
+    }
+
+    @Test
     fun `narrow - the team header keeps its own line on top`() = runGlanceAppWidgetUnitTest {
         setAppWidgetSize(androidx.compose.ui.unit.DpSize(172.dp, 223.dp))
         provideComposable { GlanceTheme { WidgetContent(ready) { Text("COUNTDOWN") } } }
@@ -74,11 +84,18 @@ class WidgetContentTest {
     }
 
     @Test
+    fun `narrow - how far behind gets its own line under the record`() = runGlanceAppWidgetUnitTest {
+        setAppWidgetSize(androidx.compose.ui.unit.DpSize(172.dp, 344.dp))
+        provideComposable { GlanceTheme { WidgetContent(ready) { Text("COUNTDOWN") } } }
+        onNode(hasTestTag("widget-root")).onChildren().assertAny(hasText("24M BEHIND"))
+        onNode(hasTestTag("time-line")).assertDoesNotExist()
+    }
+
+    @Test
     fun `large - upcoming list with breaks`() = runGlanceAppWidgetUnitTest {
         setAppWidgetSize(androidx.compose.ui.unit.DpSize(250.dp, 600.dp)) // tall enough that the 9-line cap, not the height, ends the list
         provideComposable { GlanceTheme { WidgetContent(ready) { Text("COUNTDOWN") } } }
-        onNode(hasText("CALIFORNIA NORTHERN")).assertExists()
-        onNode(hasText("24M BEHIND")).assertExists() // asked for: how far ahead or behind, on the event's line
+        onNode(hasText("CALIFORNIA NORTHERN")).assertDoesNotExist() // asked for: no event name, record and match on top
         onNode(hasText("Saturday, Apr 11")).assertExists()
         onNode(hasText("LAST · Q22")).assertExists()
         onAllNodes(hasText("End of day")).assertCountEquals(1)
@@ -89,7 +106,8 @@ class WidgetContentTest {
     @Test
     fun `a tall widget with no room for a header and a row shows no list`() = runGlanceAppWidgetUnitTest {
         // On-device (emulator-5580): ~293 dp of content above the list; a header with no room for its row got clipped.
-        setAppWidgetSize(androidx.compose.ui.unit.DpSize(250.dp, 320.dp))
+        // (302 dp: 320 before the event-name line was dropped, keeping the same room for the list.)
+        setAppWidgetSize(androidx.compose.ui.unit.DpSize(250.dp, 302.dp))
         provideComposable { GlanceTheme { WidgetContent(ready) { Text("COUNTDOWN") } } }
         onNode(hasText("Friday, Apr 10")).assertDoesNotExist()
         onNode(hasText("LAST · Q22")).assertExists()
@@ -125,8 +143,8 @@ class WidgetContentTest {
     fun `the widget's outer column stays under Glance's 10-children limit`() = runGlanceAppWidgetUnitTest {
         setAppWidgetSize(androidx.compose.ui.unit.DpSize(250.dp, 600.dp)) // every optional part drawn
         provideComposable { GlanceTheme { WidgetContent(ready) { Text("COUNTDOWN") } } }
-        // event, next match (with the header beside it), divider, last result, list: 5 of the 10 Glance renders.
-        // Adding more? Recount.
-        onNode(hasTestTag("widget-root")).onChildren().assertCountEquals(5)
+        // next match (with the header and delay beside it), divider, last result, list: 4 of the 10 Glance renders.
+        // Narrow widgets add the header and delay lines: 6. Adding more? Recount.
+        onNode(hasTestTag("widget-root")).onChildren().assertCountEquals(4)
     }
 }
