@@ -27,6 +27,7 @@ import androidx.glance.semantics.testTag
 import androidx.glance.text.FontFamily
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
+import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.pitwatch.app.MainActivity
@@ -63,8 +64,8 @@ fun WidgetContent(model: WidgetModel, countdown: @Composable (Instant) -> Unit) 
     ) {
         if (model.state != WidgetModel.State.READY || next == null) {
             Text(model.header, style = muted, maxLines = 1)
-            Text(model.message.orEmpty(), style = TextStyle(color = colors.text, fontSize = 14.sp), maxLines = 1, modifier = GlanceModifier.padding(top = 4.dp))
-            ResultsHistory(model.results, wide, HistoryPlans.rows(size.height))
+            Text(model.message.orEmpty(), style = TextStyle(color = colors.text, fontSize = 14.sp), maxLines = HistoryPlans.messageLines(wide), modifier = GlanceModifier.padding(top = 4.dp))
+            ResultsHistory(model.results, wide, HistoryPlans.rows(size.height, wide))
             return@Column
         }
         // Wide widgets keep the record in the top-right corner, over the countdown (asked for); narrow ones on top.
@@ -149,19 +150,22 @@ private fun Scoreboard(
 }
 
 @Composable
-private fun Pill(text: String, container: ColorProvider, content: ColorProvider) {
-    Box(GlanceModifier.background(container).cornerRadius(10.dp).padding(horizontal = 8.dp, vertical = 2.dp)) {
+private fun Pill(text: String, container: ColorProvider, content: ColorProvider, modifier: GlanceModifier = GlanceModifier, side: Dp = 8.dp) {
+    Box(modifier.background(container).cornerRadius(10.dp).padding(horizontal = side, vertical = 2.dp), contentAlignment = Alignment.Center) {
         Text(text, style = TextStyle(color = content, fontSize = 11.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED))
     }
 }
 
+/** WIN / LOSS / TIE; [modifier] can fix its width so a column of them lines up. */
 @Composable
-private fun OutcomePill(result: MatchListModel.Result) {
+private fun OutcomePill(result: MatchListModel.Result, modifier: GlanceModifier = GlanceModifier, side: Dp = 8.dp) {
     val pill = StatusColors.outcome(result.outcome)
     Pill(
         result.outcomeLabel,
         pill?.let { ColorProvider(it.container) } ?: GlanceTheme.colors.surfaceVariant,
         pill?.let { ColorProvider(it.content) } ?: GlanceTheme.colors.onSurfaceVariant,
+        modifier,
+        side,
     )
 }
 
@@ -194,13 +198,29 @@ internal fun LastLine(result: MatchListModel.Result, compact: Boolean) {
     }
 }
 
+/**
+ * The results' fixed cells: match, score (fits "403–299"), outcome (fits "LOSS"), and the row's side padding. Narrow
+ * widgets (~140 dp inside their padding at 2 cells) get tighter ones so the pill isn't cut off.
+ */
+private class HistoryCells(val label: Dp, val score: Dp, val outcome: Dp, val side: Dp, val labelSp: Int, val scoreSp: Int, val pillPadding: Dp)
+private val WIDE_CELLS = HistoryCells(label = 46.dp, score = 66.dp, outcome = 46.dp, side = 6.dp, labelSp = 15, scoreSp = 14, pillPadding = 8.dp)
+// Rendered at 172 dp (2 cells): 52 dp cut the score to "270–2…"; this fits "Q100", "403–299" and "LOSS" in 134 dp.
+private val NARROW_CELLS = HistoryCells(label = 32.dp, score = 54.dp, outcome = 40.dp, side = 4.dp, labelSp = 14, scoreSp = 13, pillPadding = 4.dp)
+
 /** Once there's nothing upcoming: how many results fit under the record, the message and the title. */
 object HistoryPlans {
     private val MESSAGE = 22.dp
     private val TITLE = 18.dp
 
-    fun rows(height: Dp): Int =
-        ((height - WidgetPlans.PADDING - WidgetPlans.HEADER - MESSAGE - TITLE) / WidgetPlans.ROW).toInt().coerceIn(0, WidgetLines.MAX_LINES * 3)
+    /** Narrow widgets let the message wrap to a second line ("No upcoming matches" was cut off at 2 cells). */
+    fun messageLines(wide: Boolean): Int = if (wide) 1 else 2
+
+    fun rows(height: Dp, wide: Boolean): Int =
+        ((height - WidgetPlans.PADDING - WidgetPlans.HEADER - MESSAGE * messageLines(wide) - TITLE) / WidgetPlans.ROW).toInt()
+            .coerceIn(0, WidgetLines.MAX_LINES * 3)
+
+    /** Every other row gets a faint band (asked for), starting with the second. */
+    fun striped(index: Int): Boolean = index % 2 == 1
 }
 
 /**
@@ -217,31 +237,56 @@ internal fun ResultsHistory(results: List<MatchListModel.Result>, wide: Boolean,
             style = TextStyle(color = GlanceTheme.colors.primary, fontSize = 11.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED),
             modifier = GlanceModifier.padding(top = 6.dp),
         )
-        shown.chunked(WidgetLines.MAX_LINES).forEach { chunk ->
-            Column(GlanceModifier.fillMaxWidth()) { chunk.forEach { HistoryRow(it, wide) } }
+        val stripe = scoreboardColors().stripe
+        shown.withIndex().chunked(WidgetLines.MAX_LINES).forEach { chunk ->
+            Column(GlanceModifier.fillMaxWidth()) {
+                chunk.forEach { (i, result) -> HistoryRow(result, wide, stripe.takeIf { HistoryPlans.striped(i) }) }
+            }
         }
     }
 }
 
-/** "Q22  403–299  WIN  w/ 2813 · 8033  ▮9400": partners on wide widgets only; any red cards last. */
+/**
+ * "Q22  403–299  WIN  w/ 2813 · 8033  ▮9400" in fixed-width cells, so every row's columns line up (asked for): the
+ * score right-aligned, the outcome pills one width. Partners on wide widgets only; any red cards last.
+ */
 @Composable
-private fun HistoryRow(result: MatchListModel.Result, wide: Boolean) {
+private fun HistoryRow(result: MatchListModel.Result, wide: Boolean, stripe: ColorProvider?) {
     val bold = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 15.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED)
     val muted = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 13.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED)
-    Row(GlanceModifier.fillMaxWidth().padding(vertical = 2.dp).semantics { testTag = "history-row" }, verticalAlignment = Alignment.CenterVertically) {
-        Text(result.shortLabel, style = bold, maxLines = 1, modifier = GlanceModifier.width(44.dp))
-        Text("${result.ourScore}–${result.theirScore}", style = bold.copy(fontSize = 14.sp), maxLines = 1)
-        Spacer(GlanceModifier.width(6.dp))
-        OutcomePill(result)
-        if (wide && result.partners.isNotEmpty()) {
-            Spacer(GlanceModifier.width(8.dp))
-            Text("w/ " + result.partners.joinToString(" · "), style = muted, maxLines = 1)
+    // Every row gets the same inner padding, striped or not, so the columns line up across both.
+    val band = stripe?.let { GlanceModifier.background(it).cornerRadius(6.dp) } ?: GlanceModifier
+    val cells = if (wide) WIDE_CELLS else NARROW_CELLS
+    Row(
+        GlanceModifier.fillMaxWidth().then(band).padding(horizontal = cells.side, vertical = 2.dp).semantics { testTag = "history-row" },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (wide) {
+            Text(result.shortLabel, style = bold.copy(fontSize = cells.labelSp.sp), maxLines = 1, modifier = GlanceModifier.width(cells.label))
+        } else {
+            // Narrow: no room after the pill, so a red card is just its mark beside the match ("Q16▮").
+            Row(GlanceModifier.width(cells.label), verticalAlignment = Alignment.CenterVertically) {
+                Text(result.shortLabel, style = bold.copy(fontSize = cells.labelSp.sp), maxLines = 1)
+                if (result.disqualified.isNotEmpty()) RedCard()
+            }
         }
-        result.disqualified.forEach { team ->
-            Spacer(GlanceModifier.width(6.dp))
-            RedCard()
-            Spacer(GlanceModifier.width(2.dp))
-            Text(team, style = muted, maxLines = 1)
+        Text(
+            "${result.ourScore}–${result.theirScore}",
+            style = bold.copy(fontSize = cells.scoreSp.sp, textAlign = TextAlign.End),
+            maxLines = 1,
+            modifier = GlanceModifier.width(cells.score).padding(end = 4.dp).semantics { testTag = "history-score" },
+        )
+        OutcomePill(result, GlanceModifier.width(cells.outcome).semantics { testTag = "history-outcome" }, cells.pillPadding)
+        if (wide && result.partners.isNotEmpty()) {
+            Text("w/ " + result.partners.joinToString(" · "), style = muted, maxLines = 1, modifier = GlanceModifier.padding(start = 10.dp))
+        }
+        if (wide) {
+            result.disqualified.forEach { team ->
+                Spacer(GlanceModifier.width(6.dp))
+                RedCard()
+                Spacer(GlanceModifier.width(2.dp))
+                Text(team, style = muted, maxLines = 1)
+            }
         }
     }
 }
