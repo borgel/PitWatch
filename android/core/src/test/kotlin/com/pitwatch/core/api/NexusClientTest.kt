@@ -74,4 +74,20 @@ class NexusClientTest {
         job.join()
         assertFalse(returnedNormally)
     }
+
+    @Test
+    fun `checking a key asks for the events list and reports the status`() = runTest {
+        // Setup checks the key before there's an event: /events needs the key (401 missing, 403 invalid).
+        assertEquals(200, client(HttpStatusCode.OK, "{}").checkKey())
+        assertEquals("https://example.com/api/v1/events", captured?.url.toString())
+        assertEquals("nexus-test-key", captured?.headers?.get("Nexus-Api-Key"))
+        assertEquals(403, client(HttpStatusCode.Forbidden, "").checkKey())
+        assertEquals(401, client(HttpStatusCode.Unauthorized, "").checkKey())
+    }
+
+    @Test
+    fun `checking a key lets a network failure through, unlike the data calls`() = runTest {
+        val offline = NexusClient("k", HttpClient(MockEngine { throw java.net.UnknownHostException("frc.nexus") }), "https://example.com/api/v1")
+        kotlin.test.assertFailsWith<java.io.IOException> { offline.checkKey() }
+    }
 }

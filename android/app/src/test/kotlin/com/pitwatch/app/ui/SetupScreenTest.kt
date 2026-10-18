@@ -5,6 +5,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -13,6 +14,7 @@ import com.pitwatch.app.AppContainer
 import com.pitwatch.app.installTestContainer
 import com.pitwatch.core.config.UserConfig
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -71,5 +73,30 @@ class SetupScreenTest {
         compose.onNodeWithText(SetupValidator.NO_CONNECTION).assertIsDisplayed()
         compose.onNodeWithText("CONTINUE").assertIsEnabled().performClick()
         compose.waitUntil(5_000) { attempts == 2 }
+    }
+
+    @Test
+    fun `when TBA can't be reached, Continue anyway saves what was entered`() {
+        // Asked for: a way past setup without a connection; the first refresh checks the keys.
+        val unverified = SetupValidator.Outcome.Valid(5507, "key", "nk", null)
+        // Saving starts the first refresh (WorkManager).
+        androidx.work.testing.WorkManagerTestInitHelper.initializeTestWorkManager(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+        compose.setContent {
+            SetupScreen(container, UserConfig(), validate = { _, _, _ -> SetupValidator.Outcome.Unreachable(SetupValidator.NO_CONNECTION, unverified) })
+        }
+        compose.onNodeWithText("CONTINUE").performClick()
+        compose.onNodeWithText(SetupValidator.NO_CONNECTION).assertIsDisplayed()
+        compose.onNodeWithText("Continue anyway").performScrollTo().performClick()
+        compose.waitUntil(5_000) {
+            kotlinx.coroutines.runBlocking { container.stores.config.data.first() }.let { it.teamNumber == 5507 && it.apiKey == "key" && it.nexusApiKey == "nk" }
+        }
+    }
+
+    @Test
+    fun `a rejected key offers no way around it`() {
+        compose.setContent { SetupScreen(container, UserConfig(), validate = { _, _, _ -> SetupValidator.Outcome.Invalid("TBA rejected that API key") }) }
+        compose.onNodeWithText("CONTINUE").performClick()
+        compose.onNodeWithText("TBA rejected that API key").assertIsDisplayed()
+        compose.onAllNodes(hasText("Continue anyway")).assertCountEquals(0)
     }
 }
