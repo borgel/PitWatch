@@ -32,7 +32,8 @@ class LiveCardTest {
     private val config = UserConfig(teamNumber = 5507, apiKey = "k", nexusApiKey = "n")
     private val snapshot = assertNotNull(LiveSnapshots.build(cache, config, "2026cancmp_qm36", SNAP_NOW))
     private val pending = PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)
-    private val actions = LiveNotification.Actions(pending, pending, pending)
+    private val hide = PendingIntent.getActivity(context, 1, Intent(), PendingIntent.FLAG_IMMUTABLE)
+    private val actions = LiveNotification.Actions(pending, pending, pending, cardDismissed = hide)
 
     private fun card(dark: Boolean) = LiveCard.build(context, cache, config, snapshot, SNAP_NOW, actions, dark)
 
@@ -72,7 +73,7 @@ class LiveCardTest {
         assertTrue(n.flags and Notification.FLAG_ONLY_ALERT_ONCE != 0)
         assertTrue(n.flags and Notification.FLAG_ONGOING_EVENT != 0)
         assertEquals(Notification.VISIBILITY_PUBLIC, n.visibility)
-        assertEquals(pending, n.deleteIntent) // a swipe follows the usual rule: stop, or come back when pinned
+        assertEquals(hide, n.deleteIntent) // its own swipe: hides the card, tracking goes on (asked for)
         assertFalse(n.extras.getBoolean(Notification.EXTRA_REQUEST_PROMOTED_ONGOING))
     }
 

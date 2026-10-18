@@ -35,7 +35,14 @@ object LiveNotification {
     private val SEGMENT_COLORS = StatusColors.notificationSegments.map { it.toArgb() }
 
     /** [dismissed] fires on swipe; the service decides whether that stops tracking or re-posts (pinned). */
-    data class Actions(val content: PendingIntent?, val refresh: PendingIntent?, val stop: PendingIntent?, val dismissed: PendingIntent? = stop)
+    data class Actions(
+        val content: PendingIntent?,
+        val refresh: PendingIntent?,
+        val stop: PendingIntent?,
+        val dismissed: PendingIntent? = stop,
+        /** The scoreboard card's own swipe ([LiveCard]): hides it, unless pinned; tracking goes on. */
+        val cardDismissed: PendingIntent? = dismissed,
+    )
 
     fun ensureChannel(context: Context) {
         val manager = context.getSystemService(NotificationManager::class.java)

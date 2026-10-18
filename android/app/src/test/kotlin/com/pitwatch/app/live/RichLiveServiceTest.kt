@@ -130,6 +130,50 @@ class RichLiveServiceTest {
     }
 
     @Test
+    fun `swiping the card hides it - tracking goes on with the regular notification`() {
+        // Asked for: swiping the scoreboard away just hides it (before, it stopped tracking).
+        val service = start()
+        awaitMain { card() != null }
+        manager.cancel(LiveCard.NOTIFICATION_ID) // the swipe
+        service.onStartCommand(LiveMatchService.intent(context, LiveMatchService.ACTION_CARD_DISMISSED), 0, 2)
+        awaitMain { liveUpdate()?.channelId == LiveNotification.CHANNEL_ID }
+        assertNull(card())
+        assertTrue(LiveMatchService.tracking.value)
+        kotlin.test.assertFalse(shadowOf(service).isStoppedBySelf)
+        assertEquals(LiveNotification.NOTIFICATION_ID, shadowOf(service).lastForegroundNotificationId)
+        // The card had the buttons; the regular notification brings them back.
+        assertEquals(listOf("Refresh", "Stop"), liveUpdate()!!.actions.map { it.title.toString() })
+        // It stays hidden through later redraws.
+        RuntimeEnvironment.setQualifiers("notnight")
+        service.onConfigurationChanged(context.resources.configuration)
+        shadowOf(android.os.Looper.getMainLooper()).idle()
+        assertNull(card())
+    }
+
+    @Test
+    fun `pinned - swiping the card brings it back`() {
+        runBlocking { container.stores.notificationPrefs.updateData { it.copy(pinned = true) } }
+        val service = start()
+        awaitMain { card() != null }
+        manager.cancel(LiveCard.NOTIFICATION_ID)
+        service.onStartCommand(LiveMatchService.intent(context, LiveMatchService.ACTION_CARD_DISMISSED), 0, 2)
+        awaitMain { card() != null }
+    }
+
+    @Test
+    fun `the next tracking session shows the card again`() {
+        val service = start()
+        awaitMain { card() != null }
+        service.onStartCommand(LiveMatchService.intent(context, LiveMatchService.ACTION_CARD_DISMISSED), 0, 2)
+        awaitMain { liveUpdate()?.channelId == LiveNotification.CHANNEL_ID }
+        service.onStartCommand(LiveMatchService.intent(context, LiveMatchService.ACTION_STOP), 0, 3)
+        awaitMain { shadowOf(service).isStoppedBySelf }
+        val again = start()
+        awaitMain { card() != null }
+        assertEquals(LiveCard.NOTIFICATION_ID, shadowOf(again).lastForegroundNotificationId)
+    }
+
+    @Test
     fun `pinned - swiping either away brings both back`() {
         runBlocking { container.stores.notificationPrefs.updateData { it.copy(pinned = true) } }
         val service = start()
