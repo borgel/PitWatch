@@ -80,4 +80,14 @@ class SimpleWidgetContentTest {
         provideComposable { GlanceTheme { SimpleWidgetContent(WidgetModels.build(com.pitwatch.core.store.EventCache(), UserConfig(), SNAP_NOW)) { } } }
         onNode(hasText("Set up PitWatch")).assertExists()
     }
+
+    @Test
+    fun `wide - the countdown hugs the right edge too`() = runGlanceAppWidgetUnitTest {
+        setContext(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+        setAppWidgetSize(DpSize(360.dp, 223.dp))
+        var alignEnd: Boolean? = null
+        provideComposable { GlanceTheme { SimpleWidgetContent(ready) { alignEnd = LocalCountdownAlignEnd.current; Text("COUNTDOWN") } } }
+        onNode(hasText("COUNTDOWN")).assertExists() // composes the widget
+        assertEquals(true, alignEnd)
+    }
 }

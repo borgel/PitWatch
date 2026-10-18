@@ -104,13 +104,18 @@ private fun Scoreboard(
     Column(GlanceModifier.fillMaxWidth().semantics { testTag = "scoreboard" }) {
         if (wide) {
             Row(GlanceModifier.fillMaxWidth()) {
-                Column(GlanceModifier.defaultWeight()) {
+                // The match side takes only what it needs; the clock's side takes the rest (see LocalCountdownAlignEnd).
+                Column {
                     Text(next.shortLabel, style = label, maxLines = 1)
                     next.phase?.let { PhasePill(it) }
                 }
-                Column(horizontalAlignment = Alignment.End, modifier = GlanceModifier.semantics { testTag = "scoreboard-right" }) {
+                Column(horizontalAlignment = Alignment.End, modifier = GlanceModifier.defaultWeight().semantics { testTag = "scoreboard-right" }) {
                     if (plan.header) Text(model.header, style = labelStyle(colors.muted, 12.sp), maxLines = 1)
-                    if (deadline != null) countdown(deadline) else Text(start, style = label.copy(fontSize = 24.sp), maxLines = 1)
+                    if (deadline != null) {
+                        CompositionLocalProvider(LocalCountdownAlignEnd provides true) { countdown(deadline) }
+                    } else {
+                        Text(start, style = label.copy(fontSize = 24.sp), maxLines = 1)
+                    }
                     target?.let { Text(it, style = labelStyle(colors.muted, 12.sp), maxLines = 1) }
                 }
             }
