@@ -75,7 +75,8 @@ fun ScheduleWidgetContent(model: ScheduleWidgetModel) {
     val times = TimeFormat(model.timeZone, model.zoneLabel)
     // At most 3 children: header, last result, list (its own Column).
     Column(
-        GlanceModifier.fillMaxSize().background(GlanceTheme.colors.widgetBackground).cornerRadius(24.dp)
+        // The scoreboard's background, like the other widgets and the live card, so they all match.
+        GlanceModifier.fillMaxSize().background(scoreboardColors().background).cornerRadius(24.dp)
             .padding(horizontal = 16.dp, vertical = 14.dp).clickable(actionStartActivity<MainActivity>())
             .semantics { testTag = "schedule-root" },
     ) {
