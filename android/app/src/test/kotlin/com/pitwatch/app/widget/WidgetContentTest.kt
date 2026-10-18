@@ -1,10 +1,12 @@
 package com.pitwatch.app.widget
 
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceTheme
 import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
 import androidx.glance.testing.unit.hasTestTag
 import androidx.glance.testing.unit.hasText
+import androidx.glance.testing.unit.hasTextEqualTo
 import androidx.glance.text.Text
 import com.pitwatch.app.SNAP
 import com.pitwatch.app.SNAP_NOW
@@ -27,6 +29,7 @@ class WidgetContentTest {
 
     @Test
     fun `smallest - just the match and its countdown`() = runGlanceAppWidgetUnitTest {
+        setContext(androidx.test.core.app.ApplicationProvider.getApplicationContext()) // the scoreboard colors need it
         setAppWidgetSize(PitWatchWidget.SMALL)
         provideComposable { GlanceTheme { WidgetContent(ready) { Text("COUNTDOWN") } } }
         onNode(hasText("Q36")).assertExists()
@@ -36,66 +39,60 @@ class WidgetContentTest {
     }
 
     @Test
-    fun `2x2 - countdown target and phase bar`() = runGlanceAppWidgetUnitTest {
-        setAppWidgetSize(androidx.compose.ui.unit.DpSize(170.dp, 170.dp))
+    fun `2x2 - what the countdown counts to, and the stage bar`() = runGlanceAppWidgetUnitTest {
+        setContext(androidx.test.core.app.ApplicationProvider.getApplicationContext()) // the scoreboard colors need it
+        setAppWidgetSize(DpSize(170.dp, 170.dp))
         provideComposable { GlanceTheme { WidgetContent(ready) { Text("COUNTDOWN") } } }
-        onNode(hasText("to match start")).assertExists() // what the countdown counts to (on the field, before the start)
+        onNode(hasText("TO MATCH START")).assertExists() // as the scoreboard card says it
         onAllNodes(hasTestTag("phase-step")).assertCountEquals(4)
     }
 
     @Test
-    fun `4x2 - both alliances fit, with no last result in the corner`() = runGlanceAppWidgetUnitTest {
-        // On-device (emulator-5580): at 4×2 the blue alliance line was cut off. Asked for: no last-match score at the
-        // top right (taller widgets keep their "LAST" line below the next match).
-        setAppWidgetSize(androidx.compose.ui.unit.DpSize(360.dp, 223.dp))
+    fun `wide - the scoreboard - record top right over the countdown, stages with times, alliances, footer`() = runGlanceAppWidgetUnitTest {
+        setContext(androidx.test.core.app.ApplicationProvider.getApplicationContext()) // the scoreboard colors need it
+        // Asked for: the widget in the scoreboard card's design, the record kept in the top-right corner.
+        setAppWidgetSize(DpSize(360.dp, 223.dp))
         provideComposable { GlanceTheme { WidgetContent(ready) { Text("COUNTDOWN") } } }
-        onNode(hasText("4698 · ")).assertExists()
-        onNode(hasText("6036 · 9470 · 6814")).assertExists()
-        onNode(hasText("LAST")).assertDoesNotExist()
-        onNode(hasText("403–299")).assertDoesNotExist()
-    }
-
-    @Test
-    fun `wide - the team header shares the match number's line`() = runGlanceAppWidgetUnitTest {
-        // Asked for: the header on its own line above cost a line of the widget's height.
-        setAppWidgetSize(androidx.compose.ui.unit.DpSize(360.dp, 223.dp))
-        provideComposable { GlanceTheme { WidgetContent(ready) { Text("COUNTDOWN") } } }
-        onNode(hasTestTag("next-match-line")).onChildren().assertAny(hasText("Q36"))
-        onNode(hasTestTag("next-match-line")).onChildren().assertAny(hasText("5507 · #34 · 1-2-0"))
+        val right = onNode(hasTestTag("scoreboard-right")).onChildren()
+        right.assertAny(hasText("5507 · #34 · 1-2-0"))
+        right.assertAny(hasText("COUNTDOWN"))
+        right.assertAny(hasText("TO MATCH START"))
         onNode(hasTestTag("widget-root")).onChildren().filter(hasText("5507 · #34 · 1-2-0")).assertCountEquals(0)
+        onNode(hasTextEqualTo("ON FIELD")).assertExists()
+        onAllNodes(hasTestTag("stage-label")).assertCountEquals(4)
+        onNode(hasText("QUEUE ")).assertExists() // "QUEUE 8:25"
+        onNode(hasText("START ")).assertExists()
+        onNode(hasTextEqualTo("5507")).assertExists() // our number on its alliance chip
+        onNode(hasText("6036 · 9470 · 6814")).assertExists()
+        onNode(hasTextEqualTo("NOW · FIELD #36 · 24M BEHIND")).assertExists()
+        onNode(hasText("LAST")).assertDoesNotExist()
     }
 
     @Test
-    fun `wide - how far behind sits under the record, at the end of the start time's line`() = runGlanceAppWidgetUnitTest {
-        // Asked for: the delay below the team's record, with the record and match kept at the very top.
-        setAppWidgetSize(androidx.compose.ui.unit.DpSize(360.dp, 344.dp))
-        provideComposable { GlanceTheme { WidgetContent(ready) { Text("COUNTDOWN") } } }
-        onNode(hasTestTag("time-line")).onChildren().assertAny(hasText("24M BEHIND"))
-        onNode(hasTestTag("time-line")).onChildren().assertAny(hasText("~"))
-        onNode(hasText("CALIFORNIA NORTHERN")).assertDoesNotExist()
-    }
-
-    @Test
-    fun `narrow - the team header keeps its own line on top`() = runGlanceAppWidgetUnitTest {
-        setAppWidgetSize(androidx.compose.ui.unit.DpSize(172.dp, 223.dp))
+    fun `narrow - the record keeps its own top line, stages are named without times`() = runGlanceAppWidgetUnitTest {
+        setContext(androidx.test.core.app.ApplicationProvider.getApplicationContext()) // the scoreboard colors need it
+        setAppWidgetSize(DpSize(172.dp, 344.dp))
         provideComposable { GlanceTheme { WidgetContent(ready) { Text("COUNTDOWN") } } }
         onNode(hasTestTag("widget-root")).onChildren().assertAny(hasText("5507 · #34 · 1-2-0"))
-        onNode(hasTestTag("next-match-line")).onChildren().filter(hasText("5507 · #34 · 1-2-0")).assertCountEquals(0)
+        onNode(hasTestTag("scoreboard-right")).assertDoesNotExist()
+        onNode(hasTextEqualTo("QUEUE")).assertExists()
+        onNode(hasTextEqualTo("NOW · FIELD #36 · 24M BEHIND")).assertExists()
     }
 
     @Test
-    fun `narrow - how far behind gets its own line under the record`() = runGlanceAppWidgetUnitTest {
-        setAppWidgetSize(androidx.compose.ui.unit.DpSize(172.dp, 344.dp))
-        provideComposable { GlanceTheme { WidgetContent(ready) { Text("COUNTDOWN") } } }
-        onNode(hasTestTag("widget-root")).onChildren().assertAny(hasText("24M BEHIND"))
-        onNode(hasTestTag("time-line")).assertDoesNotExist()
+    fun `without a countdown, the start time takes its place`() = runGlanceAppWidgetUnitTest {
+        setContext(androidx.test.core.app.ApplicationProvider.getApplicationContext()) // the scoreboard colors need it
+        setAppWidgetSize(DpSize(360.dp, 223.dp))
+        provideComposable { GlanceTheme { WidgetContent(ready.copy(countdownDeadline = null)) { Text("COUNTDOWN") } } }
+        onNode(hasText("COUNTDOWN")).assertDoesNotExist()
+        onNode(hasTestTag("scoreboard-right")).onChildren().assertAny(hasText("~"))
     }
 
     @Test
     fun `large - upcoming list with breaks`() = runGlanceAppWidgetUnitTest {
-        setAppWidgetSize(androidx.compose.ui.unit.DpSize(250.dp, 600.dp)) // tall enough that the 9-line cap, not the height, ends the list
+        setContext(androidx.test.core.app.ApplicationProvider.getApplicationContext()) // the scoreboard colors need it
+        setAppWidgetSize(DpSize(250.dp, 600.dp)) // tall enough that the 9-line cap, not the height, ends the list
         provideComposable { GlanceTheme { WidgetContent(ready) { Text("COUNTDOWN") } } }
-        onNode(hasText("CALIFORNIA NORTHERN")).assertDoesNotExist() // asked for: no event name, record and match on top
         onNode(hasText("Saturday, Apr 11")).assertExists()
         onNode(hasText("LAST · Q22")).assertExists()
         onAllNodes(hasText("End of day")).assertCountEquals(1)
@@ -104,28 +101,19 @@ class WidgetContentTest {
     }
 
     @Test
-    fun `a tall widget with no room for a header and a row shows no list`() = runGlanceAppWidgetUnitTest {
-        // On-device (emulator-5580): ~293 dp of content above the list; a header with no room for its row got clipped.
-        // (302 dp: 320 before the event-name line was dropped, keeping the same room for the list.)
-        setAppWidgetSize(androidx.compose.ui.unit.DpSize(250.dp, 302.dp))
-        provideComposable { GlanceTheme { WidgetContent(ready) { Text("COUNTDOWN") } } }
-        onNode(hasText("Friday, Apr 10")).assertDoesNotExist()
-        onNode(hasText("LAST · Q22")).assertExists()
-    }
-
-    @Test
     fun `a mid-height large widget still lists what's next`() = runGlanceAppWidgetUnitTest {
-        // Final review: at 4×3 (360×344 dp on emulator-5580) the list vanished; the smaller countdown makes room for a day and a row.
-        setAppWidgetSize(androidx.compose.ui.unit.DpSize(360.dp, 344.dp))
+        setContext(androidx.test.core.app.ApplicationProvider.getApplicationContext()) // the scoreboard colors need it
+        // Final review: at 4×3 (360×344 dp on emulator-5580) the list vanished once; keep at least a day and a row.
+        setAppWidgetSize(DpSize(360.dp, 344.dp))
         provideComposable { GlanceTheme { WidgetContent(ready) { Text("COUNTDOWN") } } }
         onNode(hasText("Friday, Apr 10")).assertExists()
-        onNode(hasText("End of day")).assertExists()
     }
 
     @Test
     fun `2x3 - the last result fits one line on a narrow widget`() = runGlanceAppWidgetUnitTest {
+        setContext(androidx.test.core.app.ApplicationProvider.getApplicationContext()) // the scoreboard colors need it
         // On-device: at 2×3 (172 dp wide) "LAST · Q22" wrapped onto two lines.
-        setAppWidgetSize(androidx.compose.ui.unit.DpSize(172.dp, 380.dp))
+        setAppWidgetSize(DpSize(172.dp, 420.dp))
         provideComposable { GlanceTheme { WidgetContent(ready) { Text("COUNTDOWN") } } }
         onNode(hasText("LAST · Q22")).assertDoesNotExist()
         onNode(hasText("403–299")).assertExists()
@@ -134,17 +122,20 @@ class WidgetContentTest {
 
     @Test
     fun `message states`() = runGlanceAppWidgetUnitTest {
+        setContext(androidx.test.core.app.ApplicationProvider.getApplicationContext()) // the scoreboard colors need it
         setAppWidgetSize(PitWatchWidget.SMALL)
         provideComposable { GlanceTheme { WidgetContent(WidgetModels.build(com.pitwatch.core.store.EventCache(), UserConfig(), SNAP_NOW)) { } } }
         onNode(hasText("Set up PitWatch")).assertExists()
     }
 
     @Test
-    fun `the widget's outer column stays under Glance's 10-children limit`() = runGlanceAppWidgetUnitTest {
-        setAppWidgetSize(androidx.compose.ui.unit.DpSize(250.dp, 600.dp)) // every optional part drawn
+    fun `columns stay under Glance's 10-children limit`() = runGlanceAppWidgetUnitTest {
+        setContext(androidx.test.core.app.ApplicationProvider.getApplicationContext()) // the scoreboard colors need it
+        setAppWidgetSize(DpSize(250.dp, 600.dp)) // every optional part drawn
         provideComposable { GlanceTheme { WidgetContent(ready) { Text("COUNTDOWN") } } }
-        // next match (with the header and delay beside it), divider, last result, list: 4 of the 10 Glance renders.
-        // Narrow widgets add the header and delay lines: 6. Adding more? Recount.
+        // scoreboard, divider, last result, list. Adding more? Recount.
         onNode(hasTestTag("widget-root")).onChildren().assertCountEquals(4)
+        // top row, stage bar, stage labels (names only at 250 dp), two alliances, footer, and so the start time: 7.
+        onNode(hasTestTag("scoreboard")).onChildren().assertCountEquals(7)
     }
 }

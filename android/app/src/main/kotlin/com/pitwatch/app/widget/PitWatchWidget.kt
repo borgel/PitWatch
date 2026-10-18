@@ -13,7 +13,6 @@ import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceTheme
 import androidx.glance.LocalContext
-import androidx.glance.LocalSize
 import androidx.glance.appwidget.AndroidRemoteViews
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
@@ -60,14 +59,7 @@ class PitWatchWidget : GlanceAppWidget() {
     /** Generated widget-picker preview (Android 15+): the real layout with sample content and a static countdown. */
     override suspend fun providePreview(context: Context, widgetCategory: Int) {
         provideContent {
-            GlanceTheme {
-                WidgetContent(SampleWidgetData.main(Instant.now())) {
-                    Text(
-                        "3:27",
-                        style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 40.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily("sans-serif-condensed")),
-                    )
-                }
-            }
+            GlanceTheme { WidgetContent(SampleWidgetData.main(Instant.now())) { StaticCountdown() } }
         }
     }
 
@@ -96,20 +88,30 @@ fun LiveWidget(
     initialCache: EventCache,
     initialConfig: UserConfig,
     clock: () -> Instant,
+    /** Which widget draws the model: the main one by default, or the simple one. */
+    content: @Composable (WidgetModel, @Composable (Instant) -> Unit) -> Unit = { model, slot -> WidgetContent(model, slot) },
     countdown: @Composable (deadline: Instant, now: Instant) -> Unit,
 ) {
     val cache by cacheFlow.collectAsState(initialCache)
     val config by configFlow.collectAsState(initialConfig)
     val now = clock()
-    WidgetContent(WidgetModels.build(cache, config, now)) { deadline -> countdown(deadline, now) }
+    content(WidgetModels.build(cache, config, now)) { deadline -> countdown(deadline, now) }
 }
 
-/** A platform Chronometer: ticks on the home screen with no app updates. */
+/** The picker preview's countdown: a fixed time at the size the widget asks for ([LocalCountdownSp]). */
 @Composable
-private fun ChronometerCountdown(deadline: Instant, now: Instant) {
+internal fun StaticCountdown() {
+    Text(
+        "3:27",
+        style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = LocalCountdownSp.current.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily("sans-serif-condensed")),
+    )
+}
+
+/** A platform Chronometer: ticks on the home screen with no app updates. Sized by the widget ([LocalCountdownSp]). */
+@Composable
+internal fun ChronometerCountdown(deadline: Instant, now: Instant) {
     val context = LocalContext.current
-    // 56 sp only where the upcoming list still fits beneath it (see WidgetPlans); 40 sp otherwise.
-    val textSp = if (WidgetPlans.largeCountdown(LocalSize.current.height)) 56f else 40f
+    val textSp = LocalCountdownSp.current
     val remaining = Duration.between(now, deadline).toMillis()
     val views = RemoteViews(context.packageName, R.layout.widget_countdown).apply {
         setChronometer(R.id.countdown, SystemClock.elapsedRealtime() + remaining, null, true)

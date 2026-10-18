@@ -26,6 +26,11 @@ class WidgetRegistrationTest {
     }
 
     @Test
+    fun `the simple next-match widget is declared`() {
+        assertTrue("SimpleWidgetReceiver" in manifestWidgets(), manifestWidgets().toString())
+    }
+
+    @Test
     fun `every declared widget is refreshed and previewed`() {
         assertEquals(manifestWidgets(), Widgets.RECEIVERS.map { it.simpleName!! }.toSet())
     }

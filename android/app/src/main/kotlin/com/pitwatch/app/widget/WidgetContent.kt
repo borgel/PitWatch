@@ -1,6 +1,7 @@
 package com.pitwatch.app.widget
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceModifier
@@ -30,7 +31,6 @@ import androidx.glance.unit.ColorProvider
 import com.pitwatch.app.MainActivity
 import com.pitwatch.app.ui.TimeFormat
 import com.pitwatch.app.ui.matches.MatchListModel
-import com.pitwatch.app.ui.scoreboard.PhaseSteps
 import com.pitwatch.app.ui.theme.StatusColors
 import com.pitwatch.core.model.MatchAlliance
 import com.pitwatch.core.model.Phase
@@ -39,49 +39,37 @@ import java.time.Instant
 /** Glance can't load bundled fonts; the system condensed face stands in for Barlow Condensed. */
 internal val CONDENSED = FontFamily("sans-serif-condensed")
 
-/** The widget at whatever size it's placed; [countdown] renders the live chronometer (swappable in tests). */
+/** The widget at whatever size it's placed, in the live card's scoreboard design; [countdown] renders the live chronometer (swappable in tests). */
 @Composable
 fun WidgetContent(model: WidgetModel, countdown: @Composable (Instant) -> Unit) {
     val size = LocalSize.current
-    val wide = size.width >= PitWatchWidget.MEDIUM.width
+    val wide = size.width >= WidgetPlans.WIDE
     val tall = size.height >= PitWatchWidget.LARGE.height
-    val muted = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED)
+    val colors = scoreboardColors()
+    val muted = labelStyle(colors.muted, 12.sp)
     val times = TimeFormat(model.timeZone, model.zoneLabel)
     val next = model.next
     val plan = WidgetPlans.plan(
-        size.height, wide, tall,
+        size.height, size.width, tall,
         hasCountdown = model.countdownDeadline != null, hasPhase = next?.phase != null, hasTarget = next?.countdown != null,
-        hasLast = model.last != null, hasDelay = model.scheduleDelay != null,
+        hasLast = model.last != null, hasFooter = model.footer != null,
     )
-    // Glance renders at most 10 children per Column: this one holds at most 6.
+    // Glance renders at most 10 children per Column: this one holds at most 5.
     Column(
-        GlanceModifier.fillMaxSize().background(GlanceTheme.colors.widgetBackground).cornerRadius(24.dp)
+        GlanceModifier.fillMaxSize().background(colors.background).cornerRadius(24.dp)
             .padding(horizontal = 16.dp, vertical = 14.dp).clickable(actionStartActivity<MainActivity>())
             .semantics { testTag = "widget-root" },
     ) {
-        // Wide widgets put the header beside the match number instead (see NextMatch), saving a line.
-        if ((plan.header && !wide) || next == null) Text(model.header, style = muted, maxLines = 1)
-        // Narrow widgets: how far ahead or behind, on its own line under the header (wide: see NextMatch).
-        if (plan.delay && !wide && next != null) model.scheduleDelay?.let { Text(it.uppercase(), style = muted, maxLines = 1) }
         if (model.state != WidgetModel.State.READY || next == null) {
-            Text(model.message.orEmpty(), style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 16.sp), modifier = GlanceModifier.padding(top = 8.dp))
+            Text(model.header, style = muted, maxLines = 1)
+            Text(model.message.orEmpty(), style = TextStyle(color = colors.text, fontSize = 16.sp), modifier = GlanceModifier.padding(top = 8.dp))
             model.last?.let { if (wide) LastResult(it) }
             return@Column
         }
-        Row(GlanceModifier.fillMaxWidth().padding(top = 4.dp)) {
-            Column(GlanceModifier.defaultWeight()) {
-                NextMatch(
-                    next, times, model.countdownDeadline, plan,
-                    header = model.header.takeIf { wide && plan.header },
-                    delay = model.scheduleDelay?.takeIf { wide && plan.delay },
-                    countdown,
-                )
-                if (plan.phaseBar) next.phase?.let { PhaseBar(it) }
-                if (plan.alliances) {
-                    AllianceRow(MatchAlliance.RED, next.red)
-                    AllianceRow(MatchAlliance.BLUE, next.blue)
-                }
-            }
+        // Wide widgets keep the record in the top-right corner, over the countdown (asked for); narrow ones on top.
+        if (plan.header && !wide) Text(model.header, style = muted, maxLines = 1)
+        CompositionLocalProvider(LocalCountdownSp provides if (plan.largeCountdown) 56f else 40f) {
+            Scoreboard(model, next, plan, wide, times, colors, countdown)
         }
         val lines = WidgetLines.fit(model.laterDays, plan.listLines)
         if (tall && (plan.lastLine || lines.isNotEmpty())) {
@@ -95,81 +83,62 @@ fun WidgetContent(model: WidgetModel, countdown: @Composable (Instant) -> Unit) 
     }
 }
 
+/**
+ * The live card's scoreboard: the match and its phase, the countdown and what it counts to, the stage bar with each
+ * stage's time, the alliances with our number on its chip, and the footer. At most 7 children.
+ */
 @Composable
-private fun NextMatch(
-    row: MatchListModel.MatchRow,
-    times: TimeFormat,
-    deadline: Instant?,
+private fun Scoreboard(
+    model: WidgetModel,
+    next: MatchListModel.MatchRow,
     plan: WidgetPlan,
-    /** Wide widgets only: the team header, at the right end of the match number's line. */
-    header: String?,
-    /** Wide widgets only: how far ahead or behind, at the right end of the start time's line, under [header]. */
-    delay: String?,
+    wide: Boolean,
+    times: TimeFormat,
+    colors: ScoreboardColors,
     countdown: @Composable (Instant) -> Unit,
 ) {
-    Row(GlanceModifier.fillMaxWidth().semantics { testTag = "next-match-line" }, verticalAlignment = Alignment.CenterVertically) {
-        Text(row.shortLabel, style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 30.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED))
-        row.phase?.let {
-            Spacer(GlanceModifier.width(8.dp))
-            Pill(it.stateLabel, ColorProvider(StatusColors.phase(it)), ColorProvider(StatusColors.onPhase(it)))
-        }
-        header?.let {
-            Spacer(GlanceModifier.defaultWeight())
-            Text(it, style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED), maxLines = 1)
-        }
-    }
-    if (plan.time) {
-        val time = times.match(row.time, row.estimated)
-        val timeStyle = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 13.sp)
-        if (delay == null) {
-            Text(time, style = timeStyle)
+    val label = TextStyle(color = colors.text, fontSize = 30.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED)
+    val deadline = model.countdownDeadline
+    val start = times.match(next.time, next.estimated)
+    val target = next.countdown?.target?.uppercase()?.takeIf { plan.target }
+    Column(GlanceModifier.fillMaxWidth().semantics { testTag = "scoreboard" }) {
+        if (wide) {
+            Row(GlanceModifier.fillMaxWidth()) {
+                Column(GlanceModifier.defaultWeight()) {
+                    Text(next.shortLabel, style = label, maxLines = 1)
+                    next.phase?.let { PhasePill(it) }
+                }
+                Column(horizontalAlignment = Alignment.End, modifier = GlanceModifier.semantics { testTag = "scoreboard-right" }) {
+                    if (plan.header) Text(model.header, style = labelStyle(colors.muted, 12.sp), maxLines = 1)
+                    if (deadline != null) countdown(deadline) else Text(start, style = label.copy(fontSize = 24.sp), maxLines = 1)
+                    target?.let { Text(it, style = labelStyle(colors.muted, 12.sp), maxLines = 1) }
+                }
+            }
         } else {
-            Row(GlanceModifier.fillMaxWidth().semantics { testTag = "time-line" }, verticalAlignment = Alignment.CenterVertically) {
-                Text(time, style = timeStyle, maxLines = 1, modifier = GlanceModifier.defaultWeight())
-                Text(delay.uppercase(), style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED), maxLines = 1)
+            Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(next.shortLabel, style = label, maxLines = 1)
+                next.phase?.let {
+                    Spacer(GlanceModifier.width(8.dp))
+                    PhasePill(it)
+                }
             }
+            // The platform Chronometer gets its own line: sharing a row with small text clipped it on-device.
+            if (deadline != null) countdown(deadline) else if (plan.time) Text(start, style = label.copy(fontSize = 20.sp), maxLines = 1)
+            target?.let { Text(it, style = labelStyle(colors.muted, 12.sp), maxLines = 1) }
         }
-    }
-    if (deadline != null) {
-        // The platform Chronometer gets its own line: sharing a row with small text clipped it on-device.
-        countdown(deadline)
-        if (plan.target) row.countdown?.let { Text(it.target, style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp), maxLines = 1) }
-    }
-}
-
-/** Four rounded segments filled up to the current phase; the current one taller. */
-@Composable
-private fun PhaseBar(phase: Phase) {
-    val current = PhaseSteps.current(phase)
-    Row(GlanceModifier.fillMaxWidth().height(11.dp), verticalAlignment = Alignment.Bottom) {
-        PhaseSteps.steps.forEachIndexed { i, (_, stepPhase) ->
-            val step = i + 1
-            if (i > 0) Spacer(GlanceModifier.width(4.dp))
-            val fill = stepPhase?.takeIf { current != null && step <= current }?.let { ColorProvider(StatusColors.phase(it)) }
-            Box(
-                GlanceModifier.defaultWeight().height(if (step == current) 11.dp else 7.dp)
-                    .background(fill ?: GlanceTheme.colors.surfaceVariant)
-                    .cornerRadius(4.dp)
-                    .semantics { testTag = "phase-step" },
-            ) {}
+        if (plan.phaseBar) StageBar(next.phase, colors)
+        if (plan.stageLabels != StageLabels.NONE) {
+            StageLabelsRow(next.phase, model.stageTimes, plan.stageLabels == StageLabels.TIMES, model.timeZone, colors)
         }
-    }
-}
-
-@Composable
-private fun AllianceRow(alliance: MatchAlliance, line: MatchListModel.AllianceLine) {
-    val style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 15.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED)
-    val (before, us, after) = TeamSplit.of(line)
-    Row(GlanceModifier.fillMaxWidth().padding(top = 3.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(GlanceModifier.width(5.dp).height(16.dp).background(ColorProvider(StatusColors.alliance(alliance))).cornerRadius(3.dp)) {}
-        Spacer(GlanceModifier.width(8.dp))
-        if (before.isNotEmpty()) Text(before, style = style, maxLines = 1)
-        us?.let {
-            Box(GlanceModifier.background(GlanceTheme.colors.primary).cornerRadius(5.dp).padding(horizontal = 5.dp)) {
-                Text(it, style = style.copy(color = GlanceTheme.colors.onPrimary), maxLines = 1)
-            }
+        if (plan.alliances) {
+            AllianceLine(MatchAlliance.RED, next.red, colors)
+            AllianceLine(MatchAlliance.BLUE, next.blue, colors)
         }
-        if (after.isNotEmpty()) Text(after, style = style, maxLines = 1)
+        if (plan.footer) model.footer?.let {
+            Text(it, style = labelStyle(colors.muted, 12.sp), maxLines = plan.footerLines, modifier = GlanceModifier.padding(top = 4.dp).semantics { testTag = "footer" })
+        }
+        // The start time on its own line, when the countdown has it and the stage labels don't show it.
+        if (plan.time && deadline != null) Text(start, style = TextStyle(color = colors.muted, fontSize = 13.sp), maxLines = 1)
     }
 }
 

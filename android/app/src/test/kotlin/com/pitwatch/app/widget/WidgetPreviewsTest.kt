@@ -37,7 +37,7 @@ class WidgetPreviewsTest {
         val ok = PreviewPublisher { calls += it.simpleName!!; GlanceAppWidgetManager.SET_WIDGET_PREVIEWS_RESULT_SUCCESS }
         WidgetPreviews.registerOnce(stores.notificationPrefs, 7L, ok)
         WidgetPreviews.registerOnce(stores.notificationPrefs, 7L, ok)
-        assertEquals(listOf("PitWatchWidgetReceiver", "ScheduleWidgetReceiver", "EventScheduleWidgetReceiver"), calls)
+        assertEquals(listOf("PitWatchWidgetReceiver", "SimpleWidgetReceiver", "ScheduleWidgetReceiver", "EventScheduleWidgetReceiver"), calls)
         assertEquals(7L, stores.notificationPrefs.data.first().previewsVersion)
     }
 

@@ -113,6 +113,13 @@ object LiveCard {
 
     private fun sentenceCase(text: String) = text.lowercase().replaceFirstChar(Char::uppercase)
 
+    /** "NOW · FIELD #36 · 24M BEHIND": the scoreboard's last line (the widgets show it too). */
+    fun footer(s: LiveSnapshot): String = listOfNotNull(
+        s.matchesAway?.let(MatchesAwayDisplay::text),
+        s.onFieldNumber?.let { "FIELD #$it" },
+        s.scheduleDelay?.let(ScheduleDelay::text),
+    ).joinToString(" · ").uppercase()
+
     /** The expanded scoreboard, in [colors]. */
     internal fun scoreboard(context: Context, cache: EventCache, config: UserConfig, s: LiveSnapshot, now: Instant, colors: Colors): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.live_card_expanded)
@@ -178,11 +185,7 @@ object LiveCard {
         views.setTextColor(R.id.card_red, colors.text)
         views.setTextColor(R.id.card_blue, colors.text)
 
-        val footer = listOfNotNull(
-            s.matchesAway?.let(MatchesAwayDisplay::text),
-            s.onFieldNumber?.let { "FIELD #$it" },
-            s.scheduleDelay?.let(ScheduleDelay::text),
-        ).joinToString(" · ").uppercase()
+        val footer = footer(s)
         views.setTextViewText(R.id.card_footer, footer)
         views.setTextColor(R.id.card_footer, colors.muted)
         views.setViewVisibility(R.id.card_footer, if (footer.isEmpty()) View.GONE else View.VISIBLE)

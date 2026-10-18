@@ -52,6 +52,16 @@ class WidgetModelTest {
     }
 
     @Test
+    fun `ready - the live card's stage times and footer, so widget and card agree`() {
+        // Asked for: the widgets match the scoreboard card's design.
+        val live = kotlin.test.assertNotNull(com.pitwatch.app.live.LiveSnapshots.build(cache, config, "2026cancmp_qm36", SNAP_NOW))
+        val m = build()
+        assertEquals(listOf(live.milestones.queue, live.milestones.onDeck, live.milestones.onField, live.milestones.start), m.stageTimes)
+        assertEquals(com.pitwatch.app.live.LiveCard.footer(live), m.footer)
+        assertEquals("NOW · FIELD #36 · 24M BEHIND", m.footer)
+    }
+
+    @Test
     fun `no countdown once the deadline has passed`() {
         // Review focus #4: never show a negative chronometer.
         assertNull(build(now = SNAP_NOW.plusSeconds(3600)).countdownDeadline)
@@ -113,57 +123,57 @@ class WidgetModelTest {
         assertEquals(Triple("6036 · 9470 · 6814", null, ""), TeamSplit.of(line("6036", "9470", "6814")))
     }
 
-    private fun plan(h: Int, wide: Boolean = true, tall: Boolean = h >= 250) = WidgetPlans.plan(
-        h.dp, wide = wide, tall = tall, hasCountdown = true, hasPhase = true, hasTarget = true, hasLast = true, hasDelay = true,
+    private fun plan(h: Int, w: Int = 360, tall: Boolean = h >= 250, countdown: Boolean = true) = WidgetPlans.plan(
+        h.dp, w.dp, tall = tall, hasCountdown = countdown, hasPhase = true, hasTarget = countdown, hasLast = true, hasFooter = true,
     )
 
     @Test
-    fun `a full 4x3 widget draws every part and two list lines`() {
-        // On-device (emulator-5580): 360×344 dp showed everything plus a day header and one row.
+    fun `a full 4x3 widget draws the whole scoreboard and the list`() {
+        // Asked for: the widget in the scoreboard card's design. 360×344 dp is a 4×3 on emulator-5580.
         val p = plan(344)
-        kotlin.test.assertTrue(p.header && p.phaseBar && p.target && p.alliances && p.time && p.lastLine && p.delay)
-        assertEquals(3, p.listLines) // 2 on-device, plus the line the dropped event name used
+        kotlin.test.assertTrue(p.header && p.phaseBar && p.target && p.alliances && p.footer && p.lastLine)
+        assertEquals(StageLabels.TIMES, p.stageLabels)
+        kotlin.test.assertTrue(p.listLines >= 1)
         kotlin.test.assertFalse(p.largeCountdown)
     }
 
     @Test
-    fun `the delay costs a line on narrow widgets only`() {
-        // Wide: it shares the start time's line, under the record. Narrow: its own line under the record.
-        val wide = plan(344)
-        val narrow = plan(344, wide = false)
-        kotlin.test.assertTrue(wide.delay && narrow.delay)
-        fun noDelay(h: Int, wide: Boolean) = WidgetPlans.plan(h.dp, wide = wide, tall = true, hasCountdown = true, hasPhase = true, hasTarget = true, hasLast = true, hasDelay = false)
-        assertEquals(noDelay(344 - 18, wide = false).listLines, narrow.listLines)
-        assertEquals(noDelay(344, wide = true).listLines, wide.listLines)
-        // Short wide widget without room for the start time: no delay either.
-        kotlin.test.assertFalse(WidgetPlans.plan(110.dp, wide = true, tall = false, hasCountdown = true, hasPhase = true, hasTarget = true, hasLast = false, hasDelay = true).delay)
-    }
-
-    @Test
-    fun `a short wide widget keeps both alliances, and the start time now fits too`() {
-        // On-device: at 4×2 the blue alliance line was cut off at the bottom. With the header beside the match number
-        // (no line of its own on wide widgets), the start time fits as well.
+    fun `a 4x2 keeps both alliances and the footer`() {
+        // On-device: at 4×2 the blue alliance line was once cut off at the bottom.
         val p = plan(223, tall = false)
-        kotlin.test.assertTrue(p.header && p.alliances && p.phaseBar && p.target && p.time)
+        kotlin.test.assertTrue(p.header && p.alliances && p.phaseBar && p.footer)
+        assertEquals(StageLabels.TIMES, p.stageLabels)
         assertEquals(0, p.listLines)
     }
 
     @Test
-    fun `on a wide widget the header costs no height`() {
-        kotlin.test.assertTrue(plan(110, wide = true, tall = false).header)
-        kotlin.test.assertFalse(plan(110, wide = false, tall = false).header)
+    fun `wide widgets keep the record in the top-right corner at no cost`() {
+        // Asked for: the record stays at the top right, as before; the countdown sits under it.
+        kotlin.test.assertTrue(plan(110, tall = false).header)
+        kotlin.test.assertFalse(plan(110, w = 170, tall = false).header)
+    }
+
+    @Test
+    fun `narrow widgets name the stages without times, and add the start time and record as height allows`() {
+        val p = plan(344, w = 172)
+        assertEquals(StageLabels.NAMES, p.stageLabels)
+        kotlin.test.assertTrue(p.header && p.time && p.footer)
+        kotlin.test.assertFalse(p.alliances)
+        // On-device: one line cut the footer to "24M BEH…" at 2 cells wide; narrow widgets give it two.
+        assertEquals(2, p.footerLines)
+        assertEquals(1, plan(344).footerLines)
     }
 
     @Test
     fun `the smallest widget keeps only the match and its countdown`() {
-        val p = plan(110, wide = false, tall = false)
-        kotlin.test.assertFalse(p.header || p.phaseBar || p.target || p.alliances || p.time)
+        val p = plan(110, w = 110, tall = false)
+        kotlin.test.assertFalse(p.header || p.phaseBar || p.target || p.alliances || p.time || p.footer)
+        assertEquals(StageLabels.NONE, p.stageLabels)
     }
 
     @Test
     fun `without a countdown the start time comes first`() {
-        val p = WidgetPlans.plan(140.dp, wide = false, tall = false, hasCountdown = false, hasPhase = true, hasTarget = false, hasLast = false, hasDelay = false)
-        kotlin.test.assertTrue(p.time)
+        kotlin.test.assertTrue(plan(140, w = 170, tall = false, countdown = false).time)
     }
 
     @Test
@@ -171,5 +181,19 @@ class WidgetModelTest {
         val p = plan(600)
         kotlin.test.assertTrue(p.largeCountdown)
         kotlin.test.assertTrue(p.listLines >= WidgetLines.MAX_LINES)
+    }
+
+    @Test
+    fun `the simple widget fills its top with the match, countdown and phase - big when there's room`() {
+        // Asked for: a simplified widget, its top filled by the next match number, main time and phase name.
+        val roomy = SimplePlans.plan(223.dp, 360.dp, hasCountdown = true, hasPhase = true)
+        kotlin.test.assertTrue(roomy.big && roomy.phaseBar && roomy.target && roomy.phase)
+        assertEquals(StageLabels.TIMES, roomy.stageLabels)
+        val twoByTwo = SimplePlans.plan(170.dp, 170.dp, hasCountdown = true, hasPhase = true)
+        kotlin.test.assertFalse(twoByTwo.big)
+        kotlin.test.assertTrue(twoByTwo.target)
+        val oneRow = SimplePlans.plan(60.dp, 250.dp, hasCountdown = true, hasPhase = true)
+        kotlin.test.assertTrue(oneRow.singleRow)
+        kotlin.test.assertFalse(oneRow.phaseBar || oneRow.target)
     }
 }
