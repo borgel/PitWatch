@@ -127,7 +127,7 @@ class WidgetModelTest {
     }
 
     private fun plan(h: Int, w: Int = 360, tall: Boolean = h >= 250, countdown: Boolean = true) = WidgetPlans.plan(
-        h.dp, w.dp, tall = tall, hasCountdown = countdown, hasPhase = true, hasTarget = countdown, hasLast = true, hasFooter = true,
+        h.dp, w.dp, tall = tall, hasCountdown = countdown, hasTarget = countdown, hasLast = true, hasFooter = true,
     )
 
     @Test
@@ -198,5 +198,18 @@ class WidgetModelTest {
         val oneRow = SimplePlans.plan(60.dp, 250.dp, hasCountdown = true, hasPhase = true)
         kotlin.test.assertTrue(oneRow.singleRow)
         kotlin.test.assertFalse(oneRow.phaseBar || oneRow.target)
+    }
+
+    @Test
+    fun `the stage bar shows before Nexus reports a phase - empty, with its stage times`() {
+        // Found on-device: SF2-1 had no phase yet, and both widgets dropped the bar, leaving them mostly blank.
+        val simple = SimplePlans.plan(223.dp, 360.dp, hasCountdown = false, hasPhase = false)
+        kotlin.test.assertTrue(simple.phaseBar)
+        assertEquals(StageLabels.TIMES, simple.stageLabels)
+        val main = WidgetPlans.plan(
+            440.dp, 360.dp, tall = true, hasCountdown = false, hasTarget = false, hasLast = true, hasFooter = true,
+        )
+        kotlin.test.assertTrue(main.phaseBar)
+        assertEquals(StageLabels.TIMES, main.stageLabels)
     }
 }

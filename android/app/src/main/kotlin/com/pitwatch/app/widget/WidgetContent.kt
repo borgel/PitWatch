@@ -56,7 +56,7 @@ fun WidgetContent(model: WidgetModel, countdown: @Composable (Instant) -> Unit) 
     val next = model.next
     val plan = WidgetPlans.plan(
         size.height, size.width, tall,
-        hasCountdown = model.countdownDeadline != null, hasPhase = next?.phase != null, hasTarget = next?.countdown != null,
+        hasCountdown = model.countdownDeadline != null, hasTarget = next?.countdown != null,
         hasLast = model.last != null, hasFooter = model.footer != null,
     )
     // Glance renders at most 10 children per Column: this one holds at most 5.
