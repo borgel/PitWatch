@@ -127,7 +127,7 @@ fun TeamChip(number: String, container: Color, content: Color, style: TextStyle,
 /** A red card: the team was disqualified from the match (TBA marks red cards; it publishes no yellow cards). */
 @Composable
 fun RedCardMark() {
-    Box(Modifier.padding(start = 3.dp).size(width = 7.dp, height = 10.dp).background(StatusColors.redCard, RoundedCornerShape(1.5.dp)).testTag("red-card"))
+    Box(Modifier.padding(start = 5.dp, end = 3.dp).size(width = 7.dp, height = 10.dp).background(StatusColors.redCard, RoundedCornerShape(1.5.dp)).testTag("red-card"))
 }
 
 /** "4698 · [5507] · 1678": our team in a chip; a disqualified team followed by a red card. */
