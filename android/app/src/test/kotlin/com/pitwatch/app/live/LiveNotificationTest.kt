@@ -81,6 +81,23 @@ class LiveNotificationTest {
     }
 
     @Test
+    fun `the next redraw lands just as the title's minute count changes`() {
+        // On-device: "7m to on deck" beside a 06:00 countdown — redrawn once a minute, at no particular second.
+        fun next(remainingMs: Long) = LiveNotification.untilMinuteChanges(now.plusMillis(remainingMs), now)?.toMillis()
+        assertEquals(39_001, next(400_000)) // 6:40 shows "7m"; at 6:00.999 left it shows "6m"
+        assertEquals(1, next(361_000)) // 6:01 shows "7m": it changes a millisecond later
+        assertEquals(59_501, next(360_500)) // 6:00.5 already shows "6m"; next change below 5:01
+        assertEquals(1, next(1_000))
+        assertEquals(501, next(500)) // under a second: the next change is the deadline itself
+        assertNull(LiveNotification.untilMinuteChanges(now.minusSeconds(1), now))
+        assertNull(LiveNotification.untilMinuteChanges(null, now))
+        // Each wait lands where the title shows one minute less.
+        val title = { ms: Long -> LiveNotification.timeTitle(snapshot(deadline = now.plusMillis(ms)), now) }
+        assertEquals("7m to on deck", title(400_000))
+        assertEquals("6m to on deck", title(400_000 - 39_001))
+    }
+
+    @Test
     fun `counts down to the phase deadline`() {
         val n = build(snapshot())
         assertEquals(now.plusSeconds(600).toEpochMilli(), n.`when`)

@@ -68,6 +68,8 @@ class LiveMatchService : Service() {
     private var lastStartId = 0
     /** Last rendered notification, re-used on redundant starts so the live card never blanks. */
     private var lastNotification: Notification? = null
+    /** What the last render counted down to; the loop wakes as its minute count changes. */
+    private var lastDeadline: Instant? = null
     /** Set for a START_STICKY restart: resume only if we're still inside the live window. */
     private var restarted = false
 
@@ -210,7 +212,9 @@ class LiveMatchService : Service() {
         }
         LiveWakeAlarm.arm(this, nextPollAt, container.clock())
         val untilPoll = Duration.between(container.clock(), nextPollAt)
-        val wait = minOf(untilPoll, RENDER_TICK).coerceAtLeast(Duration.ZERO)
+        // Redraw as the title's minute count changes, so "7m" never sits beside a 06:00 countdown.
+        val untilTitle = LiveNotification.untilMinuteChanges(lastDeadline, container.clock()) ?: RENDER_TICK
+        val wait = minOf(untilPoll, RENDER_TICK, untilTitle).coerceAtLeast(Duration.ZERO)
         if (withTimeoutOrNull(wait.toMillis()) { signals.receive() } == Signal.POKE) nextPollAt = Instant.MIN
         return nextPollAt
     }
@@ -227,6 +231,7 @@ class LiveMatchService : Service() {
         val cache = container.repository.cache.first()
         val config = container.stores.config.data.first()
         val snapshot = tracked?.let { LiveSnapshots.build(cache, config, it, now) }
+        lastDeadline = snapshot?.deadline
         // Without the permission the notification is hidden but tracking (and the FGS) continue.
         val notification = LiveNotification.build(this, snapshot, lastSuccess, now, actions())
         lastNotification = notification

@@ -108,6 +108,17 @@ object LiveNotification {
             .ifEmpty { null }
     }
 
+    /**
+     * How long until [timeTitle] (and the chip) show one minute less: they round whole seconds up to minutes, so the
+     * count drops once fewer than (minutes − 1) × 60 + 1 whole seconds remain. Null once [deadline] has passed.
+     */
+    fun untilMinuteChanges(deadline: Instant?, now: Instant): Duration? {
+        val remaining = deadline?.let { Duration.between(now, it) }?.takeIf { it > Duration.ZERO } ?: return null
+        val minutes = (remaining.seconds + 59) / 60
+        val boundary = if (minutes == 0L) Duration.ZERO else Duration.ofSeconds((minutes - 1) * 60 + 1)
+        return remaining.minus(boundary).plusMillis(1)
+    }
+
     /** Status-bar chip: "Q32 12m" counting down, "Q32 2h" when far out. */
     fun shortText(s: LiveSnapshot, now: Instant): String {
         val deadline = s.deadline ?: return s.matchLabel
