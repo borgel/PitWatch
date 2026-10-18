@@ -196,6 +196,18 @@ class WidgetContentTest {
         rows[1].onChildren().assertAny(hasTextEqualTo("Q14"))
         rows[2].onChildren().assertAny(hasTextEqualTo("Q1"))
         onNode(hasTextEqualTo("w/ 2813 · 8033")).assertExists()
+        // Asked for: aligned columns — every row has the same fixed-width cells, in the same order.
+        for (i in 0 until 3) {
+            rows[i].onChildren().assertCountEquals(4) // match, score, outcome, partners
+            rows[i].onChildren()[1].assert(hasTestTag("history-score"))
+            rows[i].onChildren()[2].assert(hasTestTag("history-outcome"))
+        }
+    }
+
+    @Test
+    fun `out of matches - every other row is faintly striped`() {
+        // Asked for: a faint alternating background.
+        kotlin.test.assertEquals(listOf(false, true, false, true), (0 until 4).map(HistoryPlans::striped))
     }
 
     @Test

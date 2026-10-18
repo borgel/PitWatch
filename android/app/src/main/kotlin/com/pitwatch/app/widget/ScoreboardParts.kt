@@ -50,7 +50,14 @@ val LocalCountdownSp = compositionLocalOf { 40f }
 val LocalCountdownAlignEnd = compositionLocalOf { false }
 
 /** The card's colors, light and dark: the system switches between them with the theme. */
-internal class ScoreboardColors(val background: ColorProvider, val text: ColorProvider, val muted: ColorProvider, val empty: ColorProvider)
+internal class ScoreboardColors(
+    val background: ColorProvider,
+    val text: ColorProvider,
+    val muted: ColorProvider,
+    val empty: ColorProvider,
+    /** A faint band for alternating rows: the text color at low opacity, so it works on light and dark. */
+    val stripe: ColorProvider,
+)
 
 @Composable
 internal fun scoreboardColors(): ScoreboardColors {
@@ -58,7 +65,8 @@ internal fun scoreboardColors(): ScoreboardColors {
     val day = LiveCard.colors(context, dark = false)
     val night = LiveCard.colors(context, dark = true)
     fun pair(pick: (LiveCard.Colors) -> Int) = ColorProvider(day = Color(pick(day)), night = Color(pick(night)))
-    return ScoreboardColors(pair { it.background }, pair { it.text }, pair { it.muted }, pair { it.empty })
+    val stripe = ColorProvider(day = Color(day.text).copy(alpha = 0.05f), night = Color(night.text).copy(alpha = 0.07f))
+    return ScoreboardColors(pair { it.background }, pair { it.text }, pair { it.muted }, pair { it.empty }, stripe)
 }
 
 internal fun labelStyle(color: ColorProvider, size: TextUnit = 11.sp) =

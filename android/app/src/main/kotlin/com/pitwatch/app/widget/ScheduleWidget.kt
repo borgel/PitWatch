@@ -82,9 +82,9 @@ fun ScheduleWidgetContent(model: ScheduleWidgetModel) {
     ) {
         if (plan.header || model.state != WidgetModel.State.READY) Text(model.header, style = muted, maxLines = 1)
         if (model.state != WidgetModel.State.READY) {
-            Text(model.message.orEmpty(), style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 14.sp), maxLines = 1, modifier = GlanceModifier.padding(top = 4.dp))
+            Text(model.message.orEmpty(), style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 14.sp), maxLines = HistoryPlans.messageLines(wide), modifier = GlanceModifier.padding(top = 4.dp))
             // Out of matches (e.g. alliance selection, or the event's over): the team's results, newest first.
-            ResultsHistory(model.results, wide, HistoryPlans.rows(size.height))
+            ResultsHistory(model.results, wide, HistoryPlans.rows(size.height, wide))
             return@Column
         }
         if (plan.lastLine) model.last?.let { LastLine(it, compact = !wide) }
