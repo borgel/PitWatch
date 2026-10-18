@@ -40,6 +40,7 @@ import androidx.glance.unit.ColorProvider
 import com.pitwatch.app.MainActivity
 import com.pitwatch.app.PitWatchApp
 import com.pitwatch.app.ui.TimeFormat
+import com.pitwatch.app.ui.matches.MatchListModel
 import com.pitwatch.app.ui.theme.StatusColors
 import com.pitwatch.core.config.UserConfig
 import com.pitwatch.core.store.EventCache
@@ -156,14 +157,43 @@ private fun MatchLine(row: EventMatchRow, teams: Boolean, trailing: String, play
             modifier = if (teams) GlanceModifier.width(46.dp) else GlanceModifier.defaultWeight(),
         )
         if (teams) {
-            Text(
-                row.red.teams.joinToString(" ") { it.number } + "  ·  " + row.blue.teams.joinToString(" ") { it.number },
-                style = TextStyle(color = text, fontSize = 13.sp, fontFamily = CONDENSED),
-                maxLines = 1,
-                modifier = GlanceModifier.defaultWeight(),
-            )
+            val style = TextStyle(color = text, fontSize = 13.sp, fontFamily = CONDENSED)
+            val all = row.red.teams.joinToString(" ") { it.number } + "  ·  " + row.blue.teams.joinToString(" ") { it.number }
+            if ((row.red.teams + row.blue.teams).none { it.dq }) {
+                // One Text per row: every row of the list goes into one RemoteViews update (binder budget).
+                Text(all, style = style, maxLines = 1, modifier = GlanceModifier.defaultWeight())
+            } else {
+                // Rare: split the teams around each red card, so the mark follows the disqualified team's number.
+                Row(GlanceModifier.defaultWeight(), verticalAlignment = Alignment.CenterVertically) {
+                    TeamSegments.of(row.red, row.blue).forEach { segment ->
+                        if (segment == null) RedCard() else Text(segment, style = style, maxLines = 1)
+                    }
+                }
+            }
         }
         row.ours?.let { Text("● ", style = TextStyle(color = ColorProvider(StatusColors.alliance(it)), fontSize = 12.sp)) }
         Text(trailing, style = TextStyle(color = text, fontSize = 14.sp, fontWeight = if (played) FontWeight.Bold else null))
+    }
+}
+
+/** The event schedule's teams text split around red cards: strings, with null where a red card goes. */
+internal object TeamSegments {
+    fun of(red: MatchListModel.AllianceLine, blue: MatchListModel.AllianceLine): List<String?> {
+        val out = mutableListOf<String?>()
+        val text = StringBuilder()
+        fun alliance(line: MatchListModel.AllianceLine) = line.teams.forEachIndexed { i, team ->
+            if (i > 0) text.append(" ")
+            text.append(team.number)
+            if (team.dq) {
+                out += text.toString()
+                text.clear()
+                out += null
+            }
+        }
+        alliance(red)
+        text.append("  ·  ")
+        alliance(blue)
+        if (text.isNotEmpty()) out += text.toString()
+        return out
     }
 }

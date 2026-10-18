@@ -71,7 +71,8 @@ data class MatchListModel(
     }
 
     data class AllianceLine(val teams: List<TeamChip>, val summedOpr: Double?)
-    data class TeamChip(val number: String, val isUs: Boolean)
+    /** [dq]: disqualified from the match, as TBA marks a red card (it publishes no yellow cards). */
+    data class TeamChip(val number: String, val isUs: Boolean, val dq: Boolean = false)
 
     /** "12m to on deck": counts down to [deadline]. */
     data class Countdown(val deadline: Instant, val target: String)
@@ -90,6 +91,8 @@ data class MatchListModel(
         val blueScore: Int,
     ) {
         val url: String get() = "https://www.thebluealliance.com/match/$key"
+        /** Team numbers disqualified (red card) in this match. */
+        val disqualified: List<String> get() = (red.teams + blue.teams).filter { it.dq }.map { it.number }
         val outcomeLabel: String get() = when (outcome) {
             "W" -> "WIN"
             "L" -> "LOSS"
@@ -101,6 +104,12 @@ data class MatchListModel(
 }
 
 object MatchListModels {
+    /** One alliance's teams in [match]: ours marked, and any disqualified (red card) per TBA's dq_team_keys. */
+    fun teams(match: Match, color: String, teamKey: String?): List<MatchListModel.TeamChip> {
+        val alliance = match.alliances[color] ?: return emptyList()
+        return alliance.teamKeys.map { MatchListModel.TeamChip(it.removePrefix("frc"), it == teamKey, dq = it in alliance.dqTeamKeys) }
+    }
+
     fun build(
         cache: EventCache,
         config: UserConfig,
@@ -130,7 +139,7 @@ object MatchListModels {
 
         fun line(match: Match, color: String): MatchListModel.AllianceLine {
             val keys = match.alliances[color]?.teamKeys.orEmpty()
-            return MatchListModel.AllianceLine(keys.map { MatchListModel.TeamChip(it.removePrefix("frc"), it == teamKey) }, cache.oprs?.summedOpr(keys))
+            return MatchListModel.AllianceLine(teams(match, color, teamKey), cache.oprs?.summedOpr(keys))
         }
 
         fun row(match: Match): MatchListModel.MatchRow {

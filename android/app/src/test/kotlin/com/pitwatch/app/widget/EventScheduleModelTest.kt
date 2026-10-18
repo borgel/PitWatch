@@ -107,4 +107,12 @@ class EventScheduleModelTest {
         assertEquals("Q150", m.played().first().shortLabel)
         assertTrue(m.played().last().shortLabel != "Q1", "the oldest results are the ones dropped")
     }
+
+    @Test
+    fun `a disqualified team is marked in the results`() {
+        // The captured event: 5419 was disqualified in Q16.
+        val q16 = build().played().first { it.shortLabel == "Q16" }
+        val chips = q16.red.teams + q16.blue.teams
+        assertEquals(listOf("5419"), chips.filter { it.dq }.map { it.number })
+    }
 }

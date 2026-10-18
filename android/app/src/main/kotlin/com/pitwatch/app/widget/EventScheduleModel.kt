@@ -71,9 +71,7 @@ object EventScheduleModels {
         }
         val nexus = cache.nexusEvent.takeIf { config.effectiveTimeSource == TimeSource.NEXUS }
 
-        fun line(match: Match, color: String) = MatchListModel.AllianceLine(
-            match.alliances[color]?.teamKeys.orEmpty().map { MatchListModel.TeamChip(it.removePrefix("frc"), it == teamKey) }, null,
-        )
+        fun line(match: Match, color: String) = MatchListModel.AllianceLine(MatchListModels.teams(match, color, teamKey), null)
 
         fun row(match: Match, played: Boolean): EventMatchRow {
             val (time, estimated) = MatchTime.of(match, NexusMatchMerge.nexusInfo(match, nexus), config)

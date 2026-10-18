@@ -4,6 +4,7 @@ import com.pitwatch.app.SNAP
 import com.pitwatch.app.SNAP_NOW
 import com.pitwatch.app.fixture
 import com.pitwatch.app.snapshotCache
+import com.pitwatch.app.withQ22Dq
 import com.pitwatch.app.testEvent
 import com.pitwatch.app.testMatch
 import com.pitwatch.core.PitWatchJson
@@ -191,5 +192,14 @@ class MatchListModelTest {
         val next = assertNotNull(build().next)
         assertEquals("Qual 36", next.label)
         assertTrue(next.isNext)
+    }
+
+    @Test
+    fun `a disqualified team (red card) is marked in its result`() {
+        // Asked for: show red cards in result lists. TBA has no yellow cards; a red card shows as a DQ.
+        val q22 = build(cache.withQ22Dq()).results.first { it.shortLabel == "Q22" }
+        assertEquals(listOf("9400"), q22.disqualified)
+        assertEquals(true, q22.red.teams.first { it.number == "9400" }.dq)
+        assertEquals(emptyList(), build().results.first { it.shortLabel == "Q22" }.disqualified)
     }
 }

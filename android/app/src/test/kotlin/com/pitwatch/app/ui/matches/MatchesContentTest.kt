@@ -14,6 +14,7 @@ import com.pitwatch.app.SNAP
 import com.pitwatch.app.SNAP_NOW
 import com.pitwatch.app.fixture
 import com.pitwatch.app.snapshotCache
+import com.pitwatch.app.withQ22Dq
 import com.pitwatch.core.PitWatchJson
 import com.pitwatch.core.config.UserConfig
 import com.pitwatch.core.model.EventRankings
@@ -211,5 +212,16 @@ class MatchesContentTest {
         show()
         compose.onNodeWithTag("matches").assertIsDisplayed()
         compose.onNodeWithTag("matches-next").assertDoesNotExist()
+    }
+
+    @Test
+    fun `a disqualified team carries a red card mark in the results`() {
+        val withDq = MatchListModels.build(
+            snapshotCache().withQ22Dq(), UserConfig(teamNumber = 5507, apiKey = "k", nexusApiKey = "n"), RefreshState(), SNAP_NOW, Locale.US, com.pitwatch.app.LA,
+        )
+        compose.setContent { MatchesContent(withDq, SNAP_NOW, false, false, {}, {}, {}, {}) }
+        compose.onNodeWithTag("matches").performScrollToNode(androidx.compose.ui.test.hasContentDescription("9400, disqualified (red card)"))
+        compose.onNode(androidx.compose.ui.test.hasContentDescription("9400, disqualified (red card)")).assertIsDisplayed()
+        compose.onAllNodes(androidx.compose.ui.test.hasTestTag("red-card"), useUnmergedTree = true).assertCountEquals(1) // inside the tappable card
     }
 }
