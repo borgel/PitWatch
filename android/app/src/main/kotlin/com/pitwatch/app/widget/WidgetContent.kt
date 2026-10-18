@@ -61,7 +61,13 @@ fun WidgetContent(model: WidgetModel, countdown: @Composable (Instant) -> Unit) 
     ) {
         // Wide widgets put the header beside the match number instead (see NextMatch), saving a line.
         if ((plan.header && !wide) || next == null) Text(model.header, style = muted, maxLines = 1)
-        if (plan.eventTitle) model.eventTitle?.let { Text(it.uppercase(), style = muted, maxLines = 1) }
+        if (plan.eventTitle) model.eventTitle?.let { title ->
+            // The event's schedule delay sits at the end; a long event name gives way first.
+            Row(GlanceModifier.fillMaxWidth()) {
+                Text(title.uppercase(), style = muted, maxLines = 1, modifier = GlanceModifier.defaultWeight())
+                model.scheduleDelay?.let { Text(it.uppercase(), style = muted, maxLines = 1, modifier = GlanceModifier.padding(start = 8.dp)) }
+            }
+        }
         if (model.state != WidgetModel.State.READY || next == null) {
             Text(model.message.orEmpty(), style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 16.sp), modifier = GlanceModifier.padding(top = 8.dp))
             model.last?.let { if (wide) LastResult(it) }

@@ -4,7 +4,9 @@ import com.pitwatch.app.ui.matches.MatchListModel
 import com.pitwatch.app.ui.matches.MatchListModels
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.pitwatch.core.config.TimeSource
 import com.pitwatch.core.config.UserConfig
+import com.pitwatch.core.logic.ScheduleDelay
 import com.pitwatch.core.store.EventCache
 import com.pitwatch.core.store.RefreshState
 import java.time.Instant
@@ -27,6 +29,8 @@ data class WidgetModel(
     val countdownDeadline: Instant?,
     val timeZone: ZoneId = ZoneId.systemDefault(),
     val zoneLabel: String? = null,
+    /** "12m behind", "On time": how the event is running, shown on [eventTitle]'s line. */
+    val scheduleDelay: String? = null,
 ) {
     enum class State { NOT_CONFIGURED, NO_EVENT, NO_UPCOMING, READY }
 }
@@ -60,7 +64,9 @@ object WidgetModels {
         val sameDayRest = list.days[nextDay].items.dropWhile { !(it is MatchListModel.Item.Upcoming && it.row.key == next.key) }.drop(1)
         val laterDays = listOfNotNull(list.days[nextDay].copy(items = sameDayRest).takeIf { sameDayRest.isNotEmpty() }) + list.days.drop(nextDay + 1)
         val deadline = next.countdown?.deadline?.takeIf { it > now }
-        return WidgetModel(WidgetModel.State.READY, header, list.title, next, laterDays, last, null, deadline, zone, list.zoneLabel)
+        val nexus = cache.nexusEvent.takeIf { config.effectiveTimeSource == TimeSource.NEXUS }
+        val delay = ScheduleDelay.of(cache.matches, nexus)?.let(ScheduleDelay::text)
+        return WidgetModel(WidgetModel.State.READY, header, list.title, next, laterDays, last, null, deadline, zone, list.zoneLabel, delay)
     }
 }
 

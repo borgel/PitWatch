@@ -78,6 +78,7 @@ class WidgetContentTest {
         setAppWidgetSize(androidx.compose.ui.unit.DpSize(250.dp, 600.dp)) // tall enough that the 9-line cap, not the height, ends the list
         provideComposable { GlanceTheme { WidgetContent(ready) { Text("COUNTDOWN") } } }
         onNode(hasText("CALIFORNIA NORTHERN")).assertExists()
+        onNode(hasText("24M BEHIND")).assertExists() // asked for: how far ahead or behind, on the event's line
         onNode(hasText("Saturday, Apr 11")).assertExists()
         onNode(hasText("LAST · Q22")).assertExists()
         onAllNodes(hasText("End of day")).assertCountEquals(1)
