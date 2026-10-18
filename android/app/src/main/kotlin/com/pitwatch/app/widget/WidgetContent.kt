@@ -51,7 +51,7 @@ fun WidgetContent(model: WidgetModel, countdown: @Composable (Instant) -> Unit) 
     val plan = WidgetPlans.plan(
         size.height, wide, tall,
         hasCountdown = model.countdownDeadline != null, hasPhase = next?.phase != null, hasTarget = next?.countdown != null,
-        hasLast = model.last != null, hasTitle = model.eventTitle != null,
+        hasLast = model.last != null, hasDelay = model.scheduleDelay != null,
     )
     // Glance renders at most 10 children per Column: this one holds at most 6.
     Column(
@@ -61,13 +61,8 @@ fun WidgetContent(model: WidgetModel, countdown: @Composable (Instant) -> Unit) 
     ) {
         // Wide widgets put the header beside the match number instead (see NextMatch), saving a line.
         if ((plan.header && !wide) || next == null) Text(model.header, style = muted, maxLines = 1)
-        if (plan.eventTitle) model.eventTitle?.let { title ->
-            // The event's schedule delay sits at the end; a long event name gives way first.
-            Row(GlanceModifier.fillMaxWidth()) {
-                Text(title.uppercase(), style = muted, maxLines = 1, modifier = GlanceModifier.defaultWeight())
-                model.scheduleDelay?.let { Text(it.uppercase(), style = muted, maxLines = 1, modifier = GlanceModifier.padding(start = 8.dp)) }
-            }
-        }
+        // Narrow widgets: how far ahead or behind, on its own line under the header (wide: see NextMatch).
+        if (plan.delay && !wide && next != null) model.scheduleDelay?.let { Text(it.uppercase(), style = muted, maxLines = 1) }
         if (model.state != WidgetModel.State.READY || next == null) {
             Text(model.message.orEmpty(), style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 16.sp), modifier = GlanceModifier.padding(top = 8.dp))
             model.last?.let { if (wide) LastResult(it) }
@@ -75,7 +70,12 @@ fun WidgetContent(model: WidgetModel, countdown: @Composable (Instant) -> Unit) 
         }
         Row(GlanceModifier.fillMaxWidth().padding(top = 4.dp)) {
             Column(GlanceModifier.defaultWeight()) {
-                NextMatch(next, times, model.countdownDeadline, plan, header = model.header.takeIf { wide && plan.header }, countdown)
+                NextMatch(
+                    next, times, model.countdownDeadline, plan,
+                    header = model.header.takeIf { wide && plan.header },
+                    delay = model.scheduleDelay?.takeIf { wide && plan.delay },
+                    countdown,
+                )
                 if (plan.phaseBar) next.phase?.let { PhaseBar(it) }
                 if (plan.alliances) {
                     AllianceRow(MatchAlliance.RED, next.red)
@@ -103,6 +103,8 @@ private fun NextMatch(
     plan: WidgetPlan,
     /** Wide widgets only: the team header, at the right end of the match number's line. */
     header: String?,
+    /** Wide widgets only: how far ahead or behind, at the right end of the start time's line, under [header]. */
+    delay: String?,
     countdown: @Composable (Instant) -> Unit,
 ) {
     Row(GlanceModifier.fillMaxWidth().semantics { testTag = "next-match-line" }, verticalAlignment = Alignment.CenterVertically) {
@@ -116,7 +118,18 @@ private fun NextMatch(
             Text(it, style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED), maxLines = 1)
         }
     }
-    if (plan.time) Text(times.match(row.time, row.estimated), style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 13.sp))
+    if (plan.time) {
+        val time = times.match(row.time, row.estimated)
+        val timeStyle = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 13.sp)
+        if (delay == null) {
+            Text(time, style = timeStyle)
+        } else {
+            Row(GlanceModifier.fillMaxWidth().semantics { testTag = "time-line" }, verticalAlignment = Alignment.CenterVertically) {
+                Text(time, style = timeStyle, maxLines = 1, modifier = GlanceModifier.defaultWeight())
+                Text(delay.uppercase(), style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED), maxLines = 1)
+            }
+        }
+    }
     if (deadline != null) {
         // The platform Chronometer gets its own line: sharing a row with small text clipped it on-device.
         countdown(deadline)

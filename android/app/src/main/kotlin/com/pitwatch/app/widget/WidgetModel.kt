@@ -18,7 +18,6 @@ import java.util.Locale
 data class WidgetModel(
     val state: State,
     val header: String,
-    val eventTitle: String?,
     val next: MatchListModel.MatchRow?,
     /** What follows [next], grouped by day; the next match's own day keeps only what comes after it. */
     val laterDays: List<MatchListModel.Day>,
@@ -29,7 +28,7 @@ data class WidgetModel(
     val countdownDeadline: Instant?,
     val timeZone: ZoneId = ZoneId.systemDefault(),
     val zoneLabel: String? = null,
-    /** "12m behind", "On time": how the event is running, shown on [eventTitle]'s line. */
+    /** "12m behind", "On time": how the event is running, shown under the team [header]. */
     val scheduleDelay: String? = null,
 ) {
     enum class State { NOT_CONFIGURED, NO_EVENT, NO_UPCOMING, READY }
@@ -45,11 +44,11 @@ object WidgetModels {
     ): WidgetModel {
         val list = MatchListModels.build(cache, config, RefreshState(), now, locale, zone)
         if (list.empty == MatchListModel.Empty.NOT_CONFIGURED) {
-            return WidgetModel(WidgetModel.State.NOT_CONFIGURED, "PitWatch", null, null, emptyList(), null, "Set up PitWatch", null, zone)
+            return WidgetModel(WidgetModel.State.NOT_CONFIGURED, "PitWatch", null, emptyList(), null, "Set up PitWatch", null, zone)
         }
         val header = listOfNotNull(config.teamNumber?.toString(), list.status?.rank?.let { "#$it" }, list.status?.record).joinToString(" · ")
         val event = cache.event
-            ?: return WidgetModel(WidgetModel.State.NO_EVENT, header, null, null, emptyList(), null, "No event yet", null, zone)
+            ?: return WidgetModel(WidgetModel.State.NO_EVENT, header, null, emptyList(), null, "No event yet", null, zone)
 
         val next = list.days.flatMap { it.items }.filterIsInstance<MatchListModel.Item.Upcoming>().firstOrNull()?.row
         val last = list.results.firstOrNull()
@@ -58,7 +57,7 @@ object WidgetModels {
             val message = start?.let {
                 "Next event: ${list.title} · " + DateTimeFormatter.ofPattern("MMM d", locale).withZone(event.zone).format(it)
             } ?: "No upcoming matches"
-            return WidgetModel(WidgetModel.State.NO_UPCOMING, header, list.title, null, emptyList(), last, message, null, zone, list.zoneLabel)
+            return WidgetModel(WidgetModel.State.NO_UPCOMING, header, null, emptyList(), last, message, null, zone, list.zoneLabel)
         }
         val nextDay = list.days.indexOfFirst { day -> day.items.any { it is MatchListModel.Item.Upcoming && it.row.key == next.key } }
         val sameDayRest = list.days[nextDay].items.dropWhile { !(it is MatchListModel.Item.Upcoming && it.row.key == next.key) }.drop(1)
@@ -66,7 +65,7 @@ object WidgetModels {
         val deadline = next.countdown?.deadline?.takeIf { it > now }
         val nexus = cache.nexusEvent.takeIf { config.effectiveTimeSource == TimeSource.NEXUS }
         val delay = ScheduleDelay.of(cache.matches, nexus)?.let(ScheduleDelay::text)
-        return WidgetModel(WidgetModel.State.READY, header, list.title, next, laterDays, last, null, deadline, zone, list.zoneLabel, delay)
+        return WidgetModel(WidgetModel.State.READY, header, next, laterDays, last, null, deadline, zone, list.zoneLabel, delay)
     }
 }
 
@@ -118,7 +117,8 @@ data class WidgetPlan(
     val alliances: Boolean,
     val time: Boolean,
     val lastLine: Boolean,
-    val eventTitle: Boolean,
+    /** How far ahead or behind: beside the start time on wide widgets (under the header), its own line on narrow. */
+    val delay: Boolean,
     val listLines: Int,
     val largeCountdown: Boolean,
 )
@@ -135,7 +135,7 @@ object WidgetPlans {
     private val ALLIANCES = 46.dp
     private val TIME = 18.dp
     internal val LAST_LINE = 38.dp
-    private val TITLE = 18.dp
+    private val DELAY = 18.dp
     internal val ROW = 24.dp
 
     /** The 56 sp countdown only where the list still fits beneath it; 40 sp below. */
@@ -145,7 +145,8 @@ object WidgetPlans {
      * The match label and countdown always show; then, in priority order, each part is drawn only if it fits:
      * what the countdown counts to, the phase bar, the team header (narrow only; wide widgets put it beside the match
      * number, at no cost), the alliances (wide only), the start time,
-     * and on tall widgets the last result and event title. Nothing is drawn to be clipped.
+     * how far ahead or behind the event is (narrow only; wide widgets put it
+     * beside the start time), and on tall widgets the last result. Nothing is drawn to be clipped.
      */
     fun plan(
         height: Dp,
@@ -155,7 +156,7 @@ object WidgetPlans {
         hasPhase: Boolean,
         hasTarget: Boolean,
         hasLast: Boolean,
-        hasTitle: Boolean,
+        hasDelay: Boolean,
     ): WidgetPlan {
         val large = largeCountdown(height)
         var left = height - PADDING - LABEL - if (hasCountdown) (if (large) COUNTDOWN_LARGE else COUNTDOWN) else 0.dp
@@ -168,9 +169,9 @@ object WidgetPlans {
         val header = wide || take(true, HEADER)
         val alliances = take(wide, ALLIANCES)
         val time = earlyTime || take(true, TIME)
+        val delay = if (wide) time && hasDelay else take(hasDelay, DELAY)
         val lastLine = take(tall && hasLast, LAST_LINE)
-        val eventTitle = take(tall && hasTitle, TITLE)
         val lines = if (tall) (left / ROW).toInt().coerceAtLeast(0) else 0
-        return WidgetPlan(header, phaseBar, target, alliances, time, lastLine, eventTitle, lines, large)
+        return WidgetPlan(header, phaseBar, target, alliances, time, lastLine, delay, lines, large)
     }
 }

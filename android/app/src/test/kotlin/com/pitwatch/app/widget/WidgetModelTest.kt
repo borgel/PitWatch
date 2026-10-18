@@ -27,7 +27,6 @@ class WidgetModelTest {
         val m = build()
         assertEquals(WidgetModel.State.READY, m.state)
         assertEquals("5507 · #34 · 1-2-0", m.header)
-        assertEquals("California Northern", m.eventTitle)
         assertEquals("Q36", m.next?.shortLabel)
         // What follows the next match, grouped by day (the next match's own day keeps only what's after it).
         assertEquals(listOf("Friday, Apr 10", "Saturday, Apr 11", "Sunday, Apr 12"), m.laterDays.map { it.label })
@@ -115,16 +114,29 @@ class WidgetModelTest {
     }
 
     private fun plan(h: Int, wide: Boolean = true, tall: Boolean = h >= 250) = WidgetPlans.plan(
-        h.dp, wide = wide, tall = tall, hasCountdown = true, hasPhase = true, hasTarget = true, hasLast = true, hasTitle = true,
+        h.dp, wide = wide, tall = tall, hasCountdown = true, hasPhase = true, hasTarget = true, hasLast = true, hasDelay = true,
     )
 
     @Test
     fun `a full 4x3 widget draws every part and two list lines`() {
         // On-device (emulator-5580): 360×344 dp showed everything plus a day header and one row.
         val p = plan(344)
-        kotlin.test.assertTrue(p.header && p.phaseBar && p.target && p.alliances && p.time && p.lastLine && p.eventTitle)
-        assertEquals(2, p.listLines)
+        kotlin.test.assertTrue(p.header && p.phaseBar && p.target && p.alliances && p.time && p.lastLine && p.delay)
+        assertEquals(3, p.listLines) // 2 on-device, plus the line the dropped event name used
         kotlin.test.assertFalse(p.largeCountdown)
+    }
+
+    @Test
+    fun `the delay costs a line on narrow widgets only`() {
+        // Wide: it shares the start time's line, under the record. Narrow: its own line under the record.
+        val wide = plan(344)
+        val narrow = plan(344, wide = false)
+        kotlin.test.assertTrue(wide.delay && narrow.delay)
+        fun noDelay(h: Int, wide: Boolean) = WidgetPlans.plan(h.dp, wide = wide, tall = true, hasCountdown = true, hasPhase = true, hasTarget = true, hasLast = true, hasDelay = false)
+        assertEquals(noDelay(344 - 18, wide = false).listLines, narrow.listLines)
+        assertEquals(noDelay(344, wide = true).listLines, wide.listLines)
+        // Short wide widget without room for the start time: no delay either.
+        kotlin.test.assertFalse(WidgetPlans.plan(110.dp, wide = true, tall = false, hasCountdown = true, hasPhase = true, hasTarget = true, hasLast = false, hasDelay = true).delay)
     }
 
     @Test
@@ -150,7 +162,7 @@ class WidgetModelTest {
 
     @Test
     fun `without a countdown the start time comes first`() {
-        val p = WidgetPlans.plan(140.dp, wide = false, tall = false, hasCountdown = false, hasPhase = true, hasTarget = false, hasLast = false, hasTitle = false)
+        val p = WidgetPlans.plan(140.dp, wide = false, tall = false, hasCountdown = false, hasPhase = true, hasTarget = false, hasLast = false, hasDelay = false)
         kotlin.test.assertTrue(p.time)
     }
 
