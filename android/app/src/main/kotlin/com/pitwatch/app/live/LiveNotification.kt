@@ -9,6 +9,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.core.app.NotificationCompat
 import com.pitwatch.app.R
 import com.pitwatch.app.ui.theme.StatusColors
+import com.pitwatch.core.logic.ScheduleDelay
 import com.pitwatch.core.model.MatchesAwayDisplay
 import com.pitwatch.core.model.Phase
 import java.time.Duration
@@ -100,9 +101,9 @@ object LiveNotification {
         listOfNotNull(s.matchLabel, s.alliance?.displayName, s.phase.stateLabel)
             .joinToString(" · ")
 
-    /** "3 AWAY · ON FIELD #29". */
+    /** "3 AWAY · ON FIELD #29 · 12m behind". */
     fun text(s: LiveSnapshot): String? {
-        return listOfNotNull(s.matchesAway?.let(MatchesAwayDisplay::text), s.onFieldNumber?.let { "ON FIELD #$it" })
+        return listOfNotNull(s.matchesAway?.let(MatchesAwayDisplay::text), s.onFieldNumber?.let { "ON FIELD #$it" }, s.scheduleDelay?.let(ScheduleDelay::text))
             .joinToString(" · ")
             .ifEmpty { null }
     }

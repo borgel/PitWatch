@@ -4,9 +4,11 @@ import com.pitwatch.core.config.TimeSource
 import com.pitwatch.core.config.UserConfig
 import com.pitwatch.core.logic.NexusMatchMerge
 import com.pitwatch.core.logic.PhaseDerivation
+import com.pitwatch.core.logic.ScheduleDelay
 import com.pitwatch.core.model.MatchAlliance
 import com.pitwatch.core.model.Phase
 import com.pitwatch.core.store.EventCache
+import java.time.Duration
 import java.time.Instant
 
 /** Everything the live notification renders for one tracked match at one instant. */
@@ -23,6 +25,8 @@ data class LiveSnapshot(
     /** Matches between the one on the field and ours (quals only); null without a Nexus field status. */
     val matchesAway: Int?,
     val onFieldNumber: Int?,
+    /** How far behind (positive) or ahead (negative) the event is running; null when unknown. */
+    val scheduleDelay: Duration? = null,
 ) {
     data class Milestones(val queue: Instant?, val onDeck: Instant?, val onField: Instant?, val start: Instant?, val end: Instant?)
 }
@@ -45,6 +49,7 @@ object LiveSnapshots {
             ?.let { PhaseDerivation.currentMatchOnField(it.matches, fallbackMatchNumber = NO_FIELD, compLevel = match.compLevel) }
             ?.takeIf { it != NO_FIELD }
         val away = onField?.takeIf { match.compLevel == "qm" }?.let { match.matchNumber - it }
+        val delay = ScheduleDelay.of(cache.matches, nexusEvent)
 
         val nexusMatch = NexusMatchMerge.nexusInfo(match, nexusEvent)
         if (nexusMatch != null) {
@@ -52,7 +57,7 @@ object LiveSnapshots {
             return LiveSnapshot(
                 match.key, match.shortLabel, alliance, d.phase, d.deadline, "to " + d.target,
                 LiveSnapshot.Milestones(d.queueDeadline, d.onDeckDeadline, d.onFieldDeadline, d.matchStartDeadline, d.matchEndDeadline),
-                away, onField,
+                away, onField, delay,
             )
         }
 
@@ -66,7 +71,7 @@ object LiveSnapshots {
             match.key, match.shortLabel, alliance, Phase.PRE_QUEUE, matchTime?.minus(config.queueOffset),
             if (config.queueOffsetMinutes > 0) "to queue" else "to match",
             LiveSnapshot.Milestones(null, null, null, matchTime, matchTime?.plus(PhaseDerivation.MATCH_DURATION)),
-            away, onField,
+            away, onField, delay,
         )
     }
 }

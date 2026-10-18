@@ -5,6 +5,7 @@ import com.pitwatch.app.snapshotCache
 import com.pitwatch.app.testMatch
 import com.pitwatch.core.config.TimeSource
 import com.pitwatch.core.config.UserConfig
+import com.pitwatch.core.logic.ScheduleDelay
 import com.pitwatch.core.model.MatchAlliance
 import com.pitwatch.core.model.Phase
 import com.pitwatch.core.store.EventCache
@@ -30,6 +31,16 @@ class LiveSnapshotTest {
         assertEquals("to match start", s.target) // on the field before the start: it counts to the start
         assertEquals(36, s.onFieldNumber)
         assertEquals(0, s.matchesAway)
+    }
+
+    @Test
+    fun `carries how far ahead or behind the event is running`() {
+        val s = assertNotNull(LiveSnapshots.build(cache, config, qm36, SNAP_NOW))
+        val expected = assertNotNull(ScheduleDelay.of(cache.matches, cache.nexusEvent))
+        assertEquals(expected, s.scheduleDelay)
+        // TBA time source: Nexus is ignored, so the delay comes from TBA's predicted times.
+        val tba = assertNotNull(LiveSnapshots.build(cache, config.copy(timeSource = TimeSource.TBA), qm36, SNAP_NOW))
+        assertEquals(ScheduleDelay.of(cache.matches, null), tba.scheduleDelay)
     }
 
     @Test
@@ -65,7 +76,8 @@ class LiveSnapshotTest {
         val s = assertNotNull(LiveSnapshots.build(cache.copy(nexusEvent = beforeQuals), config, qm36, SNAP_NOW))
         assertNull(s.onFieldNumber)
         assertNull(s.matchesAway)
-        assertNull(LiveNotification.text(s))
+        // Only the event's schedule delay is left on the line: no "NOW", no "ON FIELD #9".
+        assertEquals(ScheduleDelay.text(assertNotNull(s.scheduleDelay)), LiveNotification.text(s))
     }
 
     @Test

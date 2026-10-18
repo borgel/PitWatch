@@ -7,6 +7,7 @@ import com.pitwatch.app.snapshotCache
 import com.pitwatch.app.ui.matches.MatchListModel
 import com.pitwatch.core.PitWatchJson
 import com.pitwatch.core.config.UserConfig
+import com.pitwatch.core.logic.ScheduleDelay
 import com.pitwatch.core.model.EventRankings
 import com.pitwatch.core.store.EventCache
 import androidx.compose.ui.unit.dp
@@ -39,6 +40,16 @@ class WidgetModelTest {
         assertEquals(listOf("End of day", "Q43"), later)
         assertEquals("Q22", m.last?.shortLabel)
         assertEquals(Instant.ofEpochMilli(1775868749195), m.countdownDeadline) // the match start
+    }
+
+    @Test
+    fun `ready - how far ahead or behind the event is running`() {
+        val expected = ScheduleDelay.text(kotlin.test.assertNotNull(ScheduleDelay.of(cache.matches, cache.nexusEvent)))
+        assertEquals(expected, build().scheduleDelay)
+        assertEquals("24m behind", build().scheduleDelay) // the snapshot: Nexus has Q36 ~24 minutes past its slot
+        // TBA time source: the delay comes from TBA's own prediction, not Nexus.
+        val tba = config.copy(timeSource = com.pitwatch.core.config.TimeSource.TBA)
+        assertEquals(ScheduleDelay.of(cache.matches, null)?.let(ScheduleDelay::text), build(cfg = tba).scheduleDelay)
     }
 
     @Test

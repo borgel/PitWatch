@@ -39,7 +39,7 @@ object SampleWidgetData {
         val next = (day.items[0] as MatchListModel.Item.Upcoming).row
         return WidgetModel(
             WidgetModel.State.READY, HEADER, "California Northern", next,
-            listOf(day.copy(items = day.items.drop(1))), last, null, next.countdown?.deadline,
+            listOf(day.copy(items = day.items.drop(1))), last, null, next.countdown?.deadline, scheduleDelay = "6m behind",
         )
     }
 
