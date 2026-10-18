@@ -24,6 +24,9 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
 
 @RunWith(RobolectricTestRunner::class)
 class MatchesContentTest {
@@ -189,5 +192,24 @@ class MatchesContentTest {
         compose.onNodeWithTag("matches").performScrollToNode(hasText("Show schedule in notifications"))
         compose.onNodeWithText("Show schedule in notifications").performClick()
         assertEquals(1, asked)
+    }
+
+    @Test
+    @Config(qualifiers = "w800dp-h600dp")
+    fun `a wide window puts the next match beside the list`() {
+        // Asked for: a wide mode for tablets and open foldables (any window at least 600dp wide).
+        show()
+        compose.onNodeWithTag("matches").assertDoesNotExist()
+        compose.onNode(hasText("QUAL 36") and hasAnyAncestor(hasTestTag("matches-next"))).assertIsDisplayed()
+        compose.onNode(hasText("START LIVE TRACKING") and hasAnyAncestor(hasTestTag("matches-next"))).assertExists()
+        compose.onAllNodes(hasText("SATURDAY, APR 11", substring = true) and hasAnyAncestor(hasTestTag("matches-list"))).onFirst().assertExists()
+        compose.onAllNodes(hasAnyAncestor(hasTestTag("matches-next")) and hasText("LUNCH", substring = true)).assertCountEquals(0)
+    }
+
+    @Test
+    fun `a phone keeps one list`() {
+        show()
+        compose.onNodeWithTag("matches").assertIsDisplayed()
+        compose.onNodeWithTag("matches-next").assertDoesNotExist()
     }
 }
