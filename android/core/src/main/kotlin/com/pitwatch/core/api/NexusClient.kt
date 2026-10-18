@@ -12,7 +12,7 @@ import io.ktor.http.HttpStatusCode
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.serialization.DeserializationStrategy
 
-/** FRC Nexus API. Every failure degrades to null so Nexus can never block TBA data. */
+/** FRC Nexus API. Every data call degrades to null on failure, so Nexus can never block TBA data. */
 class NexusClient(
     private val apiKey: String,
     private val httpClient: HttpClient,
@@ -23,6 +23,16 @@ class NexusClient(
 
     suspend fun fetchPitMap(eventKey: String): PitMap? =
         getOrNull("/event/$eventKey/map", PitMap.serializer())
+
+    /**
+     * Setup's key check, before there's an event: the status of `/events`, which needs the key (401 missing,
+     * 403 invalid). Unlike the data calls, a network failure is thrown, so "unreachable" isn't mistaken for "rejected".
+     */
+    suspend fun checkKey(): Int =
+        httpClient.get(baseUrl.trimEnd('/') + "/events") {
+            header("Nexus-Api-Key", apiKey)
+            header(HttpHeaders.UserAgent, "PitWatch")
+        }.status.value
 
     private suspend fun <T> getOrNull(path: String, deserializer: DeserializationStrategy<T>): T? =
         try {
