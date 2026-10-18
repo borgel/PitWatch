@@ -175,4 +175,35 @@ class WidgetContentTest {
         onNode(hasText("COUNTDOWN")).assertExists() // composes the widget
         kotlin.test.assertEquals(false, alignEnd)
     }
+
+    private val finished = WidgetModels.build(
+        snapshotCache().let { c -> c.copy(matches = c.matches.filter { it.isPlayed }, rankings = PitWatchJson.decodeFromString<EventRankings>(fixture("$SNAP/tba_rankings.json"))) },
+        UserConfig(teamNumber = 5507, apiKey = "k", nexusApiKey = "n"), SNAP_NOW, Locale.US, com.pitwatch.app.LA,
+    )
+
+    @Test
+    fun `out of matches - the team's results, newest first, with partners on wide widgets`() = runGlanceAppWidgetUnitTest {
+        // Asked for: not a mostly blank widget once all matches end.
+        setContext(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+        setAppWidgetSize(DpSize(360.dp, 344.dp))
+        provideComposable { GlanceTheme { WidgetContent(finished) { Text("COUNTDOWN") } } }
+        onNode(hasText("5507 · #34 · 1-2-0")).assertExists()
+        onNode(hasText("No upcoming matches")).assertExists()
+        onNode(hasTextEqualTo("RESULTS")).assertExists()
+        val rows = onAllNodes(hasTestTag("history-row"))
+        rows.assertCountEquals(3)
+        rows[0].onChildren().assertAny(hasTextEqualTo("Q22"))
+        rows[1].onChildren().assertAny(hasTextEqualTo("Q14"))
+        rows[2].onChildren().assertAny(hasTextEqualTo("Q1"))
+        onNode(hasTextEqualTo("w/ 2813 · 8033")).assertExists()
+    }
+
+    @Test
+    fun `out of matches on a narrow widget - results without partners`() = runGlanceAppWidgetUnitTest {
+        setContext(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+        setAppWidgetSize(DpSize(172.dp, 344.dp))
+        provideComposable { GlanceTheme { WidgetContent(finished) { Text("COUNTDOWN") } } }
+        onAllNodes(hasTestTag("history-row")).assertCountEquals(3)
+        onNode(hasText("w/ ")).assertDoesNotExist()
+    }
 }

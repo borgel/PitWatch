@@ -6,6 +6,7 @@ import androidx.glance.GlanceTheme
 import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
 import androidx.glance.testing.unit.hasTestTag
 import androidx.glance.testing.unit.hasText
+import androidx.glance.testing.unit.hasTextEqualTo
 import com.pitwatch.app.SNAP
 import com.pitwatch.app.SNAP_NOW
 import com.pitwatch.app.fixture
@@ -81,12 +82,18 @@ class ScheduleWidgetContentTest {
     }
 
     @Test
-    fun `no upcoming matches still shows the last result`() = runGlanceAppWidgetUnitTest {
+    fun `no upcoming matches - the team's results, newest first`() = runGlanceAppWidgetUnitTest {
+        // Asked for: not a mostly blank widget once all matches end.
         setContext(androidx.test.core.app.ApplicationProvider.getApplicationContext()) // the scoreboard colors need it
-        val done = ready.copy(state = WidgetModel.State.NO_UPCOMING, days = emptyList(), message = "No upcoming matches")
-        setAppWidgetSize(DpSize(172.dp, 223.dp))
+        val played = snapshotCache().let { c -> c.copy(matches = c.matches.filter { it.isPlayed }) }
+        val done = ScheduleWidgetModels.build(played, UserConfig(teamNumber = 5507, apiKey = "k", nexusApiKey = "n"), SNAP_NOW, Locale.US, com.pitwatch.app.LA)
+        setAppWidgetSize(DpSize(360.dp, 344.dp))
         provideComposable { GlanceTheme { ScheduleWidgetContent(done) } }
         onNode(hasText("No upcoming matches")).assertExists()
         onNode(hasText("403–299")).assertExists()
+        val rows = onAllNodes(hasTestTag("history-row"))
+        rows.assertCountEquals(3)
+        rows[0].onChildren().assertAny(hasTextEqualTo("Q22"))
+        onNode(hasTextEqualTo("w/ 2813 · 8033")).assertExists()
     }
 }

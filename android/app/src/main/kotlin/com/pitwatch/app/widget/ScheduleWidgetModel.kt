@@ -20,6 +20,8 @@ data class ScheduleWidgetModel(
     val message: String?,
     val timeZone: ZoneId = ZoneId.systemDefault(),
     val zoneLabel: String? = null,
+    /** Once there's nothing upcoming: every result, newest first. */
+    val results: List<MatchListModel.Result> = emptyList(),
 )
 
 object ScheduleWidgetModels {
@@ -33,7 +35,7 @@ object ScheduleWidgetModels {
         // Same states and messages as the main widget; only READY needs the full schedule.
         val widget = WidgetModels.build(cache, config, now, locale, zone)
         if (widget.state != WidgetModel.State.READY) {
-            return ScheduleWidgetModel(widget.state, widget.header, emptyList(), widget.last, widget.message, widget.timeZone, widget.zoneLabel)
+            return ScheduleWidgetModel(widget.state, widget.header, emptyList(), widget.last, widget.message, widget.timeZone, widget.zoneLabel, widget.results)
         }
         val list = MatchListModels.build(cache, config, RefreshState(), now, locale, zone)
         return ScheduleWidgetModel(WidgetModel.State.READY, widget.header, list.days, widget.last, null, list.timeZone, list.zoneLabel)

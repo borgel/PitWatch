@@ -92,6 +92,9 @@ class WidgetModelTest {
         val m = build(c = cache.copy(matches = played))
         assertEquals("No upcoming matches", m.message)
         assertEquals("Q22", m.last?.shortLabel)
+        // Asked for: once matches end, the team's whole history, most recent first.
+        assertEquals(listOf("Q22", "Q14", "Q1"), m.results.map { it.shortLabel })
+        assertEquals(m.results, com.pitwatch.app.widget.ScheduleWidgetModels.build(cache.copy(matches = played), config, SNAP_NOW, Locale.US, com.pitwatch.app.LA).results)
     }
 
     @Test

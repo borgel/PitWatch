@@ -2,6 +2,7 @@ package com.pitwatch.app.widget
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceModifier
@@ -62,8 +63,8 @@ fun WidgetContent(model: WidgetModel, countdown: @Composable (Instant) -> Unit) 
     ) {
         if (model.state != WidgetModel.State.READY || next == null) {
             Text(model.header, style = muted, maxLines = 1)
-            Text(model.message.orEmpty(), style = TextStyle(color = colors.text, fontSize = 16.sp), modifier = GlanceModifier.padding(top = 8.dp))
-            model.last?.let { if (wide) LastResult(it) }
+            Text(model.message.orEmpty(), style = TextStyle(color = colors.text, fontSize = 14.sp), maxLines = 1, modifier = GlanceModifier.padding(top = 4.dp))
+            ResultsHistory(model.results, wide, HistoryPlans.rows(size.height))
             return@Column
         }
         // Wide widgets keep the record in the top-right corner, over the countdown (asked for); narrow ones on top.
@@ -193,14 +194,55 @@ internal fun LastLine(result: MatchListModel.Result, compact: Boolean) {
     }
 }
 
-/** Wide widgets with no upcoming match: the last result, below the message. */
+/** Once there's nothing upcoming: how many results fit under the record, the message and the title. */
+object HistoryPlans {
+    private val MESSAGE = 22.dp
+    private val TITLE = 18.dp
+
+    fun rows(height: Dp): Int =
+        ((height - WidgetPlans.PADDING - WidgetPlans.HEADER - MESSAGE - TITLE) / WidgetPlans.ROW).toInt().coerceIn(0, WidgetLines.MAX_LINES * 3)
+}
+
+/**
+ * Once there's nothing upcoming, instead of a near-empty widget: the team's results, newest first, as many as
+ * fit (asked for). Lines go in sub-columns of [WidgetLines.MAX_LINES] (Glance drops children past 10).
+ */
 @Composable
-private fun LastResult(result: MatchListModel.Result) {
-    Column(GlanceModifier.padding(start = 8.dp, top = 4.dp)) {
-        Text("LAST", style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 11.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED))
-        Text(result.shortLabel, style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 15.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED))
-        Text("${result.ourScore}–${result.theirScore}", style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 14.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED))
+internal fun ResultsHistory(results: List<MatchListModel.Result>, wide: Boolean, rows: Int) {
+    val shown = results.take(rows)
+    if (shown.isEmpty()) return
+    Column(GlanceModifier.fillMaxWidth()) {
+        Text(
+            "RESULTS",
+            style = TextStyle(color = GlanceTheme.colors.primary, fontSize = 11.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED),
+            modifier = GlanceModifier.padding(top = 6.dp),
+        )
+        shown.chunked(WidgetLines.MAX_LINES).forEach { chunk ->
+            Column(GlanceModifier.fillMaxWidth()) { chunk.forEach { HistoryRow(it, wide) } }
+        }
+    }
+}
+
+/** "Q22  403–299  WIN  w/ 2813 · 8033  ▮9400": partners on wide widgets only; any red cards last. */
+@Composable
+private fun HistoryRow(result: MatchListModel.Result, wide: Boolean) {
+    val bold = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 15.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED)
+    val muted = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 13.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED)
+    Row(GlanceModifier.fillMaxWidth().padding(vertical = 2.dp).semantics { testTag = "history-row" }, verticalAlignment = Alignment.CenterVertically) {
+        Text(result.shortLabel, style = bold, maxLines = 1, modifier = GlanceModifier.width(44.dp))
+        Text("${result.ourScore}–${result.theirScore}", style = bold.copy(fontSize = 14.sp), maxLines = 1)
+        Spacer(GlanceModifier.width(6.dp))
         OutcomePill(result)
+        if (wide && result.partners.isNotEmpty()) {
+            Spacer(GlanceModifier.width(8.dp))
+            Text("w/ " + result.partners.joinToString(" · "), style = muted, maxLines = 1)
+        }
+        result.disqualified.forEach { team ->
+            Spacer(GlanceModifier.width(6.dp))
+            RedCard()
+            Spacer(GlanceModifier.width(2.dp))
+            Text(team, style = muted, maxLines = 1)
+        }
     }
 }
 
