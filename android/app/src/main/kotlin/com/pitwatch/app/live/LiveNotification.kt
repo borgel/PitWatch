@@ -22,7 +22,10 @@ object LiveNotification {
      * collapse or hide. A channel's importance can't change once created, hence the new id.
      */
     const val CHANNEL_ID = "live_match_v2"
-    private const val OLD_CHANNEL_ID = "live_match"
+    /** Rich mode's Live Update: quiet, since the scoreboard card beside it is the one that alerts. */
+    const val COMPACT_CHANNEL_ID = "live_match_status"
+    /** The first, silent channel, and the dual-notification spike's test channels. */
+    private val OLD_CHANNEL_IDS = listOf("live_match", "live_match_quiet_spike", "live_card_spike")
     const val NOTIFICATION_ID = 1001
     /** Its own group, so new posts show separately (Android 15+ may still bundle single-notification groups; it's system UX). */
     const val GROUP = "pitwatch.live"
@@ -45,11 +48,23 @@ object LiveNotification {
                 lockscreenVisibility = Notification.VISIBILITY_PUBLIC // applies on creation; later it's the user's
             },
         )
-        manager.deleteNotificationChannel(OLD_CHANNEL_ID)
+        manager.createNotificationChannel(
+            NotificationChannel(COMPACT_CHANNEL_ID, "Live match status", NotificationManager.IMPORTANCE_LOW).apply {
+                description = "The short countdown in the status bar and Now Bar, beside the scoreboard card"
+                setShowBadge(false)
+                lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+            },
+        )
+        OLD_CHANNEL_IDS.forEach(manager::deleteNotificationChannel)
     }
 
-    fun build(context: Context, snapshot: LiveSnapshot?, lastSuccess: Instant?, now: Instant, actions: Actions): Notification {
-        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
+    /**
+     * [rich]: once there's a match, the short Live Update that sits beside [LiveCard] — two lines, no progress bar,
+     * buttons or ticking header time, so it stays small (Samsung also glued that time onto the title).
+     */
+    fun build(context: Context, snapshot: LiveSnapshot?, lastSuccess: Instant?, now: Instant, actions: Actions, rich: Boolean = false): Notification {
+        val compact = rich && snapshot != null
+        val builder = NotificationCompat.Builder(context, if (compact) COMPACT_CHANNEL_ID else CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_pitwatch)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
@@ -63,9 +78,10 @@ object LiveNotification {
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setContentIntent(actions.content)
             .setDeleteIntent(actions.dismissed) // the service decides: stop, or re-post when pinned
+        staleText(lastSuccess, now)?.let(builder::setSubText)
+        if (compact) return compact(builder, snapshot!!, now)
         actions.refresh?.let { builder.addAction(0, "Refresh", it) }
         actions.stop?.let { builder.addAction(0, "Stop", it) }
-        staleText(lastSuccess, now)?.let(builder::setSubText)
 
         if (snapshot == null) {
             return builder.setContentTitle("PitWatch").setContentText("Waiting for match data").setShowWhen(false).build()
@@ -83,6 +99,26 @@ object LiveNotification {
         }
         return builder.build()
     }
+
+    /** "12m to on deck" over "Q32 · Red · 3 away"; without a countdown, the match line and field position. */
+    private fun compact(builder: NotificationCompat.Builder, s: LiveSnapshot, now: Instant): Notification {
+        builder.setShortCriticalText(shortText(s, now)).setShowWhen(false)
+        if (s.deadline?.let { it > now } == true) {
+            builder.setContentTitle(timeTitle(s, now)).setContentText(compactText(s))
+        } else {
+            builder.setContentTitle(title(s)).setContentText(text(s))
+        }
+        return builder.build()
+    }
+
+    /** "Q32 · Red · 3 away". */
+    fun compactText(s: LiveSnapshot): String = listOfNotNull(
+        s.matchLabel,
+        s.alliance?.displayName?.let(::sentenceCase),
+        s.matchesAway?.let { sentenceCase(MatchesAwayDisplay.text(it)) },
+    ).joinToString(" · ")
+
+    private fun sentenceCase(text: String) = text.lowercase().replaceFirstChar(Char::uppercase)
 
     /** "12m to on deck", "1h 38m to queue": minutes rounded up, like the status-bar chip. */
     fun timeTitle(s: LiveSnapshot, now: Instant): String {
@@ -106,6 +142,17 @@ object LiveNotification {
         return listOfNotNull(s.matchesAway?.let(MatchesAwayDisplay::text), s.onFieldNumber?.let { "ON FIELD #$it" }, s.scheduleDelay?.let(ScheduleDelay::text))
             .joinToString(" · ")
             .ifEmpty { null }
+    }
+
+    /**
+     * How long until [timeTitle] (and the chip) show one minute less: they round whole seconds up to minutes, so the
+     * count drops once fewer than (minutes − 1) × 60 + 1 whole seconds remain. Null once [deadline] has passed.
+     */
+    fun untilMinuteChanges(deadline: Instant?, now: Instant): Duration? {
+        val remaining = deadline?.let { Duration.between(now, it) }?.takeIf { it > Duration.ZERO } ?: return null
+        val minutes = (remaining.seconds + 59) / 60
+        val boundary = if (minutes == 0L) Duration.ZERO else Duration.ofSeconds((minutes - 1) * 60 + 1)
+        return remaining.minus(boundary).plusMillis(1)
     }
 
     /** Status-bar chip: "Q32 12m" counting down, "Q32 2h" when far out. */

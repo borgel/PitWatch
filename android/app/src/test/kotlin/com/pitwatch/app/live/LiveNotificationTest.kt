@@ -81,6 +81,62 @@ class LiveNotificationTest {
     }
 
     @Test
+    fun `rich mode - a short, quiet Live Update beside the scoreboard card`() {
+        // Asked for: small and not expandable in the shade (the card has the detail); Samsung glued the ticking
+        // header time onto the title, so there is none.
+        val n = LiveNotification.build(context, snapshot(), now, now, noActions, rich = true)
+        assertEquals(LiveNotification.COMPACT_CHANNEL_ID, n.channelId)
+        assertTrue(n.extras.getBoolean(Notification.EXTRA_REQUEST_PROMOTED_ONGOING))
+        assertEquals("10m to on deck", n.extras.getCharSequence(Notification.EXTRA_TITLE).toString())
+        assertEquals("Q32 · Red · 3 away", n.extras.getCharSequence(Notification.EXTRA_TEXT).toString())
+        assertEquals("Q32 10m", n.shortCriticalText)
+        assertNull(Notification.Builder.recoverBuilder(context, n).style, "no progress bar")
+        assertFalse(n.extras.getBoolean(Notification.EXTRA_SHOW_WHEN))
+        assertFalse(n.extras.getBoolean(Notification.EXTRA_COLORIZED))
+        assertNull(n.actions)
+    }
+
+    @Test
+    fun `rich mode with no match yet - the usual waiting notification, with its buttons`() {
+        val pending = android.app.PendingIntent.getActivity(context, 0, android.content.Intent(), android.app.PendingIntent.FLAG_IMMUTABLE)
+        val n = LiveNotification.build(context, null, now, now, LiveNotification.Actions(null, pending, pending), rich = true)
+        assertEquals(LiveNotification.CHANNEL_ID, n.channelId)
+        assertEquals("Waiting for match data", n.extras.getCharSequence(Notification.EXTRA_TEXT).toString())
+        assertEquals(2, n.actions.size)
+    }
+
+    @Test
+    fun `the quiet channel for rich mode is silent and on the lock screen, and test channels are gone`() {
+        val manager = context.getSystemService(android.app.NotificationManager::class.java)
+        for (id in listOf("live_match_quiet_spike", "live_card_spike")) {
+            manager.createNotificationChannel(android.app.NotificationChannel(id, id, android.app.NotificationManager.IMPORTANCE_LOW))
+        }
+        LiveNotification.ensureChannel(context)
+        val quiet = kotlin.test.assertNotNull(manager.getNotificationChannel(LiveNotification.COMPACT_CHANNEL_ID))
+        assertEquals(android.app.NotificationManager.IMPORTANCE_LOW, quiet.importance)
+        assertEquals(Notification.VISIBILITY_PUBLIC, quiet.lockscreenVisibility)
+        assertNull(manager.getNotificationChannel("live_match_quiet_spike"))
+        assertNull(manager.getNotificationChannel("live_card_spike"))
+    }
+
+    @Test
+    fun `the next redraw lands just as the title's minute count changes`() {
+        // On-device: "7m to on deck" beside a 06:00 countdown — redrawn once a minute, at no particular second.
+        fun next(remainingMs: Long) = LiveNotification.untilMinuteChanges(now.plusMillis(remainingMs), now)?.toMillis()
+        assertEquals(39_001, next(400_000)) // 6:40 shows "7m"; at 6:00.999 left it shows "6m"
+        assertEquals(1, next(361_000)) // 6:01 shows "7m": it changes a millisecond later
+        assertEquals(59_501, next(360_500)) // 6:00.5 already shows "6m"; next change below 5:01
+        assertEquals(1, next(1_000))
+        assertEquals(501, next(500)) // under a second: the next change is the deadline itself
+        assertNull(LiveNotification.untilMinuteChanges(now.minusSeconds(1), now))
+        assertNull(LiveNotification.untilMinuteChanges(null, now))
+        // Each wait lands where the title shows one minute less.
+        val title = { ms: Long -> LiveNotification.timeTitle(snapshot(deadline = now.plusMillis(ms)), now) }
+        assertEquals("7m to on deck", title(400_000))
+        assertEquals("6m to on deck", title(400_000 - 39_001))
+    }
+
+    @Test
     fun `counts down to the phase deadline`() {
         val n = build(snapshot())
         assertEquals(now.plusSeconds(600).toEpochMilli(), n.`when`)

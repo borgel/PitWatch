@@ -169,6 +169,15 @@ fun SettingsScreen(container: AppContainer, config: UserConfig, onBack: (() -> U
                     )
                 }
                 ListItem(
+                    headlineContent = { Text("Rich live notification") },
+                    supportingContent = { Text(RICH_LIVE_BLURB) },
+                    trailingContent = { Switch(prefs.richLive, onCheckedChange = null) },
+                    colors = clearRow(),
+                    modifier = Modifier.toggleable(prefs.richLive, role = Role.Switch) { on ->
+                        container.scope.launch { container.stores.notificationPrefs.updateData { it.copy(richLive = on) } }
+                    },
+                )
+                ListItem(
                     headlineContent = { Text("Keep notifications pinned") },
                     supportingContent = { Text("Swiping them away brings them back; use Stop or Turn off instead") },
                     trailingContent = { Switch(prefs.pinned, onCheckedChange = null) },
@@ -252,3 +261,6 @@ private fun Choice(label: String, selected: Boolean, enabled: Boolean = true, on
         Text(label, Modifier.padding(start = 12.dp))
     }
 }
+
+const val RICH_LIVE_BLURB = "Adds a scoreboard card with the full match picture (countdown, stages, alliances), and keeps " +
+    "the Now Bar and status-bar countdown short. Turn off for a single notification with a progress bar."

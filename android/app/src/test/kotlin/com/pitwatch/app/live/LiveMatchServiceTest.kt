@@ -40,6 +40,8 @@ class LiveMatchServiceTest {
     fun setUp() {
         container = installTestContainer(tmp.root, nexus = nexus)
         runBlocking { container.stores.config.updateData { UserConfig(teamNumber = 5507, apiKey = "k", nexusApiKey = "n") } }
+        // These cover the single (classic) Live Update; RichLiveServiceTest covers the scoreboard card beside it.
+        runBlocking { container.stores.notificationPrefs.updateData { it.copy(richLive = false) } }
     }
 
     @After
@@ -131,7 +133,8 @@ class LiveMatchServiceTest {
         container.scope.cancel()
         var calls = 0
         val nexusApi = com.pitwatch.app.snapshotNexus()
-        container = installTestContainer(tmp.newFolder(), nexus = nexusApi, clock = { if (++calls == 3) error("boom") else com.pitwatch.app.SNAP_NOW })
+        // The 4th clock read is just after the first render (arming the wake alarm): the loop throws once it has posted.
+        container = installTestContainer(tmp.newFolder(), nexus = nexusApi, clock = { if (++calls == 4) error("boom") else com.pitwatch.app.SNAP_NOW })
         runBlocking { container.stores.config.updateData { UserConfig(teamNumber = 5507, apiKey = "k", nexusApiKey = "n") } }
         shadowOf(context as Application).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
         val service = startService()

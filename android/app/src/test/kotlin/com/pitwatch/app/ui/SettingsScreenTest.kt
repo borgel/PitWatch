@@ -71,6 +71,16 @@ class SettingsScreenTest {
     }
 
     @Test
+    fun `rich live notification is on by default and can be turned off, with its explanation`() {
+        // Asked for: a setting to choose the scoreboard card or the old single notification, with a short blurb.
+        kotlin.test.assertTrue(com.pitwatch.app.data.NotificationPrefs().richLive)
+        compose.setContent { SettingsScreen(container, config) }
+        compose.onNode(hasText(RICH_LIVE_BLURB)).performScrollTo().assertIsDisplayed()
+        compose.onNode(hasText("Rich live notification")).performScrollTo().performClick()
+        compose.waitUntil(5_000) { runBlocking { !container.stores.notificationPrefs.data.first().richLive } }
+    }
+
+    @Test
     fun `without notification permission the schedule switch explains instead`() {
         shadowOf(ApplicationProvider.getApplicationContext<android.app.Application>()).denyPermissions(android.Manifest.permission.POST_NOTIFICATIONS)
         runBlocking { container.stores.notificationPrefs.updateData { it.copy(scheduleEnabled = true) } }
