@@ -108,7 +108,8 @@ fun EventScheduleContent(model: EventScheduleModel) {
     val muted = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp, fontWeight = FontWeight.Bold, fontFamily = CONDENSED)
     val times = TimeFormat(model.timeZone, model.zoneLabel)
     Column(
-        GlanceModifier.fillMaxSize().background(GlanceTheme.colors.widgetBackground).cornerRadius(24.dp)
+        // The scoreboard's background, like the other widgets and the live card, so they all match.
+        GlanceModifier.fillMaxSize().background(scoreboardColors().background).cornerRadius(24.dp)
             .padding(horizontal = 16.dp, vertical = 14.dp).clickable(actionStartActivity<MainActivity>())
             .semantics { testTag = "event-schedule-root" },
     ) {

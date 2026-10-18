@@ -28,6 +28,7 @@ class ScheduleWidgetContentTest {
 
     @Test
     fun `2x2 - header, last result and the schedule from the next match`() = runGlanceAppWidgetUnitTest {
+        setContext(androidx.test.core.app.ApplicationProvider.getApplicationContext()) // the scoreboard colors need it
         setAppWidgetSize(DpSize(172.dp, 223.dp))
         provideComposable { GlanceTheme { ScheduleWidgetContent(ready) } }
         onNode(hasText("5507 · #34 · 1-2-0")).assertExists()
@@ -39,6 +40,7 @@ class ScheduleWidgetContentTest {
 
     @Test
     fun `tall - more of the schedule, capped, under the child limit`() = runGlanceAppWidgetUnitTest {
+        setContext(androidx.test.core.app.ApplicationProvider.getApplicationContext()) // the scoreboard colors need it
         setAppWidgetSize(DpSize(360.dp, 450.dp))
         provideComposable { GlanceTheme { ScheduleWidgetContent(ready) } }
         onNode(hasText("Q43")).assertExists()
@@ -48,6 +50,7 @@ class ScheduleWidgetContentTest {
 
     @Test
     fun `not configured shows the setup message`() = runGlanceAppWidgetUnitTest {
+        setContext(androidx.test.core.app.ApplicationProvider.getApplicationContext()) // the scoreboard colors need it
         setAppWidgetSize(DpSize(172.dp, 223.dp))
         provideComposable { GlanceTheme { ScheduleWidgetContent(ScheduleWidgetModels.build(EventCache(), UserConfig(), SNAP_NOW)) } }
         onNode(hasText("Set up PitWatch")).assertExists()
@@ -55,6 +58,7 @@ class ScheduleWidgetContentTest {
 
     @Test
     fun `a match in motion shows its phase instead of its time`() = runGlanceAppWidgetUnitTest {
+        setContext(androidx.test.core.app.ApplicationProvider.getApplicationContext()) // the scoreboard colors need it
         // On-device at 2×2 the pill pushed the time to "~4:26 P"; the phase is what matters once it's moving.
         val next = ready.days.first().items.filterIsInstance<com.pitwatch.app.ui.matches.MatchListModel.Item.Upcoming>().first().row
         val time = com.pitwatch.app.ui.TimeFormat(ready.timeZone, ready.zoneLabel).match(next.time, next.estimated)
@@ -66,6 +70,7 @@ class ScheduleWidgetContentTest {
 
     @Test
     fun `a tall schedule widget lists past the 9-line column cap`() = runGlanceAppWidgetUnitTest {
+        setContext(androidx.test.core.app.ApplicationProvider.getApplicationContext()) // the scoreboard colors need it
         // On-device at 4×3 the list stopped at 9 lines with room to spare.
         val beyond = WidgetLines.fit(ready.days, 50, cap = 27).drop(WidgetLines.MAX_LINES)
             .filterIsInstance<WidgetLine.Entry>().map { it.item }
@@ -77,6 +82,7 @@ class ScheduleWidgetContentTest {
 
     @Test
     fun `no upcoming matches still shows the last result`() = runGlanceAppWidgetUnitTest {
+        setContext(androidx.test.core.app.ApplicationProvider.getApplicationContext()) // the scoreboard colors need it
         val done = ready.copy(state = WidgetModel.State.NO_UPCOMING, days = emptyList(), message = "No upcoming matches")
         setAppWidgetSize(DpSize(172.dp, 223.dp))
         provideComposable { GlanceTheme { ScheduleWidgetContent(done) } }

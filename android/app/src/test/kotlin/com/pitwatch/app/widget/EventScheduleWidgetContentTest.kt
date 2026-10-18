@@ -25,6 +25,7 @@ class EventScheduleWidgetContentTest {
 
     @Test
     fun `wide - title, each match with its teams, time, and the results with scores`() = runGlanceAppWidgetUnitTest {
+        setContext(androidx.test.core.app.ApplicationProvider.getApplicationContext()) // the scoreboard colors need it
         setAppWidgetSize(DpSize(360.dp, 344.dp))
         provideComposable { GlanceTheme { EventScheduleContent(ready) } }
         onNode(hasText("California Northern")).assertExists()
@@ -42,6 +43,7 @@ class EventScheduleWidgetContentTest {
 
     @Test
     fun `the whole schedule is in the list, to the last match`() = runGlanceAppWidgetUnitTest {
+        setContext(androidx.test.core.app.ApplicationProvider.getApplicationContext()) // the scoreboard colors need it
         setAppWidgetSize(DpSize(360.dp, 344.dp))
         provideComposable { GlanceTheme { EventScheduleContent(ready) } }
         onNode(hasText("Q120")).assertExists()
@@ -50,6 +52,7 @@ class EventScheduleWidgetContentTest {
 
     @Test
     fun `narrow - label and time only, no team numbers`() = runGlanceAppWidgetUnitTest {
+        setContext(androidx.test.core.app.ApplicationProvider.getApplicationContext()) // the scoreboard colors need it
         setAppWidgetSize(DpSize(172.dp, 223.dp))
         provideComposable { GlanceTheme { EventScheduleContent(ready) } }
         onNode(hasText("Q36")).assertExists()
@@ -59,6 +62,7 @@ class EventScheduleWidgetContentTest {
 
     @Test
     fun `not configured shows the setup message`() = runGlanceAppWidgetUnitTest {
+        setContext(androidx.test.core.app.ApplicationProvider.getApplicationContext()) // the scoreboard colors need it
         setAppWidgetSize(DpSize(172.dp, 223.dp))
         provideComposable { GlanceTheme { EventScheduleContent(EventScheduleModels.build(EventCache(), UserConfig(), true, SNAP_NOW)) } }
         onNode(hasText("Set up PitWatch")).assertExists()
@@ -66,6 +70,7 @@ class EventScheduleWidgetContentTest {
 
     @Test
     fun `a disqualified team carries a red card mark after its number`() = runGlanceAppWidgetUnitTest {
+        setContext(androidx.test.core.app.ApplicationProvider.getApplicationContext()) // the scoreboard colors need it
         setAppWidgetSize(DpSize(360.dp, 600.dp))
         // Only the results, so Q16 (5419 disqualified) is within the list.
         val played = EventScheduleModels.build(snapshotCache(), config, showPlayed = true, SNAP_NOW, Locale.US, LA)
