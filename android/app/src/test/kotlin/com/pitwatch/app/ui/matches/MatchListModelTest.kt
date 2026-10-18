@@ -81,6 +81,7 @@ class MatchListModelTest {
         assertEquals(listOf("W", "L", "L"), results.map { it.outcome })
         assertEquals(403 to 299, results[0].ourScore to results[0].theirScore)
         assertEquals("https://www.thebluealliance.com/match/2026cancmp_qm22", results[0].url)
+        assertEquals(listOf("2813", "8033"), results[0].partners) // we were blue with them
     }
 
     @Test

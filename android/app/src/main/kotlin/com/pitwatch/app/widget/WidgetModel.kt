@@ -36,6 +36,8 @@ data class WidgetModel(
     val stageTimes: List<Instant?> = emptyList(),
     /** "NOW · FIELD #36 · 24M BEHIND", as the live card's last line. */
     val footer: String? = null,
+    /** Once there's nothing upcoming: every result, newest first (shown instead of a near-empty widget). */
+    val results: List<MatchListModel.Result> = emptyList(),
 ) {
     enum class State { NOT_CONFIGURED, NO_EVENT, NO_UPCOMING, READY }
 }
@@ -63,7 +65,7 @@ object WidgetModels {
             val message = start?.let {
                 "Next event: ${list.title} · " + DateTimeFormatter.ofPattern("MMM d", locale).withZone(event.zone).format(it)
             } ?: "No upcoming matches"
-            return WidgetModel(WidgetModel.State.NO_UPCOMING, header, null, emptyList(), last, message, null, zone, list.zoneLabel)
+            return WidgetModel(WidgetModel.State.NO_UPCOMING, header, null, emptyList(), last, message, null, zone, list.zoneLabel, results = list.results)
         }
         val nextDay = list.days.indexOfFirst { day -> day.items.any { it is MatchListModel.Item.Upcoming && it.row.key == next.key } }
         val sameDayRest = list.days[nextDay].items.dropWhile { !(it is MatchListModel.Item.Upcoming && it.row.key == next.key) }.drop(1)

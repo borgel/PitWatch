@@ -91,6 +91,8 @@ data class MatchListModel(
         val blueScore: Int,
     ) {
         val url: String get() = "https://www.thebluealliance.com/match/$key"
+        /** Our alliance partners in this match. */
+        val partners: List<String> get() = (if (red.teams.any { it.isUs }) red else blue).teams.filterNot { it.isUs }.map { it.number }
         /** Team numbers disqualified (red card) in this match. */
         val disqualified: List<String> get() = (red.teams + blue.teams).filter { it.dq }.map { it.number }
         val outcomeLabel: String get() = when (outcome) {
