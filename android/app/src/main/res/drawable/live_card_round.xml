@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- A rounded block, tinted per use: LiveCard's phase pill and stage-bar segments. -->
+<!-- A rounded block, tinted per use: LiveCard's phase pill. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
     <solid android:color="#FFFFFFFF" />
     <corners android:radius="4dp" />

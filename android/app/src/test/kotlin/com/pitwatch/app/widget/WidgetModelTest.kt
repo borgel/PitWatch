@@ -157,9 +157,11 @@ class WidgetModelTest {
     }
 
     @Test
-    fun `narrow widgets name the stages without times, and add the start time and record as height allows`() {
+    fun `narrow widgets draw the chevron band unlabeled, and add the start time and record as height allows`() {
+        // Asked for (mock-up): at 2 cells wide the band is just colors; the phase pill names the stage.
         val p = plan(344, w = 172)
-        assertEquals(StageLabels.NAMES, p.stageLabels)
+        kotlin.test.assertTrue(p.phaseBar)
+        assertEquals(StageLabels.NONE, p.stageLabels)
         kotlin.test.assertTrue(p.header && p.time && p.footer)
         kotlin.test.assertFalse(p.alliances)
         // On-device: one line cut the footer to "24M BEH…" at 2 cells wide; narrow widgets give it two.
@@ -211,5 +213,12 @@ class WidgetModelTest {
         )
         kotlin.test.assertTrue(main.phaseBar)
         assertEquals(StageLabels.TIMES, main.stageLabels)
+    }
+
+    @Test
+    fun `between narrow and wide, the chevrons hold their names only`() {
+        assertEquals(StageLabels.NAMES, plan(223, w = 260).stageLabels)
+        assertEquals(StageLabels.NAMES, SimplePlans.plan(223.dp, 260.dp, hasCountdown = true, hasPhase = true).stageLabels)
+        assertEquals(StageLabels.NONE, SimplePlans.plan(170.dp, 170.dp, hasCountdown = true, hasPhase = true).stageLabels)
     }
 }

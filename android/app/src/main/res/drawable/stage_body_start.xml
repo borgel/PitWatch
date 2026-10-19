@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The stage band's start: rounded on its outer side only, tinted per stage (StageChevrons). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="#FFFFFFFF" />
+    <corners android:topLeftRadius="7dp" android:bottomLeftRadius="7dp" />
+</shape>

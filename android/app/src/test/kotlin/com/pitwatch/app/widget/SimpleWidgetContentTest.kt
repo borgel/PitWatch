@@ -36,7 +36,9 @@ class SimpleWidgetContentTest {
         onNode(hasText("COUNTDOWN")).assertExists()
         onNode(hasTextEqualTo("TO MATCH START")).assertExists()
         onAllNodes(hasTestTag("phase-step")).assertCountEquals(4)
-        onNode(hasText("QUEUE ")).assertExists()
+        onAllNodes(hasTestTag("stage-joint")).assertCountEquals(3)
+        onNode(hasTextEqualTo("QUEUE")).assertExists()
+        onAllNodes(hasTestTag("stage-time")).assertCountEquals(4)
         assertEquals(56f, countdownSp, "a roomy widget fills its top with a big countdown")
     }
 
@@ -98,6 +100,6 @@ class SimpleWidgetContentTest {
         val noPhase = ready.copy(next = ready.next!!.copy(phase = null))
         provideComposable { GlanceTheme { SimpleWidgetContent(noPhase) { Text("COUNTDOWN") } } }
         onAllNodes(hasTestTag("phase-step")).assertCountEquals(4)
-        onNode(hasText("QUEUE")).assertExists()
+        onNode(hasTextEqualTo("QUEUE")).assertExists()
     }
 }

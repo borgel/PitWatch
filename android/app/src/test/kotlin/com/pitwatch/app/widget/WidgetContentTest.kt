@@ -61,8 +61,10 @@ class WidgetContentTest {
         onNode(hasTestTag("widget-root")).onChildren().filter(hasText("5507 · #34 · 1-2-0")).assertCountEquals(0)
         onNode(hasTextEqualTo("ON FIELD")).assertExists()
         onAllNodes(hasTestTag("stage-label")).assertCountEquals(4)
-        onNode(hasText("QUEUE ")).assertExists() // "QUEUE 8:25"
-        onNode(hasText("START ")).assertExists()
+        onAllNodes(hasTestTag("stage-time")).assertCountEquals(4)
+        onAllNodes(hasTestTag("stage-joint")).assertCountEquals(3) // the chevron tips between the four stages
+        onNode(hasTextEqualTo("QUEUE")).assertExists()
+        onNode(hasTextEqualTo("START")).assertExists()
         onNode(hasTextEqualTo("5507")).assertExists() // our number on its alliance chip
         onNode(hasText("6036 · 9470 · 6814")).assertExists()
         onNode(hasTextEqualTo("NOW · FIELD #36 · 24M BEHIND")).assertExists()
@@ -76,7 +78,8 @@ class WidgetContentTest {
         provideComposable { GlanceTheme { WidgetContent(ready) { Text("COUNTDOWN") } } }
         onNode(hasTestTag("widget-root")).onChildren().assertAny(hasText("5507 · #34 · 1-2-0"))
         onNode(hasTestTag("scoreboard-right")).assertDoesNotExist()
-        onNode(hasTextEqualTo("QUEUE")).assertExists()
+        onAllNodes(hasTestTag("phase-step")).assertCountEquals(4)
+        onNode(hasTextEqualTo("QUEUE")).assertDoesNotExist() // the band alone at this width
         onNode(hasTextEqualTo("NOW · FIELD #36 · 24M BEHIND")).assertExists()
     }
 
@@ -136,8 +139,8 @@ class WidgetContentTest {
         provideComposable { GlanceTheme { WidgetContent(ready) { Text("COUNTDOWN") } } }
         // scoreboard, divider, last result, list. Adding more? Recount.
         onNode(hasTestTag("widget-root")).onChildren().assertCountEquals(4)
-        // top row, stage bar, stage labels (names only at 250 dp), two alliances, footer, and so the start time: 7.
-        onNode(hasTestTag("scoreboard")).onChildren().assertCountEquals(7)
+        // top row, the stage band (its names inside it), two alliances, footer, and so the start time: 6.
+        onNode(hasTestTag("scoreboard")).onChildren().assertCountEquals(6)
     }
 
     @Test
