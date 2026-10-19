@@ -144,9 +144,6 @@ fun SimpleWidgetContent(model: WidgetModel, countdown: @Composable (Instant) -> 
                 target?.let { Text(it, style = labelStyle(colors.muted, 12.sp), maxLines = 1) }
             }
         }
-        if (plan.phaseBar) StageBar(next.phase, colors)
-        if (plan.stageLabels != StageLabels.NONE) {
-            StageLabelsRow(next.phase, model.stageTimes, plan.stageLabels == StageLabels.TIMES, model.timeZone, colors)
-        }
+        if (plan.phaseBar) StageBand(next.phase, model.stageTimes, plan.stageLabels, model.timeZone, colors)
     }
 }

@@ -121,7 +121,7 @@ object TeamSplit {
     }
 }
 
-/** How the stage bar's labels fit: none, the stage names, or names with their clock times ("QUEUE 9:41"). */
+/** What fits inside the stage band's chevrons: nothing, the stage names, or names over their clock times. */
 enum class StageLabels { NONE, NAMES, TIMES }
 
 /** Which parts of the widget fit at a size; the upcoming list gets the height that's left. */
@@ -153,8 +153,9 @@ object WidgetPlans {
     private val COUNTDOWN_LARGE = 70.dp
     private val TARGET = 17.dp
     internal val HEADER = 18.dp
-    private val PHASE_BAR = 19.dp
-    private val STAGE_LABELS = 16.dp
+    /** The chevron band bare (14 dp) and its top gap; with names inside it grows to 24 dp, with times to 34. */
+    private val PHASE_BAR = 20.dp
+    private val STAGE_LABELS = 20.dp
     private val ALLIANCES = 46.dp
     private val FOOTER = 18.dp
     private val TIME = 18.dp
@@ -162,7 +163,9 @@ object WidgetPlans {
     internal val ROW = 24.dp
     /** From here the scoreboard's top is two columns: match and phase left; record, countdown and target right. */
     val WIDE = 250.dp
-    /** From here each stage label fits its clock time ("QUEUE 9:41"). */
+    /** From here each chevron fits its stage's name... */
+    val STAGE_NAMES = 230.dp
+    /** ...and from here its clock time under the name. */
     val STAGE_TIMES = 300.dp
 
     /** The 56 sp countdown only where the list still fits beneath it; 40 sp below. */
@@ -204,7 +207,7 @@ object WidgetPlans {
         // Even before Nexus reports a phase: then the bar is empty, and its labels still carry the stage times.
         val phaseBar = take(true, PHASE_BAR)
         val stageLabels = when {
-            !take(phaseBar, STAGE_LABELS) -> StageLabels.NONE
+            !take(phaseBar && width >= STAGE_NAMES, STAGE_LABELS) -> StageLabels.NONE
             width >= STAGE_TIMES -> StageLabels.TIMES
             else -> StageLabels.NAMES
         }
@@ -239,8 +242,8 @@ object SimplePlans {
     private val TOP_WIDE = 70.dp
     private val TOP_NARROW = 96.dp
     private val TARGET = 17.dp
-    private val PHASE_BAR = 19.dp
-    private val STAGE_LABELS = 16.dp
+    private val PHASE_BAR = 20.dp
+    private val STAGE_LABELS = 20.dp
 
     /** Asked for: the top filled with the next match number, main time and phase name; the stage bar below. */
     fun plan(height: Dp, width: Dp, hasCountdown: Boolean, hasPhase: Boolean): SimplePlan {
@@ -261,7 +264,7 @@ object SimplePlans {
         }
         val phaseBar = take(true, PHASE_BAR) // empty until Nexus reports a phase (see WidgetPlans)
         val stageLabels = when {
-            !take(phaseBar, STAGE_LABELS) -> StageLabels.NONE
+            !take(phaseBar && width >= WidgetPlans.STAGE_NAMES, STAGE_LABELS) -> StageLabels.NONE
             width >= WidgetPlans.STAGE_TIMES -> StageLabels.TIMES
             else -> StageLabels.NAMES
         }
