@@ -71,131 +71,191 @@
         </LinearLayout>
     </LinearLayout>
 
+    <!-- The stage band: the iOS chevrons (asked for). Four stages, and between each pair a joint holding the earlier
+         stage's arrow tip and the later one's notch, each tinted to its stage's fill (StageChevrons). -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="40dp"
         android:layout_marginTop="12dp"
         android:orientation="horizontal">
 
         <LinearLayout
+            android:id="@+id/card_seg1"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_weight="1"
-            android:layout_marginEnd="4dp"
-            android:orientation="vertical">
-
-            <FrameLayout
-                android:layout_width="match_parent"
-                android:layout_height="10dp"
-                android:gravity="bottom">
-
-                <FrameLayout
-                    android:id="@+id/card_seg1"
-                    android:layout_width="match_parent"
-                    android:layout_height="6dp"
-                    android:layout_gravity="bottom"
-                    android:background="@drawable/live_card_round" />
-            </FrameLayout>
+            android:background="@drawable/stage_body_start"
+            android:gravity="center_vertical"
+            android:orientation="vertical"
+            android:paddingStart="10dp"
+            android:paddingEnd="2dp">
 
             <TextView
                 android:id="@+id/card_seg1_label"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
                 android:fontFamily="sans-serif-condensed"
+                android:includeFontPadding="false"
+                android:letterSpacing="0.03"
                 android:maxLines="1"
-                android:textSize="11sp"
-                android:textStyle="bold" />
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/card_seg1_time"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:fontFamily="sans-serif-condensed"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:textSize="11sp" />
         </LinearLayout>
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_marginEnd="4dp"
-            android:orientation="vertical">
+
+        <FrameLayout
+            android:layout_width="14dp"
+            android:layout_height="match_parent">
 
             <FrameLayout
+                android:id="@+id/card_tip1"
                 android:layout_width="match_parent"
-                android:layout_height="10dp"
-                android:gravity="bottom">
+                android:layout_height="match_parent"
+                android:background="@drawable/stage_tip" />
 
-                <FrameLayout
-                    android:id="@+id/card_seg2"
-                    android:layout_width="match_parent"
-                    android:layout_height="6dp"
-                    android:layout_gravity="bottom"
-                    android:background="@drawable/live_card_round" />
-            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/card_notch1"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/stage_notch" />
+        </FrameLayout>
+
+        <LinearLayout
+            android:id="@+id/card_seg2"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/stage_body"
+            android:gravity="center_vertical"
+            android:orientation="vertical"
+            android:paddingStart="6dp"
+            android:paddingEnd="2dp">
 
             <TextView
                 android:id="@+id/card_seg2_label"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
                 android:fontFamily="sans-serif-condensed"
+                android:includeFontPadding="false"
+                android:letterSpacing="0.03"
                 android:maxLines="1"
-                android:textSize="11sp"
-                android:textStyle="bold" />
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/card_seg2_time"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:fontFamily="sans-serif-condensed"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:textSize="11sp" />
         </LinearLayout>
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_marginEnd="4dp"
-            android:orientation="vertical">
+
+        <FrameLayout
+            android:layout_width="14dp"
+            android:layout_height="match_parent">
 
             <FrameLayout
+                android:id="@+id/card_tip2"
                 android:layout_width="match_parent"
-                android:layout_height="10dp"
-                android:gravity="bottom">
+                android:layout_height="match_parent"
+                android:background="@drawable/stage_tip" />
 
-                <FrameLayout
-                    android:id="@+id/card_seg3"
-                    android:layout_width="match_parent"
-                    android:layout_height="6dp"
-                    android:layout_gravity="bottom"
-                    android:background="@drawable/live_card_round" />
-            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/card_notch2"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/stage_notch" />
+        </FrameLayout>
+
+        <LinearLayout
+            android:id="@+id/card_seg3"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/stage_body"
+            android:gravity="center_vertical"
+            android:orientation="vertical"
+            android:paddingStart="6dp"
+            android:paddingEnd="2dp">
 
             <TextView
                 android:id="@+id/card_seg3_label"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
                 android:fontFamily="sans-serif-condensed"
+                android:includeFontPadding="false"
+                android:letterSpacing="0.03"
                 android:maxLines="1"
-                android:textSize="11sp"
-                android:textStyle="bold" />
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/card_seg3_time"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:fontFamily="sans-serif-condensed"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:textSize="11sp" />
         </LinearLayout>
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_marginEnd="0dp"
-            android:orientation="vertical">
+
+        <FrameLayout
+            android:layout_width="14dp"
+            android:layout_height="match_parent">
 
             <FrameLayout
+                android:id="@+id/card_tip3"
                 android:layout_width="match_parent"
-                android:layout_height="10dp"
-                android:gravity="bottom">
+                android:layout_height="match_parent"
+                android:background="@drawable/stage_tip" />
 
-                <FrameLayout
-                    android:id="@+id/card_seg4"
-                    android:layout_width="match_parent"
-                    android:layout_height="6dp"
-                    android:layout_gravity="bottom"
-                    android:background="@drawable/live_card_round" />
-            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/card_notch3"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/stage_notch" />
+        </FrameLayout>
+
+        <LinearLayout
+            android:id="@+id/card_seg4"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/stage_body_end"
+            android:gravity="center_vertical"
+            android:orientation="vertical"
+            android:paddingStart="6dp"
+            android:paddingEnd="2dp">
 
             <TextView
                 android:id="@+id/card_seg4_label"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
                 android:fontFamily="sans-serif-condensed"
+                android:includeFontPadding="false"
+                android:letterSpacing="0.03"
                 android:maxLines="1"
-                android:textSize="11sp"
-                android:textStyle="bold" />
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/card_seg4_time"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:fontFamily="sans-serif-condensed"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:textSize="11sp" />
         </LinearLayout>
     </LinearLayout>
 

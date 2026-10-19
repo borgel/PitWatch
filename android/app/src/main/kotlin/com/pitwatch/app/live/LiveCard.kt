@@ -6,11 +6,13 @@ import android.app.NotificationManager
 import android.content.Context
 import android.content.res.ColorStateList
 import android.os.SystemClock
+import android.graphics.Typeface
+import android.text.SpannableString
 import android.text.SpannableStringBuilder
 import android.text.Spanned
 import android.text.style.BackgroundColorSpan
 import android.text.style.ForegroundColorSpan
-import android.util.TypedValue
+import android.text.style.StyleSpan
 import android.view.View
 import android.widget.RemoteViews
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -41,7 +43,7 @@ object LiveCard {
     const val CHANNEL_ID = "live_scoreboard"
     const val NOTIFICATION_ID = 1003
     private const val GROUP = "pitwatch.scoreboard"
-    private val SEGMENT_COLORS = StatusColors.notificationSegments.map { it.toArgb() }
+    private val JOINTS = listOf(R.id.card_tip1 to R.id.card_notch1, R.id.card_tip2 to R.id.card_notch2, R.id.card_tip3 to R.id.card_notch3)
     private val CLOCK = DateTimeFormatter.ofPattern("h:mm")
     private const val WHITE = 0xFFFFFFFF.toInt()
 
@@ -79,7 +81,7 @@ object LiveCard {
             .setSmallIcon(R.drawable.ic_stat_pitwatch)
             .setStyle(NotificationCompat.DecoratedCustomViewStyle())
             // Collapsed: no custom view, so the system's own layout (and type) shows the title and text.
-            .setCustomBigContentView(scoreboard(context, cache, config, s, now, colors))
+            .setCustomBigContentView(scoreboard(context, cache, config, s, now, colors, dark))
             .setContentTitle(LiveNotification.title(s))
             .setContentText(collapsedText(s, now))
             .setOngoing(true)
@@ -121,7 +123,7 @@ object LiveCard {
     ).joinToString(" · ").uppercase()
 
     /** The expanded scoreboard, in [colors]. */
-    internal fun scoreboard(context: Context, cache: EventCache, config: UserConfig, s: LiveSnapshot, now: Instant, colors: Colors): RemoteViews {
+    internal fun scoreboard(context: Context, cache: EventCache, config: UserConfig, s: LiveSnapshot, now: Instant, colors: Colors, dark: Boolean): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.live_card_expanded)
         views.setTextViewText(R.id.card_label, s.matchLabel)
         views.setTextColor(R.id.card_label, colors.text)
@@ -141,23 +143,32 @@ object LiveCard {
             views.setTextViewText(R.id.card_target, "")
         }
 
-        // Stage bar: filled up to the current stage, which is taller; each stage's clock time under it.
+        // Stage band: the chevrons, filled up to the current stage; each stage's clock time inside it.
         val current = PhaseSteps.current(s.phase)
         val m = s.milestones
-        val stages = listOf(
-            Triple(R.id.card_seg1, R.id.card_seg1_label, "QUEUE" to m.queue),
-            Triple(R.id.card_seg2, R.id.card_seg2_label, "DECK" to m.onDeck),
-            Triple(R.id.card_seg3, R.id.card_seg3_label, "FIELD" to m.onField),
-            Triple(R.id.card_seg4, R.id.card_seg4_label, "START" to m.start),
+        val ids = listOf(
+            Triple(R.id.card_seg1, R.id.card_seg1_label, R.id.card_seg1_time),
+            Triple(R.id.card_seg2, R.id.card_seg2_label, R.id.card_seg2_time),
+            Triple(R.id.card_seg3, R.id.card_seg3_label, R.id.card_seg3_time),
+            Triple(R.id.card_seg4, R.id.card_seg4_label, R.id.card_seg4_time),
         )
-        stages.forEachIndexed { i, (segment, label, stage) ->
-            val step = i + 1
-            val filled = current != null && step <= current
-            views.setColorStateList(segment, "setBackgroundTintList", ColorStateList.valueOf(if (filled) SEGMENT_COLORS[i] else colors.empty))
-            views.setViewLayoutHeight(segment, if (step == current) 10f else 6f, TypedValue.COMPLEX_UNIT_DIP)
-            val time = stage.second?.atZone(ZoneId.systemDefault())?.format(CLOCK)
-            views.setTextViewText(label, listOfNotNull(stage.first, time).joinToString(" "))
-            views.setTextColor(label, if (step == current) SEGMENT_COLORS[i] else colors.muted)
+        val looks = ids.indices.map { StageChevrons.look(it, current, colors, dark) }
+        val times = listOf(m.queue, m.onDeck, m.onField, m.start)
+        ids.forEachIndexed { i, (segment, label, time) ->
+            val look = looks[i]
+            fun tint(id: Int, color: Int) = views.setColorStateList(id, "setBackgroundTintList", ColorStateList.valueOf(color))
+            tint(segment, look.fill)
+            val name = SpannableString(StageChevrons.NAMES[i])
+            if (look.bold) name.setSpan(StyleSpan(Typeface.BOLD), 0, name.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            views.setTextViewText(label, name)
+            views.setTextColor(label, look.name)
+            views.setTextViewText(time, times[i]?.atZone(ZoneId.systemDefault())?.format(CLOCK).orEmpty())
+            views.setTextColor(time, look.time)
+            if (i > 0) {
+                // The joint before this stage: the earlier stage's tip, this one's notch.
+                tint(JOINTS[i - 1].first, looks[i - 1].fill)
+                tint(JOINTS[i - 1].second, look.fill)
+            }
         }
 
         val match = cache.matches.firstOrNull { it.key == s.matchKey }

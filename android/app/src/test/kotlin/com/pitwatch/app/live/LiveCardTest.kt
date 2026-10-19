@@ -38,7 +38,7 @@ class LiveCardTest {
     private fun card(dark: Boolean) = LiveCard.build(context, cache, config, snapshot, SNAP_NOW, actions, dark)
 
     private fun scoreboard(dark: Boolean) =
-        LiveCard.scoreboard(context, cache, config, snapshot, SNAP_NOW, LiveCard.colors(context, dark)).apply(context, FrameLayout(context))
+        LiveCard.scoreboard(context, cache, config, snapshot, SNAP_NOW, LiveCard.colors(context, dark), dark).apply(context, FrameLayout(context))
 
     private fun text(root: android.view.View, id: Int) = root.findViewById<TextView>(id).text
 
@@ -83,8 +83,9 @@ class LiveCardTest {
         assertEquals("Q36", text(root, R.id.card_label).toString())
         assertEquals("ON FIELD", text(root, R.id.card_pill).toString())
         assertEquals("TO MATCH START", text(root, R.id.card_target).toString())
-        assertTrue(text(root, R.id.card_seg1_label).startsWith("QUEUE "))
-        assertTrue(text(root, R.id.card_seg4_label).startsWith("START "))
+        assertEquals("QUEUE", text(root, R.id.card_seg1_label).toString())
+        assertEquals("START", text(root, R.id.card_seg4_label).toString())
+        assertTrue(text(root, R.id.card_seg1_time).isNotEmpty() && text(root, R.id.card_seg4_time).isNotEmpty())
         val red = text(root, R.id.card_red)
         assertTrue(red.toString().contains("4698") && red.toString().contains("5507"))
         val ours = (red as Spanned).getSpans(0, red.length, BackgroundColorSpan::class.java).single()
@@ -107,5 +108,18 @@ class LiveCardTest {
         assertEquals(dark.text, scoreboard(dark = true).findViewById<TextView>(R.id.card_label).currentTextColor)
         assertEquals(light.text, scoreboard(dark = false).findViewById<TextView>(R.id.card_label).currentTextColor)
         assertEquals(light.muted, scoreboard(dark = false).findViewById<TextView>(R.id.card_footer).currentTextColor)
+    }
+
+    @Test
+    fun `the stages are a tinted chevron band - each tip in its stage's fill, notched into the next`() {
+        // Asked for: the iOS chevrons on the card. The snapshot is on field, stage 3 of 4.
+        val colors = LiveCard.colors(context, dark = true)
+        val root = scoreboard(dark = true)
+        fun tint(id: Int) = root.findViewById<android.view.View>(id).backgroundTintList!!.defaultColor
+        val fills = (0..3).map { StageChevrons.look(it, current = 3, colors = colors, dark = true).fill }
+        assertEquals(fills, listOf(R.id.card_seg1, R.id.card_seg2, R.id.card_seg3, R.id.card_seg4).map(::tint))
+        assertEquals(colors.empty, fills[3])
+        assertEquals(listOf(fills[0], fills[1], fills[2]), listOf(R.id.card_tip1, R.id.card_tip2, R.id.card_tip3).map(::tint))
+        assertEquals(listOf(fills[1], fills[2], fills[3]), listOf(R.id.card_notch1, R.id.card_notch2, R.id.card_notch3).map(::tint))
     }
 }
