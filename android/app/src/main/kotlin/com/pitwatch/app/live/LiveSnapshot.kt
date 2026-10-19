@@ -27,6 +27,8 @@ data class LiveSnapshot(
     val onFieldNumber: Int?,
     /** How far behind (positive) or ahead (negative) the event is running; null when unknown. */
     val scheduleDelay: Duration? = null,
+    /** On the field and past Nexus's start estimate: START is the current stage. */
+    val started: Boolean = false,
 ) {
     data class Milestones(val queue: Instant?, val onDeck: Instant?, val onField: Instant?, val start: Instant?, val end: Instant?)
 }
@@ -57,7 +59,7 @@ object LiveSnapshots {
             return LiveSnapshot(
                 match.key, match.shortLabel, alliance, d.phase, d.deadline, "to " + d.target,
                 LiveSnapshot.Milestones(d.queueDeadline, d.onDeckDeadline, d.onFieldDeadline, d.matchStartDeadline, d.matchEndDeadline),
-                away, onField, delay,
+                away, onField, delay, started = d.matchStarted,
             )
         }
 

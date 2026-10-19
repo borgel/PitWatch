@@ -122,4 +122,17 @@ class LiveCardTest {
         assertEquals(listOf(fills[0], fills[1], fills[2]), listOf(R.id.card_tip1, R.id.card_tip2, R.id.card_tip3).map(::tint))
         assertEquals(listOf(fills[1], fills[2], fills[3]), listOf(R.id.card_notch1, R.id.card_notch2, R.id.card_notch3).map(::tint))
     }
+
+    @Test
+    fun `past the start estimate, START is the solid current stage`() {
+        val now = java.time.Instant.ofEpochMilli(1775868749195)
+        val started = assertNotNull(LiveSnapshots.build(cache, config, "2026cancmp_qm36", now))
+        val colors = LiveCard.colors(context, dark = true)
+        val root = LiveCard.scoreboard(context, cache, config, started, now, colors, true).apply(context, FrameLayout(context))
+        fun tint(id: Int) = root.findViewById<android.view.View>(id).backgroundTintList!!.defaultColor
+        val fills = (0..3).map { StageChevrons.look(it, current = 4, colors = colors, dark = true).fill }
+        assertEquals(fills, listOf(R.id.card_seg1, R.id.card_seg2, R.id.card_seg3, R.id.card_seg4).map(::tint))
+        assertEquals(StageChevrons.State.CURRENT, StageChevrons.state(4, 4))
+        assertEquals(StageChevrons.State.PAST, StageChevrons.state(3, 4))
+    }
 }

@@ -136,7 +136,7 @@ private fun Scoreboard(
             if (deadline != null) countdown(deadline) else if (plan.time) Text(start, style = label.copy(fontSize = 20.sp), maxLines = 1)
             target?.let { Text(it, style = labelStyle(colors.muted, 12.sp), maxLines = 1) }
         }
-        if (plan.phaseBar) StageBand(next.phase, model.stageTimes, plan.stageLabels, model.timeZone, colors)
+        if (plan.phaseBar) StageBand(next.phase, next.started, model.stageTimes, plan.stageLabels, model.timeZone, colors)
         if (plan.alliances) {
             AllianceLine(MatchAlliance.RED, next.red, colors)
             AllianceLine(MatchAlliance.BLUE, next.blue, colors)

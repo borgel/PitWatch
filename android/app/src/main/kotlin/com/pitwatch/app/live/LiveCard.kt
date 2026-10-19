@@ -144,7 +144,7 @@ object LiveCard {
         }
 
         // Stage band: the chevrons, filled up to the current stage; each stage's clock time inside it.
-        val current = PhaseSteps.current(s.phase)
+        val current = PhaseSteps.current(s.phase, s.started)
         val m = s.milestones
         val ids = listOf(
             Triple(R.id.card_seg1, R.id.card_seg1_label, R.id.card_seg1_time),

@@ -39,9 +39,24 @@ class ScoreboardTest {
     }
 
     @Test
+    fun `past the start estimate, START is the current step`() {
+        // Asked for: light START even though Nexus never reports it, from the start estimate.
+        assertEquals(4, PhaseSteps.current(Phase.ON_FIELD, started = true))
+        assertEquals("Match likely started, step 4 of 4", PhaseSteps.description(Phase.ON_FIELD, started = true))
+        // Only from the field.
+        assertEquals(2, PhaseSteps.current(Phase.ON_DECK, started = true))
+    }
+
+    @Test
     fun `timeline announces the current step`() {
         compose.setContent { PitWatchTheme { PhaseTimeline(Phase.ON_FIELD) } }
         compose.onNode(hasContentDescription("On field, step 3 of 4")).assertIsDisplayed()
+    }
+
+    @Test
+    fun `timeline announces a likely start`() {
+        compose.setContent { PitWatchTheme { PhaseTimeline(Phase.ON_FIELD, started = true) } }
+        compose.onNode(hasContentDescription("Match likely started, step 4 of 4")).assertIsDisplayed()
     }
 
     @Test

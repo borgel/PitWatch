@@ -38,7 +38,10 @@ object StatusColors {
     }
 
     /** [phase] as a text color: the bright phase colors are too light to read on light surfaces, so darken them there. */
-    fun phaseText(phase: Phase, onLight: Boolean): Color = if (onLight) lerp(phase(phase), Color.Black, 0.45f) else phase(phase)
+    fun phaseText(phase: Phase, onLight: Boolean): Color = stepText(phase(phase), onLight)
+
+    /** A stage color (see [notificationSegments]) as a text color, darkened on light surfaces like [phaseText]. */
+    fun stepText(color: Color, onLight: Boolean): Color = if (onLight) lerp(color, Color.Black, 0.45f) else color
 
     /** Badge label color, chosen for contrast on [phase]. */
     fun onPhase(phase: Phase): Color = if (phase == Phase.PRE_QUEUE) Color.White else Color(0xFF1C1C1E)
