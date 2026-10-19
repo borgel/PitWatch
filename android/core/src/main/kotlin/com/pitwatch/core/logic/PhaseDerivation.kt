@@ -21,6 +21,11 @@ object PhaseDerivation {
         val onFieldDeadline: Instant?,
         val matchStartDeadline: Instant?,
         val matchEndDeadline: Instant?,
+        /**
+         * Our match has (probably) started: on the field and past Nexus's start estimate. Nexus never reports a real
+         * start; its estimate is the on-field time plus a fixed few minutes, so a slow field lights this early.
+         */
+        val matchStarted: Boolean,
     )
 
     /**
@@ -44,6 +49,7 @@ object PhaseDerivation {
             onFieldDeadline = times.onFieldDate,
             matchStartDeadline = times.startDate,
             matchEndDeadline = matchEnd,
+            matchStarted = phase == Phase.ON_FIELD && times.startDate?.let { it <= now } == true,
         )
 
         val status = nexusMatch.status?.lowercase()
