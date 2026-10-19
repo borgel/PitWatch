@@ -317,7 +317,7 @@ private fun Hero(model: MatchListModel, now: Instant, tracking: Boolean, onToggl
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                PhaseTimeline(next.phase, Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp))
+                PhaseTimeline(next.phase, Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp), next.started)
                 AllianceBands(next.red, next.blue, Modifier.padding(top = 12.dp))
             }
         }

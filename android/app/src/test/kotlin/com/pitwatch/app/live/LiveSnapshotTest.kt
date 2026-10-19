@@ -34,6 +34,14 @@ class LiveSnapshotTest {
     }
 
     @Test
+    fun `counts the match as started once Nexus's start estimate passes`() {
+        assertEquals(false, assertNotNull(LiveSnapshots.build(cache, config, qm36, SNAP_NOW)).started)
+        val later = assertNotNull(LiveSnapshots.build(cache, config, qm36, Instant.ofEpochMilli(1775868749195)))
+        assertEquals(true, later.started)
+        assertEquals("to match end", later.target)
+    }
+
+    @Test
     fun `carries how far ahead or behind the event is running`() {
         val s = assertNotNull(LiveSnapshots.build(cache, config, qm36, SNAP_NOW))
         val expected = assertNotNull(ScheduleDelay.of(cache.matches, cache.nexusEvent))

@@ -90,8 +90,8 @@ internal fun labelStyle(color: ColorProvider, size: TextUnit = 11.sp) =
  * time, inside it; without them the band is just its colors (the phase pill names the stage).
  */
 @Composable
-internal fun StageBand(phase: Phase?, times: List<Instant?>, labels: StageLabels, zone: ZoneId, colors: ScoreboardColors) {
-    val current = PhaseSteps.current(phase)
+internal fun StageBand(phase: Phase?, started: Boolean, times: List<Instant?>, labels: StageLabels, zone: ZoneId, colors: ScoreboardColors) {
+    val current = PhaseSteps.current(phase, started)
     val looks = StageChevrons.NAMES.indices.map {
         StageChevrons.look(it, current, colors.day, dark = false) to StageChevrons.look(it, current, colors.night, dark = true)
     }

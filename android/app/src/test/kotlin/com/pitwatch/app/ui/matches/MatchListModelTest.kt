@@ -75,6 +75,14 @@ class MatchListModelTest {
     }
 
     @Test
+    fun `the next match counts as started once its start estimate passes`() {
+        fun next(now: Instant) = (MatchListModels.build(cache, config, RefreshState(), now, Locale.US, com.pitwatch.app.LA)
+            .days[0].items[0] as MatchListModel.Item.Upcoming).row
+        assertFalse(next(SNAP_NOW).started)
+        assertTrue(next(Instant.ofEpochMilli(1775868749195)).started)
+    }
+
+    @Test
     fun `results are most recent first from our side`() {
         val results = build().results
         assertEquals(listOf("Qual 22", "Qual 14", "Qual 1"), results.map { it.label })

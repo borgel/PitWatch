@@ -72,6 +72,24 @@ class PhaseDerivationTest {
     }
 
     @Test
+    fun `the match counts as started once the field passes Nexus's start estimate`() {
+        // Nexus never reports a start; its estimate (on-field + ~5 min) is the best signal there is.
+        assertEquals(false, PhaseDerivation.derivePhase(nexus(-600, -300, -60, 45), ref).matchStarted)
+        assertEquals(true, PhaseDerivation.derivePhase(nexus(-600, -300, -120, 0), ref).matchStarted)
+        assertEquals(true, PhaseDerivation.derivePhase(nexus(-900, -600, -400, -100), ref).matchStarted)
+        // Status alone, start still ahead.
+        assertEquals(false, PhaseDerivation.derivePhase(nexus(300, 600, 900, 1200, "On field"), ref).matchStarted)
+        // On the field with no estimate: unknown, so not started.
+        assertEquals(false, PhaseDerivation.derivePhase(nexus(-600, -300, -120, null), ref).matchStarted)
+    }
+
+    @Test
+    fun `only a match on the field can have started`() {
+        // A stale start estimate on a match Nexus still has on deck doesn't light START.
+        assertEquals(false, PhaseDerivation.derivePhase(nexus(-600, -300, -120, -60, "On deck"), ref).matchStarted)
+    }
+
+    @Test
     fun `targets name what each phase counts to`() {
         assertEquals("queue", PhaseDerivation.derivePhase(nexus(300, 600, 900, 1200), ref).target)
         assertEquals("on deck", PhaseDerivation.derivePhase(nexus(-60, 300, 600, 900), ref).target)

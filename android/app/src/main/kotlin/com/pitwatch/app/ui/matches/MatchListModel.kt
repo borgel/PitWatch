@@ -66,6 +66,8 @@ data class MatchListModel(
         val blue: AllianceLine,
         val isNext: Boolean,
         val countdown: Countdown?,
+        /** On the field and past Nexus's start estimate: the stage band lights START. */
+        val started: Boolean = false,
     ) {
         val url: String get() = "https://www.thebluealliance.com/match/$key"
     }
@@ -163,7 +165,7 @@ object MatchListModels {
             }
             return MatchListModel.MatchRow(
                 match.key, match.label, match.shortLabel, time, estimated, alliance, derived?.phase,
-                line(match, "red"), line(match, "blue"), isNext, countdown,
+                line(match, "red"), line(match, "blue"), isNext, countdown, derived?.matchStarted == true,
             )
         }
 

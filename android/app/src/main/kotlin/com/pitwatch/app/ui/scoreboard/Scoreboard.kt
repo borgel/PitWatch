@@ -193,31 +193,35 @@ object PhaseSteps {
     val steps: List<Pair<String, Phase?>> =
         listOf("QUEUE" to Phase.QUEUEING, "ON DECK" to Phase.ON_DECK, "ON FIELD" to Phase.ON_FIELD, "MATCH" to null)
 
-    /** 1-based current step; null before queueing and for TBA-only rows with no phase. */
-    fun current(phase: Phase?): Int? = when (phase) {
+    /**
+     * 1-based current step; null before queueing and for TBA-only rows with no phase. No phase reaches the match itself:
+     * on the field and [started] (past Nexus's start estimate, the only start signal there is) makes it step 4.
+     */
+    fun current(phase: Phase?, started: Boolean = false): Int? = when (phase) {
         Phase.QUEUEING -> 1
         Phase.ON_DECK -> 2
-        Phase.ON_FIELD -> 3
+        Phase.ON_FIELD -> if (started) 4 else 3
         Phase.PRE_QUEUE, null -> null
     }
 
-    fun description(phase: Phase?): String {
-        val step = current(phase) ?: return "Not queued yet"
-        return phase!!.stateLabel.lowercase().replaceFirstChar { it.uppercase() } + ", step $step of 4"
+    fun description(phase: Phase?, started: Boolean = false): String {
+        val step = current(phase, started) ?: return "Not queued yet"
+        val state = if (step == 4) "Match likely started" else phase!!.stateLabel.lowercase().replaceFirstChar { it.uppercase() }
+        return "$state, step $step of 4"
     }
 }
 
 /** Queue → on deck → on field → match: filled up to the current phase, the current step taller. */
 @Composable
-fun PhaseTimeline(phase: Phase?, modifier: Modifier = Modifier) {
-    val current = PhaseSteps.current(phase)
+fun PhaseTimeline(phase: Phase?, modifier: Modifier = Modifier, started: Boolean = false) {
+    val current = PhaseSteps.current(phase, started)
     val colors = MaterialTheme.colorScheme
-    val description = PhaseSteps.description(phase)
+    val description = PhaseSteps.description(phase, started)
     Column(modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = description }, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(Modifier.fillMaxWidth().height(12.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.Bottom) {
-            PhaseSteps.steps.forEachIndexed { i, (_, stepPhase) ->
+            PhaseSteps.steps.forEachIndexed { i, _ ->
                 val step = i + 1
-                val fill = stepPhase?.takeIf { current != null && step <= current }?.let(StatusColors::phase)
+                val fill = StatusColors.notificationSegments[i].takeIf { current != null && step <= current }
                 Box(
                     Modifier.weight(1f).height(if (step == current) 12.dp else 8.dp)
                         .background(fill ?: colors.surfaceContainerHighest, RoundedCornerShape(6.dp)),
@@ -225,13 +229,14 @@ fun PhaseTimeline(phase: Phase?, modifier: Modifier = Modifier) {
             }
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            PhaseSteps.steps.forEachIndexed { i, (label, stepPhase) ->
+            PhaseSteps.steps.forEachIndexed { i, (label, _) ->
                 val isCurrent = i + 1 == current
+                val stepColor = StatusColors.notificationSegments[i]
                 Text(
                     if (isCurrent) "$label ◂" else label,
                     Modifier.weight(1f),
                     style = condensed(13.sp, letterSpacing = 1.sp),
-                    color = if (isCurrent && stepPhase != null) StatusColors.phaseText(stepPhase, onLight = colors.surface.luminance() > 0.5f) else colors.onSurfaceVariant,
+                    color = if (isCurrent) StatusColors.stepText(stepColor, onLight = colors.surface.luminance() > 0.5f) else colors.onSurfaceVariant,
                     maxLines = 1,
                     softWrap = false,
                     overflow = TextOverflow.Clip,
